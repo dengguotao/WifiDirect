@@ -1,16 +1,41 @@
 package com.ckt.io;
 
-import android.app.Activity;
+import java.io.File;
+import java.util.ArrayList;
+
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends Activity {
+import com.ckt.io.fragment.FileExplorerFragment;
 
+public class MainActivity extends FragmentActivity  {
+
+	private ViewPager viewPager;
+	
+	private ArrayList<Fragment> fragmentList;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		this.viewPager = (ViewPager) findViewById(R.id.viewPager1);
+		initViewPager();
+	}
+	
+	public void initViewPager() {
+		fragmentList = new ArrayList<Fragment>();
+		fragmentList.add(new FileExplorerFragment(new File("")));
+		fragmentList.add(new FileExplorerFragment(new File("")));
+		fragmentList.add(new FileExplorerFragment(new File("")));
+		fragmentList.add(new FileExplorerFragment(new File("")));
+		viewPager.setAdapter(new MyFragmentPagerAdapter(getSupportFragmentManager(), fragmentList));
 	}
 
 	@Override
@@ -30,5 +55,23 @@ public class MainActivity extends Activity {
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
+	}
+	
+	class MyFragmentPagerAdapter extends FragmentPagerAdapter{  
+	    ArrayList<Fragment> list;  
+	    public MyFragmentPagerAdapter(FragmentManager fm,ArrayList<Fragment> list) {  
+	        super(fm);  
+	        this.list = list;      
+	    }  
+	      
+	    @Override  
+	    public int getCount() {  
+	        return list.size();  
+	    }  
+	      
+	    @Override  
+	    public Fragment getItem(int arg0) {  
+	        return list.get(arg0);  
+	    }   
 	}
 }
