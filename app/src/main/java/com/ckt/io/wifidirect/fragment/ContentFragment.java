@@ -63,16 +63,18 @@ public class ContentFragment extends Fragment {
 
     public void InitImage() {
         image = (ImageView) view.findViewById(R.id.id_cursor);
-        bmpW = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher).getWidth();
+
         DisplayMetrics dm = new DisplayMetrics();
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(dm);
         int screenW = dm.widthPixels;
-        offset = (screenW / viewPagerTitleIds.length - bmpW) / 2;
-        image.setPadding(offset, 0, 0, 0);
-
-        Matrix matrix = new Matrix();
+        offset = 0;
+        ViewGroup.LayoutParams lp = image.getLayoutParams();
+        lp.width = screenW/viewPagerTitleIds.length;
+        bmpW = lp.width;
+        image.setLayoutParams(lp);
+        /*Matrix matrix = new Matrix();
         matrix.preTranslate(offset, 0);
-        image.setImageMatrix(matrix);
+        image.setImageMatrix(matrix);*/
     }
 
     public void InitViewPager() {
