@@ -116,6 +116,9 @@ public class FileExplorerFragment extends Fragment implements
 		return view;
 	}
 
+	/**
+	 * 保存浏览一个目录时的状态
+	 */
 	class State {
 		public State(File dir, int pos, int top) {
 			this.pos = pos;

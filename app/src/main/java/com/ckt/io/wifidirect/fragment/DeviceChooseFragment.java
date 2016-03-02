@@ -14,16 +14,17 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 
 
 public class DeviceChooseFragment extends Fragment{
+	private TextView txt_connected_info;
 	private ListView listView;
 	private ArrayList<WifiP2pDevice> deviceList = new ArrayList<WifiP2pDevice>();
 	private WifiP2pHelper wifiP2pHelper;
-	public DeviceChooseFragment(WifiP2pHelper wifiP2pHelper) {
-		this.wifiP2pHelper = wifiP2pHelper;
+	public DeviceChooseFragment() {
 	}
 	
 	@Override
@@ -32,7 +33,9 @@ public class DeviceChooseFragment extends Fragment{
 
 		View view = inflater.inflate(R.layout.fragment_device_choose, container, false);
 		listView = (ListView) view.findViewById(R.id.listview);
+		txt_connected_info = (TextView) view.findViewById(R.id.txt_connected_info);
 		listView.setAdapter(new MyListViewAdapter());
+		wifiP2pHelper = ((MainActivity)getActivity()).getWifiP2pHelper();
 		listView.setOnItemClickListener(new OnItemClickListener() {
 
 			@Override
@@ -42,7 +45,6 @@ public class DeviceChooseFragment extends Fragment{
 				WifiP2pDevice device = deviceList.get(position);
 				wifiP2pHelper.connectDevice(device);
 			}
-			
 		});
 		return view;
 	}
@@ -51,6 +53,13 @@ public class DeviceChooseFragment extends Fragment{
 		this.deviceList.clear();
 		this.deviceList.addAll(deviceList);
 		((BaseAdapter)this.listView.getAdapter()).notifyDataSetChanged();
+	}
+	public void updateConnectedInfo(boolean isServer) {
+		if(isServer) {
+			txt_connected_info.setText("server");
+		}else {
+			txt_connected_info.setText("client");
+		}
 	}
 	
 	class MyListViewAdapter extends BaseAdapter {
@@ -90,6 +99,5 @@ public class DeviceChooseFragment extends Fragment{
 			viewHolder.txt_device_name.setText(device.deviceName);
 			return convertView;
 		}
-		
 	}
 }

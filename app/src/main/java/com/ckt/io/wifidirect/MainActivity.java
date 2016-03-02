@@ -8,15 +8,22 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
+import com.ckt.io.wifidirect.dialog.DeviceConnectDialog;
 import com.ckt.io.wifidirect.fragment.ContentFragment;
 import com.ckt.io.wifidirect.fragment.DeviceChooseFragment;
 import com.ckt.io.wifidirect.fragment.FileExplorerFragment;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 
+import java.io.File;
+import java.util.ArrayList;
+
 public class MainActivity extends ActionBarActivity {
+    private DeviceConnectDialog deviceConnectDialog;
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
     protected Toolbar toolbar;
@@ -29,10 +36,10 @@ public class MainActivity extends ActionBarActivity {
         public void handleMessage(android.os.Message msg) {
             switch(msg.what) {
                 case WifiP2pHelper.WIFIP2P_DEVICE_LIST_CHANGED:
-                    DeviceChooseFragment fragment = contentfragment.getmDeviceChooseFragment();
-                    fragment.updateDeviceList(wifiP2pHelper.getDeviceList());
+                    deviceConnectDialog.updateDeviceList(wifiP2pHelper.getDeviceList());
                     break;
                 case WifiP2pHelper.WIFIP2P_DEVICE_CONNECTED_SUCCESS:
+                    deviceConnectDialog.updateConnectedInfo(wifiP2pHelper.isServer());
                     break;
                 case 0:
                     break;
@@ -61,7 +68,10 @@ public class MainActivity extends ActionBarActivity {
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close);
         mDrawerToggle.syncState();
         mDrawerLayout.setDrawerListener(mDrawerToggle);
+        deviceConnectDialog = new DeviceConnectDialog(this, R.style.FullHeightDialog);
     }
+
+
 
     @Override
     protected void onResume() {
@@ -94,7 +104,11 @@ public class MainActivity extends ActionBarActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
+        Log.d(WifiP2pHelper.TAG, "试图发送文件");
+        ArrayList<File> fileList = new ArrayList<File>();
+        fileList.add(new File("/storage/emulated/0/1.apk"));
+        fileList.add(new File("/storage/emulated/0/2.zip"));
+        wifiP2pHelper.sendFiles(fileList);
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
@@ -113,5 +127,11 @@ public class MainActivity extends ActionBarActivity {
 
     public WifiP2pHelper getWifiP2pHelper() {
         return wifiP2pHelper;
+    }
+    public Handler getHandler(){
+        return this.handler;
+    }
+    public DeviceConnectDialog getDeviceConnectDialog() {
+        return this.deviceConnectDialog;
     }
 }

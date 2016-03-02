@@ -69,9 +69,11 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 
 	// 开始查找设备
 	public void discoverDevice() {
+		Log.d(TAG, "WifiP2pHelper-->discoverDevice()");
 		if (!isWifiOn()) {
 			toggleWifi(true);
 		}
+		if(isConnected) return;
 		manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
 
 			@Override
@@ -86,6 +88,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 
 	// 连接到设备
 	public void connectDevice(WifiP2pDevice device) {
+		Log.d(TAG, "WifiP2pHelper-->connectDevice()");
 		WifiP2pConfig config = new WifiP2pConfig();
 		config.deviceAddress = device.deviceAddress;
 		config.wps.setup = WpsInfo.PBC;
@@ -193,6 +196,9 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 				//1.get the file name
 	            byte buffer [] = new byte[MAX_FILENAME_LEN];
 	            int receveCount = inputstream.read(buffer);
+//				if(receveCount==-1) {
+//					continue;
+//				}
 	            String name = new String(buffer, 0, receveCount);
 	            int validLen = name.indexOf("\0");
 	            name = name.substring(0, validLen);
@@ -264,7 +270,6 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 		Log.d(TAG, "onConnectionInfoAvailable()");
 		connectInfo = info;
 		new Thread(){
-
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
@@ -335,6 +340,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 	}
 	
 	public void release() {
+		Log.d(TAG, "WifiP2pHelper-->connectDevice()");
 		try {
 			this.serverSocket.close();
 		}catch(Exception e){}
@@ -368,6 +374,11 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 		WifiManager wifiManager = (WifiManager) activity
 				.getSystemService(Context.WIFI_SERVICE);
 		return wifiManager.isWifiEnabled();
+	}
+
+	//判断是否已连接其他设备
+	public boolean isConnected() {
+		return this.isConnected;
 	}
 
 	// getter
@@ -416,6 +427,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 Log.d(TAG, "device Connected!!--->requestConnectionInfo()");
             } else {
                 // It's a disconnect
+				isConnected = false;
             	release();
             }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {

@@ -28,11 +28,12 @@ import java.util.ArrayList;
 /**
  * Created by ckt on 2/29/16.
  */
-public class ContentFragment extends Fragment {
+public class ContentFragment extends Fragment implements View.OnClickListener{
+    private ImageView img_connect; //ÓÒÏÂ½ÇµÄ "´«"
     private ViewPager mPager;
     private ArrayList<Fragment> fragmentArrayList;
     private ImageView image;
-    private int viewPagerTitleIds [] = {R.id.id_device_title, R.id.id_application_title, R.id.id_music_title, R.id.id_movie_title, R.id.id_file_title};
+    private int viewPagerTitleIds [] = {R.id.id_application_title, R.id.id_music_title, R.id.id_movie_title, R.id.id_file_title};
     private TextView view_one, view_two, view_three, view_four, view_five;
     private int currIndex;
     private int bmpW;
@@ -48,6 +49,8 @@ public class ContentFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.content_layout, container, false);
+        img_connect = (ImageView) view.findViewById(R.id.img_connect);
+        img_connect.setOnClickListener(this);
         InitImage();
         InitViewPager();
         InitTextView();
@@ -84,19 +87,26 @@ public class ContentFragment extends Fragment {
         MusicFragment musicFragment = new MusicFragment();
         MovieFragment movieFragment = new MovieFragment();
         mFileFragment = new FileExplorerFragment(SdcardUtils.getInnerSDcardFile(getActivity()));
-        mDeviceChooseFragment = new DeviceChooseFragment(((MainActivity)getActivity()).getWifiP2pHelper());
+        mDeviceChooseFragment = new DeviceChooseFragment();
 
-        fragmentArrayList.add(mDeviceChooseFragment);
         fragmentArrayList.add(applicationFragment);
         fragmentArrayList.add(musicFragment);
         fragmentArrayList.add(movieFragment);
         fragmentArrayList.add(mFileFragment);
 
-
         MainActivity activity = (MainActivity) getActivity();
         mPager.setAdapter(new MyFragmentAdapter(activity.getSupportFragmentManager(), fragmentArrayList));
         mPager.setCurrentItem(0);
         mPager.setOnPageChangeListener(new MyOnPageChangeListener());
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.img_connect:
+                ((MainActivity)getActivity()).getDeviceConnectDialog().show();
+                break;
+        }
     }
 
     public class MyOnPageChangeListener implements ViewPager.OnPageChangeListener {
@@ -139,12 +149,6 @@ public class ContentFragment extends Fragment {
             // TODO Auto-generated method stub
             mPager.setCurrentItem(index);
         }
-    }
-
-
-    //setter and getter
-    public DeviceChooseFragment getmDeviceChooseFragment() {
-        return mDeviceChooseFragment;
     }
 
     public FileExplorerFragment getFileExplorerFragment() {

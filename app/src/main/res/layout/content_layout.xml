@@ -1,64 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
-
+    android:layout_height="match_parent">
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/id_device_title"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="device" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/id_application_title"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="application" />
+            <TextView
+                android:id="@+id/id_application_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="application" />
 
-        <TextView
-            android:id="@+id/id_music_title"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="music" />
+            <TextView
+                android:id="@+id/id_music_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="music" />
 
-        <TextView
-            android:id="@+id/id_movie_title"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="movie" />
+            <TextView
+                android:id="@+id/id_movie_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="movie" />
 
-        <TextView
-            android:id="@+id/id_file_title"
-            android:layout_width="0dp"
-            android:layout_weight="1"
+            <TextView
+                android:id="@+id/id_file_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="file" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/id_cursor"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="file" />
+            android:src="@drawable/underline" />
+
+        <android.support.v4.view.ViewPager
+            android:id="@+id/id_view_pager"
+            android:layout_width="match_parent"
+            android:layout_height="fill_parent"
+            android:flipInterval="30"
+            android:persistentDrawingCache="animation" />
     </LinearLayout>
-
     <ImageView
-        android:id="@+id/id_cursor"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/underline" />
-
-    <android.support.v4.view.ViewPager
-        android:id="@+id/id_view_pager"
-        android:layout_width="match_parent"
-        android:layout_height="fill_parent"
-        android:flipInterval="30"
-        android:persistentDrawingCache="animation" />
-</LinearLayout>
+        android:id="@+id/img_connect"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginRight="5dp"
+        android:layout_marginBottom="5dp"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:src="@drawable/send" />
+</RelativeLayout>
