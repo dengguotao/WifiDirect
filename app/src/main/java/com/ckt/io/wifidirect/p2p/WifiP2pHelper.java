@@ -428,6 +428,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
             } else {
                 // It's a disconnect
 				isConnected = false;
+				Log.d(TAG, "device disconnected!!)");
             	release();
             }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {

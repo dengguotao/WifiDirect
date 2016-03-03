@@ -34,7 +34,6 @@ public class ToolBarFragment extends Fragment {
         toolbar.setLogo(R.drawable.ic_launcher);
         activity.setSupportActionBar(toolbar);
         toolbar.setOnMenuItemClickListener(onMenuItemClick);
-        activity.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         return view;
     }
 }

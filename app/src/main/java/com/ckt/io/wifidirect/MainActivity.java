@@ -12,6 +12,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 
 import com.ckt.io.wifidirect.dialog.DeviceConnectDialog;
 import com.ckt.io.wifidirect.fragment.ContentFragment;
@@ -56,6 +58,9 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //保持屏幕常亮
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         wifiP2pHelper = new WifiP2pHelper(this, this.handler);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
@@ -65,6 +70,8 @@ public class MainActivity extends ActionBarActivity {
         contentfragment = (ContentFragment) getSupportFragmentManager().findFragmentById(R.id.id_content);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.id_drawer_layout);
         // 實作 drawer toggle 並放入 toolbar
+        toolbar = (Toolbar)findViewById(R.id.id_toolbar_layout);
+        getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close);
         mDrawerToggle.syncState();
         mDrawerLayout.setDrawerListener(mDrawerToggle);
@@ -104,11 +111,11 @@ public class MainActivity extends ActionBarActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        Log.d(WifiP2pHelper.TAG, "试图发送文件");
+        /*Log.d(WifiP2pHelper.TAG, "试图发送文件");
         ArrayList<File> fileList = new ArrayList<File>();
         fileList.add(new File("/storage/emulated/0/1.apk"));
         fileList.add(new File("/storage/emulated/0/2.zip"));
-        wifiP2pHelper.sendFiles(fileList);
+        wifiP2pHelper.sendFiles(fileList);*/
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
