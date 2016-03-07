@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.dialog;
+package com.ckt.io.wifidirect.myViews;
 
 import android.app.Dialog;
 import android.graphics.Bitmap;
@@ -10,8 +10,6 @@ import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.BaseAdapter;
-import android.widget.FrameLayout;
 
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
@@ -69,16 +67,20 @@ public class DeviceConnectDialog extends Dialog {
         getWindow().setAttributes(lp);
     }
 
-    //更新fragment_choose_device视图的方法
+    //update views
     public void updateDeviceList(ArrayList<WifiP2pDevice> deviceList) {
         if(this.fragment_choose_device != null) {
             this.fragment_choose_device.updateDeviceList(deviceList);
         }
-
     }
     public void updateConnectedInfo(boolean isServer) {
         if(this.fragment_choose_device != null) {
             this.fragment_choose_device.updateConnectedInfo(isServer);
+        }
+    }
+    public void onDisconnectedInfo() {
+        if(this.fragment_choose_device != null) {
+            this.fragment_choose_device.onDisconnectedInfo();
         }
     }
 }

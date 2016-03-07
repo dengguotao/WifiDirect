@@ -17,4 +17,9 @@
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
     </style>
+
+    <style name="sendfilelist_popwin_animal_style">
+        <item name="android:windowEnterAnimation">@anim/sendfilelist_popwin_in</item>
+        <item name="android:windowExitAnimation">@anim/sendfilelist_popwin_out</item>
+    </style>
 </resources>

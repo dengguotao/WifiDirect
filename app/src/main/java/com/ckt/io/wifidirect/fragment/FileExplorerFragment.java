@@ -2,27 +2,41 @@ package com.ckt.io.wifidirect.fragment;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 
+import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.ckt.io.wifidirect.utils.ApkUtils;
+import com.ckt.io.wifidirect.utils.ToastUtils;
 
 
+@SuppressLint("ValidFragment")
 public class FileExplorerFragment extends Fragment implements
 		OnItemClickListener {
 
+	private HashMap<String, Drawable> drawableHashMapCathe = new HashMap<>(); //cathe the loaded img
 	private ArrayList<State> stateList = new ArrayList<State>();
 
 	private ViewGroup lin_no_file;
@@ -30,6 +44,10 @@ public class FileExplorerFragment extends Fragment implements
 	private File mDir;
 	private ArrayList<File> fileList;
 
+	private boolean isListViewScrolling = false;
+	private boolean isUpdateListViewAfterStopScrolling = false;
+
+	private Handler handler = new Handler();
 	public FileExplorerFragment(File dir) {
 		this.mDir = dir;
 		if (this.mDir == null) {
@@ -112,6 +130,23 @@ public class FileExplorerFragment extends Fragment implements
 		listView = (ListView) view.findViewById(R.id.listview);
 		listView.setAdapter(new MyListViewAdapter());
 		listView.setOnItemClickListener(this);
+		listView.setOnScrollListener(new AbsListView.OnScrollListener() {
+			@Override
+			public void onScrollStateChanged(AbsListView view, int scrollState) {
+				if(scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE)  {
+					isListViewScrolling = false;
+					if(isUpdateListViewAfterStopScrolling) {
+						((MyListViewAdapter)listView.getAdapter()).notifyDataSetChanged();
+						isUpdateListViewAfterStopScrolling = false;
+					}
+				}else {
+					isListViewScrolling = true;
+				}
+			}
+			@Override
+			public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+			}
+		});
 		updateView(null);
 		return view;
 	}
@@ -125,7 +160,6 @@ public class FileExplorerFragment extends Fragment implements
 			this.dir = dir;
 			this.top = top;
 		}
-
 		private int pos;
 		private File dir;
 		private int top; // listview中第一个view的top
@@ -175,6 +209,56 @@ public class FileExplorerFragment extends Fragment implements
 			ViewHolder viewHolder = (ViewHolder) convertView.getTag();
 			File tempFile = fileList.get(position);
 			viewHolder.txt_title.setText(tempFile.getName());
+			if(tempFile.isDirectory()) {
+				viewHolder.img_icon.setImageResource(R.drawable.folder_icon);
+			}else {
+				final String path = tempFile.getPath().toLowerCase();
+				if(path.endsWith(".apk")) {
+					if(drawableHashMapCathe.containsKey(path)) { //apk file
+						Drawable drawable = drawableHashMapCathe.get(path);
+						if(drawable != null) {
+							viewHolder.img_icon.setImageDrawable(drawable);
+						}else {
+							viewHolder.img_icon.setImageResource(R.drawable.file_icon);
+						}
+
+					}else {
+						handler.post(new Runnable() {
+							@Override
+							public void run() {
+								Log.d(WifiP2pHelper.TAG, "post");
+								Drawable drawable = ApkUtils.getApkIcon(getActivity(), path);
+								drawableHashMapCathe.put(path, drawable);
+								if(!isListViewScrolling) {//the listview is not scrolling update listview item now
+									notifyDataSetChanged();
+								}else { //the listview is scrolling , update listview item after it stoped.
+									isUpdateListViewAfterStopScrolling = true;
+								}
+								Log.d(WifiP2pHelper.TAG, "post End");
+							}
+						});
+					}
+				}/*else if(path.endsWith(".png")||path.endsWith(".bmp")||
+						path.endsWith(".jpg")||path.endsWith(".jpeg")) {//image file
+					if(drawableHashMapCathe.containsKey(path)) {
+						Drawable drawable = drawableHashMapCathe.get(path);
+						if(drawable != null) {
+							viewHolder.img_icon.setImageDrawable(drawable);
+						}else {
+							viewHolder.img_icon.setImageResource(R.drawable.file_icon);
+						}
+					}else {
+						Bitmap bitmap = BitmapFactory.decodeFile(path);
+						BitmapDrawable drawable = new BitmapDrawable(bitmap);
+						drawableHashMapCathe.put(path, drawable);
+						viewHolder.img_icon.setImageDrawable(drawable);
+					}
+
+				} */else { //normal file
+					viewHolder.img_icon.setImageResource(R.drawable.file_icon);
+				}
+
+			}
 			return convertView;
 		}
 	}
@@ -192,6 +276,13 @@ public class FileExplorerFragment extends Fragment implements
 			State state = new State(mDir, listView.getFirstVisiblePosition(), top);
 			stateList.add(state);
 			updateView(new State(f, 0, 0));
+		}else { //click a file ---> add to sendFile-list
+			MainActivity activity = (MainActivity) getActivity();
+			if(activity.addFileToSendFileList(f.getPath())) {//add succeussed
+
+			}else {
+				ToastUtils.toast(activity, R.string.add_to_sendfilelist_erorr);
+			}
 		}
 	}
 }

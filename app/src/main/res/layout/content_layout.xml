@@ -3,6 +3,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <LinearLayout
+        android:id="@+id/lin_send_fun"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true">
+        <include layout="@layout/file_send_fun_layout"/>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_above="@id/lin_send_fun"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -57,12 +65,13 @@
             android:flipInterval="30"
             android:persistentDrawingCache="animation" />
     </LinearLayout>
+
     <ImageView
         android:id="@+id/img_connect"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginRight="5dp"
-        android:layout_marginBottom="5dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="80dp"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:src="@drawable/send" />

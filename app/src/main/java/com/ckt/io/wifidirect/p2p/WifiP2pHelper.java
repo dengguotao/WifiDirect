@@ -41,8 +41,10 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 	public static final int SOCKET_PORT = 8989;
 	public static final int SOCKET_TIMEOUT = 5000;
 
-	public static final int WIFIP2P_DEVICE_LIST_CHANGED = 100;
-	public static final int WIFIP2P_DEVICE_CONNECTED_SUCCESS = 101;
+	public static final int WIFIP2P_DEVICE_DISCOVERING = 99; //正在发现设备
+	public static final int WIFIP2P_DEVICE_LIST_CHANGED = 100;//可以设备列表更新
+	public static final int WIFIP2P_DEVICE_CONNECTED_SUCCESS = 101;//连接设备成功
+	public static final int WIFIP2P_DEVICE_DISCONNECTED = 102;//链接断开
 	private WifiP2pManager manager;
 	private Channel channel;
 	private ArrayList<WifiP2pDevice> deviceList;
@@ -73,15 +75,18 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 		if (!isWifiOn()) {
 			toggleWifi(true);
 		}
-		if(isConnected) return;
+		if(isConnected) {
+			Log.d(TAG, "WifiP2pHelper-->discoverDevice ended-->isConnected=true");
+			return;
+		}
+		handler.sendEmptyMessage(WIFIP2P_DEVICE_DISCOVERING);
 		manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
-
 			@Override
 			public void onSuccess() {
 			}
-
 			@Override
 			public void onFailure(int reasonCode) {
+				Log.d(TAG, "WifiP2pHelper-->discoverDevice failed   reasonCode="+reasonCode);
 			}
 		});
 	}
@@ -159,6 +164,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 				out.write(buf, 0, len);
 			}
 			inputstream.close();
+			Log.d(WifiP2pHelper.TAG, "send a file sucessfully!!!");
 
 		} catch (IOException e) {
 			try {
@@ -244,6 +250,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 		        	}
 	            }
 		        out.close();
+				Log.d(WifiP2pHelper.TAG, "recevice a file sucessfully!!!");
 			}
 			
 		} catch (IOException e) {
@@ -277,6 +284,8 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 					try {
 						serverSocket = new ServerSocket(SOCKET_PORT);
 						serverSocket_the_connected_clientSocket = serverSocket.accept();
+//						Log.d(TAG, "server addr:"+connectInfo.groupOwnerAddress);
+//						Log.d(TAG, "client addr:"+serverSocket_the_connected_clientSocket.getLocalAddress());
 						Log.d(TAG, "server has accept client!!!");
 						handler.sendEmptyMessage(0);
 						isConnected = true;
@@ -297,6 +306,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 					try {
 						clientSocket_to_connect_server.bind(null);
 						clientSocket_to_connect_server.connect((new InetSocketAddress(connectInfo.groupOwnerAddress, SOCKET_PORT)), SOCKET_TIMEOUT);
+						Log.d(TAG, "client addr:" + clientSocket_to_connect_server.getLocalAddress());
 						Log.d(TAG, "client has connected to server!!!");
 						handler.sendEmptyMessage(1);
 					} catch (IOException e) {
@@ -317,8 +327,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 				receviceFiles();
 			}
 		}.start();
-		
-		handler.sendEmptyMessage(WIFIP2P_DEVICE_CONNECTED_SUCCESS);
+		handler.sendEmptyMessage(WIFIP2P_DEVICE_CONNECTED_SUCCESS);//设备已连接
 	}
 	
 	public boolean isServer() {
@@ -351,7 +360,6 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 			this.clientSocket_to_connect_server.close();
 		}catch(Exception e){}
 		manager.removeGroup(channel, new ActionListener() {
-
             @Override
             public void onFailure(int reasonCode) {
                 Log.d(TAG, "Disconnect failed. Reason :" + reasonCode);
@@ -430,6 +438,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 				isConnected = false;
 				Log.d(TAG, "device disconnected!!)");
             	release();
+				handler.sendEmptyMessage(WIFIP2P_DEVICE_DISCONNECTED); //设置断开连接
             }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
 //            DeviceListFragment fragment = (DeviceListFragment) activity.getFragmentManager()

@@ -1,5 +1,7 @@
 package com.ckt.io.wifidirect.fragment;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.support.v4.app.Fragment;
 import android.graphics.BitmapFactory;
@@ -8,9 +10,11 @@ import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
@@ -20,6 +24,7 @@ import android.widget.TextView;
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyFragmentAdapter;
+import com.ckt.io.wifidirect.myViews.SendFileListPopWin;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
 
@@ -28,8 +33,13 @@ import java.util.ArrayList;
 /**
  * Created by ckt on 2/29/16.
  */
-public class ContentFragment extends Fragment implements View.OnClickListener{
-    private ImageView img_connect; //ÓÒÏÂ½ÇµÄ "´«"
+public class ContentFragment extends Fragment implements View.OnClickListener, MainActivity.OnSendFileListChangeListener{
+    private ViewGroup mButtomFunViewGroup;
+    private ViewGroup mButtomFun_fileNum;
+    private ViewGroup mButtomFun_send;
+    private ViewGroup mButtomFun_clear;
+    private TextView txt_sendFileNum;
+    private ImageView img_connect; //the right conner "send"
     private ViewPager mPager;
     private ArrayList<Fragment> fragmentArrayList;
     private ImageView image;
@@ -43,12 +53,19 @@ public class ContentFragment extends Fragment implements View.OnClickListener{
     private FileExplorerFragment mFileFragment;
 
 
-
     private DeviceChooseFragment mDeviceChooseFragment;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.content_layout, container, false);
+        txt_sendFileNum = (TextView) view.findViewById(R.id.txt_fileNum);
+        mButtomFunViewGroup = (ViewGroup) view.findViewById(R.id.lin_send_fun);
+        mButtomFun_fileNum = (ViewGroup) view.findViewById(R.id.lin_fun_fileNum);
+        mButtomFun_send = (ViewGroup) view.findViewById(R.id.lin_fun_sendFile);
+        mButtomFun_clear = (ViewGroup) view.findViewById(R.id.lin_fun_clear);
+        mButtomFun_fileNum.setOnClickListener(this);
+        mButtomFun_send.setOnClickListener(this);
+        mButtomFun_clear.setOnClickListener(this);
         img_connect = (ImageView) view.findViewById(R.id.img_connect);
         img_connect.setOnClickListener(this);
         InitImage();
@@ -100,13 +117,88 @@ public class ContentFragment extends Fragment implements View.OnClickListener{
         mPager.setOnPageChangeListener(new MyOnPageChangeListener());
     }
 
+    public void toggleButtomFun() {
+        if(this.mButtomFunViewGroup.getVisibility() == View.VISIBLE) {
+            toggleButtomFun(false);
+        }else {
+            toggleButtomFun(true);
+        }
+    }
+
+    public void toggleButtomFun(boolean isShow) {
+        if(isShow) {//show
+            if(this.mButtomFunViewGroup.getVisibility() != View.VISIBLE) {
+                mButtomFunViewGroup.setVisibility(View.VISIBLE);
+                TranslateAnimation animation = new TranslateAnimation(0, 0, mButtomFunViewGroup.getHeight(), 0);
+                animation.setDuration(200);
+                animation.setInterpolator(new AccelerateInterpolator());
+                mButtomFunViewGroup.startAnimation(animation);
+            }
+        }else {//hide
+            if(this.mButtomFunViewGroup.getVisibility() == View.VISIBLE) {
+
+                TranslateAnimation animation = new TranslateAnimation(0, 0, 0, mButtomFunViewGroup.getHeight());
+                animation.setDuration(200);
+                animation.setInterpolator(new AccelerateInterpolator());
+                animation.setAnimationListener(new Animation.AnimationListener() {
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                        mButtomFunViewGroup.setVisibility(View.INVISIBLE);
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+
+                    }
+                });
+                mButtomFunViewGroup.startAnimation(animation);
+            }
+        }
+    }
+
     @Override
     public void onClick(View v) {
+        final MainActivity activity = (MainActivity) getActivity();
         switch (v.getId()) {
             case R.id.img_connect:
                 ((MainActivity)getActivity()).getDeviceConnectDialog().show();
                 break;
+            case R.id.lin_fun_fileNum: //click the fileNum view--->show a popwin to list all selected files to send
+                new SendFileListPopWin(false, activity.getResources().getString(R.string.delete_sendfilelist_popwin_title), activity, activity.getSendFiles(), new SendFileListPopWin.IOnOkListener() {
+                    @Override
+                    public void onOk(ArrayList<String> seleckedList, boolean isAdd) {
+                        activity.removeFileFromSendFileList(seleckedList);
+                    }
+                }).showAtLocation(this.image, Gravity.CENTER, 0, 0);
+                break;
+            case R.id.lin_fun_sendFile: //send the selected files
+                break;
+            case R.id.lin_fun_clear: //clear all sendFile list
+                new AlertDialog.Builder(activity)
+                        .setTitle(R.string.clear_sendfilelist_alert_title)
+                        .setMessage(R.string.clear_sendfilelist_alert_content)
+                        .setPositiveButton(R.string.clear_sendfilelist_alert_button_sure, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                activity.clearSendFileList();
+                            }
+                        })
+                        .setNegativeButton(R.string.clear_sendfilelist_alert_button_cancel, null)
+                        .show();
+                break;
         }
+    }
+
+    //the others has changed the sendFile-List, do update views here
+    //this listen was seted in MainActivity
+    @Override
+    public void onChange(ArrayList<String> sendFiles, int num) {
+        txt_sendFileNum.setText(""+num);
     }
 
     public class MyOnPageChangeListener implements ViewPager.OnPageChangeListener {
@@ -149,6 +241,10 @@ public class ContentFragment extends Fragment implements View.OnClickListener{
             // TODO Auto-generated method stub
             mPager.setCurrentItem(index);
         }
+    }
+
+    public boolean isNowFileExplorerFragment() {
+        return fragmentArrayList.get(mPager.getCurrentItem()) instanceof FileExplorerFragment;
     }
 
     public FileExplorerFragment getFileExplorerFragment() {

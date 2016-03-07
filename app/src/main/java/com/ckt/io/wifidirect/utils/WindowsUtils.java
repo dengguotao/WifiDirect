@@ -4,7 +4,7 @@ import android.content.Context;
 
 public class WindowsUtils {
 
-    /**获取状态栏高度
+    /**
      * @param context
      * @return
      */

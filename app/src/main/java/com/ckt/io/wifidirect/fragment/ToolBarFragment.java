@@ -2,6 +2,7 @@ package com.ckt.io.wifidirect.fragment;
 
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -10,6 +11,10 @@ import android.support.v7.widget.Toolbar;
 
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
+import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+
+import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Created by ckt on 2/28/16.
@@ -17,12 +22,6 @@ import com.ckt.io.wifidirect.R;
 public class ToolBarFragment extends Fragment {
     private Toolbar toolbar;
     MainActivity activity;
-    private Toolbar.OnMenuItemClickListener onMenuItemClick = new Toolbar.OnMenuItemClickListener() {
-        @Override
-        public boolean onMenuItemClick(MenuItem menuItem) {
-            return true;
-        }
-    };
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -33,7 +32,6 @@ public class ToolBarFragment extends Fragment {
         toolbar.setSubtitle("This is a test");
         toolbar.setLogo(R.drawable.ic_launcher);
         activity.setSupportActionBar(toolbar);
-        toolbar.setOnMenuItemClickListener(onMenuItemClick);
         return view;
     }
 }

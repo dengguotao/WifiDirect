@@ -48,7 +48,8 @@ public class DeviceChooseFragment extends Fragment{
 		});
 		return view;
 	}
-	
+
+	//update views
 	public void updateDeviceList(ArrayList<WifiP2pDevice> deviceList) {
 		this.deviceList.clear();
 		this.deviceList.addAll(deviceList);
@@ -60,6 +61,9 @@ public class DeviceChooseFragment extends Fragment{
 		}else {
 			txt_connected_info.setText("client");
 		}
+	}
+	public void onDisconnectedInfo() {
+		txt_connected_info.setText("disconnect");
 	}
 	
 	class MyListViewAdapter extends BaseAdapter {

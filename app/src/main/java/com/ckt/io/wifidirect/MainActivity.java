@@ -11,13 +11,10 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.Window;
 import android.view.WindowManager;
 
-import com.ckt.io.wifidirect.dialog.DeviceConnectDialog;
+import com.ckt.io.wifidirect.myViews.DeviceConnectDialog;
 import com.ckt.io.wifidirect.fragment.ContentFragment;
-import com.ckt.io.wifidirect.fragment.DeviceChooseFragment;
 import com.ckt.io.wifidirect.fragment.FileExplorerFragment;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 
@@ -30,26 +27,31 @@ public class MainActivity extends ActionBarActivity {
     private ActionBarDrawerToggle mDrawerToggle;
     protected Toolbar toolbar;
 
+    private ArrayList<String> sendFiles;  //the selected files to send
+
     private ContentFragment contentfragment;
+    private OnSendFileListChangeListener onSendFileListChangeListener;
 
     private final IntentFilter intentFilter = new IntentFilter();
     private WifiP2pHelper wifiP2pHelper;
     private Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
-            switch(msg.what) {
-                case WifiP2pHelper.WIFIP2P_DEVICE_LIST_CHANGED:
+            switch (msg.what) {
+                case WifiP2pHelper.WIFIP2P_DEVICE_LIST_CHANGED://可用的设备列表更新
                     deviceConnectDialog.updateDeviceList(wifiP2pHelper.getDeviceList());
                     break;
-                case WifiP2pHelper.WIFIP2P_DEVICE_CONNECTED_SUCCESS:
+                case WifiP2pHelper.WIFIP2P_DEVICE_CONNECTED_SUCCESS://设备连接成功
                     deviceConnectDialog.updateConnectedInfo(wifiP2pHelper.isServer());
                     break;
-                case 0:
+                case WifiP2pHelper.WIFIP2P_DEVICE_DISCONNECTED: //连接已断开
+                    deviceConnectDialog.onDisconnectedInfo();
                     break;
                 case 1:
                     break;
             }
-        };
+        }
     };
+
     public MainActivity() {
     }
 
@@ -60,7 +62,7 @@ public class MainActivity extends ActionBarActivity {
 
         //保持屏幕常亮
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
+        sendFiles = new ArrayList<>();
         wifiP2pHelper = new WifiP2pHelper(this, this.handler);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
@@ -68,17 +70,18 @@ public class MainActivity extends ActionBarActivity {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
 
         contentfragment = (ContentFragment) getSupportFragmentManager().findFragmentById(R.id.id_content);
+        setOnSendFileListChangeListener(contentfragment);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.id_drawer_layout);
         // 實作 drawer toggle 並放入 toolbar
-        toolbar = (Toolbar)findViewById(R.id.id_toolbar_layout);
+        toolbar = (Toolbar) findViewById(R.id.id_toolbar_layout);
         getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close);
         mDrawerToggle.syncState();
         mDrawerLayout.setDrawerListener(mDrawerToggle);
         deviceConnectDialog = new DeviceConnectDialog(this, R.style.FullHeightDialog);
+
+        clearSendFileList();
     }
-
-
 
     @Override
     protected void onResume() {
@@ -111,34 +114,105 @@ public class MainActivity extends ActionBarActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        /*Log.d(WifiP2pHelper.TAG, "试图发送文件");
-        ArrayList<File> fileList = new ArrayList<File>();
-        fileList.add(new File("/storage/emulated/0/1.apk"));
-        fileList.add(new File("/storage/emulated/0/2.zip"));
-        wifiP2pHelper.sendFiles(fileList);*/
+
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Log.d(WifiP2pHelper.TAG, "trying send files");
+            ArrayList<File> fileList = new ArrayList<File>();
+            fileList.add(new File("/storage/emulated/0/1.apk"));
+            fileList.add(new File("/storage/emulated/0/2.zip"));
+            wifiP2pHelper.sendFiles(fileList);
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
+    
+
     @Override
     public void onBackPressed() {
         FileExplorerFragment fileExplorerFragment = contentfragment.getFileExplorerFragment();
-        if(fileExplorerFragment != null && fileExplorerFragment.back()) {
-            return ;
+        if (contentfragment.isNowFileExplorerFragment() && fileExplorerFragment != null && fileExplorerFragment.back()) {
+            return;
         }
         super.onBackPressed();
     }
 
+    //add a new file to the sendFile-list
+    public boolean addFileToSendFileList(String path) {
+        if(path==null || "".equals(path)) {
+            return false;
+        }
+        boolean isExist = false;
+        for(int i=0; i<sendFiles.size(); i++) {
+            String temp = sendFiles.get(i);
+            if(path.equals(temp)) {
+                isExist = true;
+                break;
+            }
+        }
+        if(!isExist) {
+            sendFiles.add(path);
+            if(this.onSendFileListChangeListener!=null) {
+                this.onSendFileListChangeListener.onChange(this.sendFiles, sendFiles.size());
+            }
+        }
+        return !isExist;
+    }
+    public void removeFileFromSendFileList(ArrayList<String> list) {
+        if(list == null) return;
+        for(int i=0; i<list.size(); i++) {
+            removeFileFromSendFileList(list.get(i));
+        }
+    }
+    //remove a file in the sendFile-list
+    public boolean removeFileFromSendFileList(String path) {
+        if(path==null || "".equals(path)) {
+            return false;
+        }
+        boolean isExist = false;
+        for(int i=0; i<sendFiles.size(); i++) {
+            String temp = sendFiles.get(i);
+            if(path.equals(temp)) {
+                sendFiles.remove(i);
+                isExist = true;
+                if(this.onSendFileListChangeListener!=null) {
+                    this.onSendFileListChangeListener.onChange(this.sendFiles, sendFiles.size());
+                }
+                break;
+            }
+        }
+        return isExist;
+    }
+    //clear the sendFile-list
+    public void clearSendFileList() {
+        sendFiles.clear();
+        if(this.onSendFileListChangeListener!=null) {
+            this.onSendFileListChangeListener.onChange(this.sendFiles, sendFiles.size());
+        }
+    }
+
+    public ArrayList<String> getSendFiles() {
+        return this.sendFiles;
+    }
     public WifiP2pHelper getWifiP2pHelper() {
         return wifiP2pHelper;
     }
-    public Handler getHandler(){
+
+    public Handler getHandler() {
         return this.handler;
     }
+
     public DeviceConnectDialog getDeviceConnectDialog() {
         return this.deviceConnectDialog;
+    }
+
+    public void setOnSendFileListChangeListener(OnSendFileListChangeListener onSendFileListChangeListener) {
+        this.onSendFileListChangeListener = onSendFileListChangeListener;
+    }
+
+    //interface call-back when the sendFile-list changed
+    public interface OnSendFileListChangeListener {
+        public abstract void onChange(ArrayList<String> sendFiles, int num);
     }
 }
