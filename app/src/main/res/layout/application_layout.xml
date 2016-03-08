@@ -5,8 +5,13 @@
     android:orientation="vertical">
 
     <TextView
+        android:layout_marginTop="10dp"
+        android:id="@+id/id_application_number"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="This is application page" />
+        android:singleLine="true"
+        android:textSize="16sp"
+        android:elevation="10dp"/>
+
+    <include layout="@layout/gridview_layout" />
 </LinearLayout>
