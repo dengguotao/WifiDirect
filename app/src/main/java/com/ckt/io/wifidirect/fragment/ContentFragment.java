@@ -28,6 +28,7 @@ import com.ckt.io.wifidirect.myViews.SendFileListPopWin;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -166,7 +167,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         final MainActivity activity = (MainActivity) getActivity();
         switch (v.getId()) {
             case R.id.img_connect:
-                ((MainActivity)getActivity()).getDeviceConnectDialog().show();
+                activity.getDeviceConnectDialog().show();
                 break;
             case R.id.lin_fun_fileNum: //click the fileNum view--->show a popwin to list all selected files to send
                 new SendFileListPopWin(false, activity.getResources().getString(R.string.delete_sendfilelist_popwin_title), activity, activity.getSendFiles(), new SendFileListPopWin.IOnOkListener() {
@@ -177,6 +178,17 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
                 }).showAtLocation(this.image, Gravity.CENTER, 0, 0);
                 break;
             case R.id.lin_fun_sendFile: //send the selected files
+                WifiP2pHelper wifiP2pHelper = activity.getWifiP2pHelper();
+                if(wifiP2pHelper.isConnected()) {
+                    Log.d(WifiP2pHelper.TAG, "trying send files");
+                    ArrayList<File> list = new ArrayList<>();
+                    for(int i=0; i<activity.getSendFiles().size(); i++) {
+                        list.add(new File(activity.getSendFiles().get(i)));
+                    }
+                    wifiP2pHelper.sendFiles(list);
+                }else {
+                    activity.getDeviceConnectDialog().show();
+                }
                 break;
             case R.id.lin_fun_clear: //clear all sendFile list
                 new AlertDialog.Builder(activity)
@@ -199,6 +211,11 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
     @Override
     public void onChange(ArrayList<String> sendFiles, int num) {
         txt_sendFileNum.setText(""+num);
+        if(num == 0) {
+            toggleButtomFun(false);
+        }else {
+            toggleButtomFun(true);
+        }
     }
 
     public class MyOnPageChangeListener implements ViewPager.OnPageChangeListener {

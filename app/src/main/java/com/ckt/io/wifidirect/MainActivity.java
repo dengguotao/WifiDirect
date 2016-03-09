@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import com.ckt.io.wifidirect.myViews.DeviceConnectDialog;
 import com.ckt.io.wifidirect.fragment.ContentFragment;
@@ -46,6 +47,7 @@ public class MainActivity extends ActionBarActivity {
                 case WifiP2pHelper.WIFIP2P_DEVICE_DISCONNECTED: //连接已断开
                     deviceConnectDialog.onDisconnectedInfo();
                     break;
+                case 0:
                 case 1:
                     break;
             }
@@ -117,17 +119,11 @@ public class MainActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Log.d(WifiP2pHelper.TAG, "trying send files");
-            ArrayList<File> fileList = new ArrayList<File>();
-            fileList.add(new File("/storage/emulated/0/1.apk"));
-            fileList.add(new File("/storage/emulated/0/2.zip"));
-            wifiP2pHelper.sendFiles(fileList);
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    
 
     @Override
     public void onBackPressed() {
