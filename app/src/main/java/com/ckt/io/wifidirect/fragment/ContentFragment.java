@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
+import android.view.animation.ScaleAnimation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -134,6 +135,11 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
                 animation.setDuration(200);
                 animation.setInterpolator(new AccelerateInterpolator());
                 mButtomFunViewGroup.startAnimation(animation);
+                ScaleAnimation scaleAnimation = new ScaleAnimation(1, 0, 1, 0, img_connect.getWidth()/2, img_connect.getHeight()/2);
+                scaleAnimation.setDuration(200);
+                scaleAnimation.setInterpolator(new AccelerateInterpolator());
+                img_connect.startAnimation(scaleAnimation);
+                img_connect.setVisibility(View.GONE);
             }
         }else {//hide
             if(this.mButtomFunViewGroup.getVisibility() == View.VISIBLE) {
@@ -158,6 +164,12 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
                     }
                 });
                 mButtomFunViewGroup.startAnimation(animation);
+                img_connect.setVisibility(View.VISIBLE);
+                ScaleAnimation scaleAnimation = new ScaleAnimation(0, 1, 0, 1, img_connect.getWidth()/2, img_connect.getHeight()/2);
+                scaleAnimation.setDuration(200);
+                scaleAnimation.setInterpolator(new AccelerateInterpolator());
+                img_connect.startAnimation(scaleAnimation);
+
             }
         }
     }

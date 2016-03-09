@@ -16,10 +16,6 @@ import com.ckt.io.wifidirect.R;
 
 import java.util.ArrayList;
 
-
-/**
- * 选择音乐
- */
 public class SendFileListPopWin extends PopupWindow implements AdapterView.OnItemClickListener, View.OnClickListener {
     private MainActivity activity;
     ArrayList<String> list; //可供操作的音乐列表

@@ -54,10 +54,11 @@ public class DeviceConnectDialog extends Dialog {
         setContentView(v);
         fragment_choose_device = (DeviceChooseFragment) activity.getSupportFragmentManager().findFragmentById(R.id.fragment_choose_device);
         Log.d(WifiP2pHelper.TAG, "--->"+fragment_choose_device);
-        Bitmap bitmap = BitmapFactory.decodeResource(activity.getResources(), R.drawable.device_connect_dialog_bg);
+        /*Bitmap bitmap = BitmapFactory.decodeResource(activity.getResources(), R.drawable.device_connect_dialog_bg);
         v.setBackgroundDrawable(new BitmapDrawable(BitmapUtils.blur(activity,
                 bitmap)));
-        bitmap.recycle();
+        v.setAlpha(0.5f);
+        bitmap.recycle();*/
         // set the dialog inflate the whole screen
         Display dis = activity.getWindowManager().getDefaultDisplay();
         WindowManager.LayoutParams lp = getWindow().getAttributes();

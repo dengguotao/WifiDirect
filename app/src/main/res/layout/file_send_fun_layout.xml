@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="60dp"
+    android:layout_height="55dp"
     android:gravity="center">
 
     <View
@@ -32,7 +32,7 @@
         </LinearLayout>
         <View
             android:layout_width="1dp"
-            android:layout_height="match_parent"
+            android:layout_height="45dp"
             android:background="@drawable/gradient_bg"/>
         <LinearLayout
             android:id="@+id/lin_fun_sendFile"
@@ -50,7 +50,7 @@
         </LinearLayout>
         <View
             android:layout_width="1dp"
-            android:layout_height="match_parent"
+            android:layout_height="45dp"
             android:background="@drawable/gradient_bg"/>
         <LinearLayout
             android:id="@+id/lin_fun_clear"
