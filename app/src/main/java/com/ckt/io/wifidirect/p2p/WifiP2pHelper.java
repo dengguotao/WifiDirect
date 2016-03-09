@@ -59,6 +59,9 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     private MainActivity activity;
     private Handler handler;
 
+    private int mSendCount;
+    private int mReceviceCount;
+
     public WifiP2pHelper(MainActivity activity, Handler handler) {
         this.activity = activity;
         this.handler = handler;
@@ -174,14 +177,30 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
             //3.发送文件内容
             byte buf[] = new byte[1024];
             int len;
+            mSendCount = 0;
+            handler.sendEmptyMessage(1);
             while ((len = inputstream.read(buf)) != -1) {
                 out.write(buf, 0, len);
+                mSendCount += len;
             }
-            inputstream.close();
+            handler.sendEmptyMessage(0);
+            mSendCount = 0;
             Log.d(WifiP2pHelper.TAG, "send a file sucessfully!!!");
         } catch (IOException e) {
 
+        } finally {
+            mSendCount = 0;
+            try{
+                if (inputstream != null) {
+                 inputstream.close();}
+            } catch (IOException e) {
+
+            }
         }
+    }
+
+    public int getSendCount() {
+        return mSendCount;
     }
 
     // 接收文件-->单独的新线程里面运行
@@ -241,6 +260,8 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 long receivedSize = 0;
                 long leftSize = size;
                 out = new FileOutputStream(f);
+                mReceviceCount = 0;
+                handler.sendEmptyMessage(1);
                 byte buf[] = new byte[1024];
                 int len;
                 while (true) {
@@ -259,23 +280,36 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                         leftSize -= len;
                         receivedSize += len;
                     }
+                    mReceviceCount += len;
                     if (len == -1) {
                         break;
                     }
                 }
-                Log.d(WifiP2pHelper.TAG, "recevice a file sucessfully!!!"+name);
-                //5.close the fileOutstream
-                out.close();
+                mReceviceCount = 0;
+                Log.d(WifiP2pHelper.TAG, "recevice a file sucessfully!!!" + name);
             }
-            inputstream.close();
         } catch (IOException e) {
 
         } finally {
             try {
-                socket.close();
+                if(socket != null) {
+                    socket.close();
+                }
+                if(inputstream != null) {
+                    inputstream.close();
+                }
+                if(out != null) {
+                    out.close();
+                }
             } catch (Exception e) {
             }
+            mReceviceCount = 0;
+            handler.sendEmptyMessage(0);
         }
+    }
+
+    public int getReceviceCount() {
+        return mReceviceCount;
     }
 
     // 监听的回调

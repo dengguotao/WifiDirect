@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class MainActivity extends ActionBarActivity {
+    private static final String TAG = "MainActivity";
     private DeviceConnectDialog deviceConnectDialog;
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
@@ -35,6 +36,9 @@ public class MainActivity extends ActionBarActivity {
 
     private final IntentFilter intentFilter = new IntentFilter();
     private WifiP2pHelper wifiP2pHelper;
+    private boolean isTranfering;
+    private int mSendCount;
+    private int mReceviceCount;
     private Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
             switch (msg.what) {
@@ -48,8 +52,24 @@ public class MainActivity extends ActionBarActivity {
                     deviceConnectDialog.onDisconnectedInfo();
                     break;
                 case 0:
-                case 1:
+                    isTranfering = false;
+                    mSendCount = 0;
+                    mReceviceCount = 0;
+                    handler.removeMessages(2);
                     break;
+                case 1:
+                    isTranfering = true;
+                    this.sendEmptyMessageDelayed(2, 100);
+                    break;
+                case 2:
+                    if(isTranfering) {
+                        int sendCount = wifiP2pHelper.getSendCount();
+                        int receviceCount = wifiP2pHelper.getReceviceCount();
+                        int sendSpeed = (sendCount - mSendCount) * 10 / 1024 /1024;
+                        int receSpeed = (receviceCount - mReceviceCount) * 10 / 1024 /1024;
+                        Log.d(TAG, "speed: "+(sendSpeed > receSpeed? sendSpeed : receSpeed) + " MB");
+                        this.sendEmptyMessageDelayed(2, 100);
+                    }
             }
         }
     };
