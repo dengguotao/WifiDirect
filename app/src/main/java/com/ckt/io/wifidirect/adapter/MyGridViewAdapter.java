@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -20,14 +21,20 @@ import java.util.ArrayList;
 public class MyGridViewAdapter extends BaseAdapter {
     private ArrayList<String> mNameList = new ArrayList<>();
     private ArrayList<Drawable> mIconList = new ArrayList<>();
+    private ArrayList<Boolean> mCheckBoxList = new ArrayList<>();
     private LayoutInflater mInflater;
     private Context mContext;
 
-    public MyGridViewAdapter(Context context, ArrayList<String> nameList, ArrayList<Drawable> iconList) {
+    public MyGridViewAdapter(Context context, ArrayList<String> nameList, ArrayList<Drawable> iconList, ArrayList<Boolean> checkBoxList) {
         mNameList = nameList;
         mIconList = iconList;
+        mCheckBoxList = checkBoxList;
         mContext = context;
-        mInflater = LayoutInflater.from(context);
+        mInflater = LayoutInflater.from(mContext);
+    }
+
+    public ArrayList<Boolean> getmCheckBoxList() {
+        return this.mCheckBoxList;
     }
 
     @Override
@@ -51,23 +58,26 @@ public class MyGridViewAdapter extends BaseAdapter {
         if (convertView == null) {
             convertView = mInflater.inflate(R.layout.gridview_item, null);
             viewTag = new ItemViewTag((ImageView) convertView.findViewById(R.id.id_grid_view_icon),
-                    (TextView) convertView.findViewById(R.id.id_grid_view_name));
+                    (TextView) convertView.findViewById(R.id.id_grid_view_name), (CheckBox) convertView.findViewById(R.id.id_grid_view_checkbox));
             convertView.setTag(viewTag);
         } else {
             viewTag = (ItemViewTag) convertView.getTag();
         }
         viewTag.mName.setText(mNameList.get(position));
         viewTag.mIcon.setImageDrawable(mIconList.get(position));
+        viewTag.mCheckBox.setChecked(mCheckBoxList.get(position));
         return convertView;
     }
 
     public class ItemViewTag {
-        protected ImageView mIcon;
-        protected TextView mName;
+        public ImageView mIcon;
+        public TextView mName;
+        public CheckBox mCheckBox;
 
-        public ItemViewTag(ImageView icon, TextView name) {
+        public ItemViewTag(ImageView icon, TextView name, CheckBox checkBox) {
             mName = name;
             mIcon = icon;
+            mCheckBox = checkBox;
         }
     }
 }
