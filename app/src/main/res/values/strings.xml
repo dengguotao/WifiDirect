@@ -13,4 +13,5 @@
     <string name="clear_sendfilelist_alert_button_sure">清空</string>
     <string name="clear_sendfilelist_alert_button_cancel">算了</string>
     <string name="delete_sendfilelist_popwin_title">移除要发送的文件</string>
+    <string name="refresh_music_list">刷新</string>
 </resources>
