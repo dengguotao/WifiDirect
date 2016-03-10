@@ -13,6 +13,7 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.TextView;
 
+import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyGridViewAdapterMovie;
 import com.ckt.io.wifidirect.utils.GetVideoThumbnail;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 public class MovieFragment extends Fragment implements View.OnClickListener, AdapterView.OnItemClickListener {
     private ArrayList<Movie> movieList;
     private ArrayList<String> nameList;
+    private ArrayList<String> mPathList;
     private ArrayList<Drawable> iconList;
     private ArrayList<Boolean> checkBoxList;
     private GridView gridView;
@@ -40,6 +42,7 @@ public class MovieFragment extends Fragment implements View.OnClickListener, Ada
         movieList = new ArrayList<>();
         nameList = new ArrayList<>();
         iconList = new ArrayList<>();
+        mPathList = new ArrayList<>();
         checkBoxList = new ArrayList<>();
         refresh = (TextView) view.findViewById(R.id.id_movie_refresh);
         gridView = (GridView) view.findViewById(R.id.id_movie_grid_view);
@@ -50,6 +53,7 @@ public class MovieFragment extends Fragment implements View.OnClickListener, Ada
             nameList.add(movie.getTitle());
             iconList.add(new BitmapDrawable(GetVideoThumbnail.getVideoThumbnailTool(movie.getFileUrl())));
             checkBoxList.add(false);
+            mPathList.add(movie.getFileUrl());
         }
         adapterMovie = new MyGridViewAdapterMovie(getActivity(), nameList, iconList, checkBoxList);
         gridView.setAdapter(adapterMovie);
@@ -84,6 +88,12 @@ public class MovieFragment extends Fragment implements View.OnClickListener, Ada
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         checkBoxList = adapterMovie.getmCheckBoxList();
         checkBoxList.set(position, !checkBoxList.get(position));
+        MainActivity activity = (MainActivity) getActivity();
+        if(checkBoxList.get(position)) {//checked--->add to sendfile-list
+            activity.addFileToSendFileList(mPathList.get(position));
+        }else {//unchecked--->remove from sendfile-list
+            activity.removeFileFromSendFileList(mPathList.get(position));
+        }
         adapterMovie.notifyDataSetChanged();
     }
 }

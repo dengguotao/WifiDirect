@@ -17,9 +17,11 @@ import android.widget.Toast;
 import com.ckt.io.wifidirect.myViews.DeviceConnectDialog;
 import com.ckt.io.wifidirect.fragment.ContentFragment;
 import com.ckt.io.wifidirect.fragment.FileExplorerFragment;
+import com.ckt.io.wifidirect.myViews.SpeedFloatWin;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 public class MainActivity extends ActionBarActivity {
@@ -65,10 +67,16 @@ public class MainActivity extends ActionBarActivity {
                     if(isTranfering) {
                         int sendCount = wifiP2pHelper.getSendCount();
                         int receviceCount = wifiP2pHelper.getReceviceCount();
-                        int sendSpeed = (sendCount - mSendCount) * 10 / 1024 /1024;
-                        int receSpeed = (receviceCount - mReceviceCount) * 10 / 1024 /1024;
-                        Log.d(TAG, "speed: "+(sendSpeed > receSpeed? sendSpeed : receSpeed) + " MB");
-                        this.sendEmptyMessageDelayed(2, 100);
+                        double sendSpeed = (sendCount - mSendCount) / 1024.0 /1024;
+                        double receSpeed = (receviceCount - mReceviceCount) / 1024.0 /1024;
+                        mSendCount = sendCount;
+                        mReceviceCount = receviceCount;
+                        Log.d(TAG, "speed: " + (sendSpeed > receSpeed ? sendSpeed : receSpeed) + " MB");
+                        DecimalFormat df = new DecimalFormat("0.0");
+                        SpeedFloatWin.updateSpeed(df.format(sendSpeed)+"MB/s", df.format(receSpeed)+"MB/s");
+                        this.sendEmptyMessageDelayed(2, 1000);
+                    }else {
+                        SpeedFloatWin.updateSpeed("0MB/s", "0MB/s");
                     }
             }
         }
@@ -109,12 +117,14 @@ public class MainActivity extends ActionBarActivity {
     protected void onResume() {
         super.onResume();
         registerReceiver(wifiP2pHelper, intentFilter);
+        SpeedFloatWin.show(this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         unregisterReceiver(wifiP2pHelper);
+        SpeedFloatWin.hide(this);
     }
 
     @Override

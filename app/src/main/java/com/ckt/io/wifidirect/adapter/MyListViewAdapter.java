@@ -19,6 +19,7 @@ import java.util.ArrayList;
  */
 public class MyListViewAdapter extends BaseAdapter {
     private ArrayList<String> mNameList;
+    private ArrayList<String> mPathList;
     private ArrayList<Drawable> mIconList;
     private ArrayList<Boolean> mCheckBoxList;
     private LayoutInflater inflater;
@@ -66,6 +67,10 @@ public class MyListViewAdapter extends BaseAdapter {
             convertView.setTag(viewTag);
         } else {
             viewTag = (ItemViewTag) convertView.getTag();
+        }
+        String name = mNameList.get(position).toLowerCase();
+        if(name.endsWith(".apk")) { //apk file
+
         }
         viewTag.mName.setText(mNameList.get(position));
         viewTag.mIcon.setImageDrawable(mIconList.get(position));

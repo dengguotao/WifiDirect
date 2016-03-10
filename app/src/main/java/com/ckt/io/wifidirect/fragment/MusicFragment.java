@@ -14,6 +14,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyListViewAdapter;
 import com.ckt.io.wifidirect.utils.AudioUtils;
@@ -83,6 +84,12 @@ public class MusicFragment extends Fragment implements View.OnClickListener, Ada
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         checkBoxList = adapter.getmCheckBoxList();
         checkBoxList.set(position, !checkBoxList.get(position));
+        MainActivity activity = (MainActivity) getActivity();
+        if(checkBoxList.get(position)) {//checked--->add to sendfile-list
+            activity.addFileToSendFileList(songList.get(position).getFileUrl());
+        }else {//unchecked--->remove from sendfile-list
+            activity.removeFileFromSendFileList(songList.get(position).getFileUrl());
+        }
         adapter.notifyDataSetChanged();
     }
 }

@@ -14,8 +14,10 @@ import android.widget.CheckBox;
 import android.widget.GridView;
 import android.widget.TextView;
 
+import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyGridViewAdapter;
+import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +34,7 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
     List<PackageInfo> packageInfoList;
     List<PackageInfo> apps;
     ArrayList<String> mNameList;
+    ArrayList<String> mPathList;
     ArrayList<Drawable> mIconList;
     ArrayList<Boolean> mCheckBoxList;
 
@@ -42,6 +45,7 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
         packageInfoList = manager.getInstalledPackages(0);
         apps = new ArrayList<>();
         mNameList = new ArrayList<>();
+        mPathList = new ArrayList<>();
         mIconList = new ArrayList<>();
         mCheckBoxList = new ArrayList<>();
         gridView = (GridView) view.findViewById(R.id.id_grid_view);
@@ -54,6 +58,9 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                 apps.add(packageInfo);
                 mNameList.add(manager.getApplicationLabel(packageInfo.applicationInfo).toString());
                 mIconList.add(manager.getApplicationIcon(packageInfo.applicationInfo));
+                mPathList.add(packageInfo.applicationInfo.sourceDir);
+//                Log.i(WifiP2pHelper.TAG, "packageInfo.applicationInfo.sourceDir=" + packageInfo.applicationInfo.sourceDir);
+//                Log.i(WifiP2pHelper.TAG, "packageInfo.applicationInfo.publicSourceDir="+packageInfo.applicationInfo.publicSourceDir);
                 mCheckBoxList.add(false);
             } else {
             }
@@ -69,6 +76,12 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         mCheckBoxList = adapter.getmCheckBoxList();
         mCheckBoxList.set(position, !mCheckBoxList.get(position));
+        MainActivity activity = (MainActivity) getActivity();
+        if(mCheckBoxList.get(position)) {//checked--->add to sendfile-list
+            activity.addFileToSendFileList(mPathList.get(position));
+        }else {//unchecked--->remove from sendfile-list
+            activity.removeFileFromSendFileList(mPathList.get(position));
+        }
         adapter.notifyDataSetChanged();
     }
 }

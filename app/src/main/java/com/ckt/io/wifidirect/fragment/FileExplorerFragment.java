@@ -20,6 +20,7 @@ import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -42,7 +43,6 @@ public class FileExplorerFragment extends Fragment implements
 	private ViewGroup lin_no_file;
 	private ListView listView;
 	private File mDir;
-	private ArrayList<File> fileList;
 
 	private boolean isListViewScrolling = false;
 	private boolean isUpdateListViewAfterStopScrolling = false;
@@ -53,7 +53,6 @@ public class FileExplorerFragment extends Fragment implements
 		if (this.mDir == null) {
 			mDir = new File("/");
 		}
-		this.fileList = new ArrayList<File>();
 	}
 
 	private ArrayList<File> sort(ArrayList<File> list) {
@@ -73,36 +72,34 @@ public class FileExplorerFragment extends Fragment implements
 	}
 
 	private void updateView(State state) {
-		if (state != null) {
-			mDir = state.dir;
-		}
-		fileList.clear();
-		if (mDir.canRead()) {
-			ArrayList<File> tempFolderList = new ArrayList<File>(); // 暂时保存文件夹
-			ArrayList<File> tempFileList = new ArrayList<File>(); // 用来暂时保存文件
-			File fs[] = mDir.listFiles();
-			for (File temp : fs) {
-				if (temp.getName().startsWith(".")) {
-					continue;
+		mDir = state.dir;
+		MyListViewAdapter adapter = (MyListViewAdapter) listView.getAdapter();
+		if(state.list == null) { //a new state
+			state.list = new ArrayList<File>();
+			if (mDir.canRead()) {
+				ArrayList<File> tempFolderList = new ArrayList<File>(); // 暂时保存文件夹
+				ArrayList<File> tempFileList = new ArrayList<File>(); // 用来暂时保存文件
+				File fs[] = mDir.listFiles();
+				for (File temp : fs) {
+					if (temp.getName().startsWith(".")) {
+						continue;
+					}
+					if (temp.isFile()) {
+						tempFileList.add(temp);
+					} else {
+						tempFolderList.add(temp);
+					}
 				}
-				if (temp.isFile()) {
-					tempFileList.add(temp);
-				} else {
-					tempFolderList.add(temp);
-				}
+				state.list.addAll(sort(tempFolderList));
+				state.list.addAll(sort(tempFileList));
 			}
-			fileList.addAll(sort(tempFolderList));
-			fileList.addAll(sort(tempFileList));
-		}
-		MyListViewAdapter adapter = (MyListViewAdapter) listView
-				.getAdapter();
-		if (adapter != null) {
-			adapter.notifyDataSetChanged();
-		}
-		if (state != null) {
+			adapter.setList(state.list);
+		}else { //a old state
+			adapter.setData(state.list, state.checkList);
 			listView.setSelectionFromTop(state.pos, state.top);
+			Log.d(WifiP2pHelper.TAG, adapter.getmCheckBoxList().toString());
 		}
-		if (fileList.size() != 0) {
+		if (state.list.size() != 0) {
 			lin_no_file.setVisibility(View.GONE);
 		} else {
 			lin_no_file.setVisibility(View.VISIBLE);
@@ -128,7 +125,7 @@ public class FileExplorerFragment extends Fragment implements
 				container, false);
 		lin_no_file = (ViewGroup) view.findViewById(R.id.lin_no_file);
 		listView = (ListView) view.findViewById(R.id.listview);
-		listView.setAdapter(new MyListViewAdapter());
+		listView.setAdapter(new MyListViewAdapter(null));
 		listView.setOnItemClickListener(this);
 		listView.setOnScrollListener(new AbsListView.OnScrollListener() {
 			@Override
@@ -147,7 +144,7 @@ public class FileExplorerFragment extends Fragment implements
 			public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 			}
 		});
-		updateView(null);
+		updateView(new State(mDir,0,0,null,null));
 		return view;
 	}
 
@@ -155,34 +152,78 @@ public class FileExplorerFragment extends Fragment implements
 	 * 保存浏览一个目录时的状态
 	 */
 	class State {
-		public State(File dir, int pos, int top) {
+		public State(File dir, int pos, int top, ArrayList<File> list, ArrayList<Boolean> checkList) {
 			this.pos = pos;
 			this.dir = dir;
 			this.top = top;
+			this.checkList = checkList;
+			this.list = list;
 		}
 		private int pos;
 		private File dir;
 		private int top; // listview中第一个view的top
+		private ArrayList<File> list;
+		private ArrayList<Boolean> checkList;
 	}
 
 	class MyListViewAdapter extends BaseAdapter {
+		private ArrayList<Boolean> mCheckBoxList;
+		private ArrayList<File> list;
+		public MyListViewAdapter(ArrayList<File> list) {
+			setList(list);
+		}
+		public void setList(ArrayList<File> list) {
+			this.list = list;
+			mCheckBoxList = new ArrayList<>();
+			if(list != null) {
+				for(int i=0; i<list.size(); i++) {
+					mCheckBoxList.add(false);
+				}
+			}
+			notifyDataSetChanged();
+		}
+		public void setData(ArrayList<File> list, ArrayList<Boolean> checkList) {
+			this.list = list;
+			this.mCheckBoxList = checkList;
+			notifyDataSetChanged();
+		}
+		public boolean isChecked(int pos) {
+			if(pos<0 || pos >= mCheckBoxList.size()) {
+				return false;
+			}
+			return mCheckBoxList.get(pos);
+		}
+		public void clearChecked() {
+			for(int i=0; i<mCheckBoxList.size(); i++) {
+				mCheckBoxList.set(i, false);
+			}
+		}
+		public void toggleChecked(int pos) {
+			mCheckBoxList.set(pos, !mCheckBoxList.get(pos));
+		}
 
 		class ViewHolder {
 			ImageView img_icon;
 			TextView txt_title;
 			TextView txt_info;
+			CheckBox checkBox;
 		}
-
+		public ArrayList<Boolean> getmCheckBoxList() {
+			return  this.mCheckBoxList;
+		}
+		public ArrayList<File> getList() {
+			return this.list;
+		}
 		@Override
 		public int getCount() {
 			// TODO Auto-generated method stub
-			return fileList.size();
+			return this.list == null ? 0 : this.list.size();
 		}
 
 		@Override
 		public Object getItem(int position) {
 			// TODO Auto-generated method stub
-			return fileList.get(position);
+			return this.list == null ? null :list.get(position);
 		}
 
 		@Override
@@ -204,10 +245,11 @@ public class FileExplorerFragment extends Fragment implements
 						.findViewById(R.id.txt_title);
 				holder.txt_info = (TextView) convertView
 						.findViewById(R.id.txt_info);
+				holder.checkBox = (CheckBox) convertView.findViewById(R.id.list_item_checkbox);
 				convertView.setTag(holder);
 			}
 			ViewHolder viewHolder = (ViewHolder) convertView.getTag();
-			File tempFile = fileList.get(position);
+			File tempFile = list.get(position);
 			viewHolder.txt_title.setText(tempFile.getName());
 			if(tempFile.isDirectory()) {
 				viewHolder.img_icon.setImageResource(R.drawable.folder_icon);
@@ -257,7 +299,14 @@ public class FileExplorerFragment extends Fragment implements
 				} */else { //normal file
 					viewHolder.img_icon.setImageResource(R.drawable.file_icon);
 				}
-
+			}
+			//设置是否选中
+			if(mCheckBoxList.get(position)) { //checked
+				viewHolder.checkBox.setVisibility(View.VISIBLE);
+				viewHolder.checkBox.setChecked(true);
+			}else {//unchecked
+				viewHolder.checkBox.setVisibility(View.GONE);
+				viewHolder.checkBox.setChecked(false);
 			}
 			return convertView;
 		}
@@ -268,20 +317,22 @@ public class FileExplorerFragment extends Fragment implements
 			long id) {
 		// TODO Auto-generated method stub
 		Log.d(WifiP2pHelper.TAG, "FileExplore-->onItemClick()");
-		File f = fileList.get(position);
+		MyListViewAdapter adapter = (MyListViewAdapter) listView.getAdapter();
+		File f = adapter.getList().get(position);
 		if (f.isDirectory()) {
-
 			final View v = listView.getChildAt(0);
 			int top = (v == null) ? 0 : v.getTop();
-			State state = new State(mDir, listView.getFirstVisiblePosition(), top);
-			stateList.add(state);
-			updateView(new State(f, 0, 0));
+			State state = new State(mDir, listView.getFirstVisiblePosition(), top, adapter.getList(), adapter.getmCheckBoxList());
+			stateList.add(state); //save old state
+			updateView(new State(f, 0, 0, null, null)); //update new state
 		}else { //click a file ---> add to sendFile-list
 			MainActivity activity = (MainActivity) getActivity();
-			if(activity.addFileToSendFileList(f.getPath())) {//add succeussed
-
-			}else {
-				ToastUtils.toast(activity, R.string.add_to_sendfilelist_erorr);
+			adapter.toggleChecked(position);
+			adapter.notifyDataSetInvalidated();
+			if(adapter.isChecked(position)) {//checked-->add to sendfile-list
+				activity.addFileToSendFileList(f.getPath());
+			}else { //unchecked--->remove from sendfile-list
+				activity.removeFileFromSendFileList(f.getPath());
 			}
 		}
 	}
