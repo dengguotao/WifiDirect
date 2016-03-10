@@ -67,10 +67,8 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        ArrayList<Boolean> checkList = adapter.getmCheckBoxList();
-        checkList.set(position, !checkList.get(position));
-        MyGridViewAdapter.ItemViewTag viewTag = (MyGridViewAdapter.ItemViewTag) view.getTag();
-        viewTag.mCheckBox.setVisibility(checkList.get(position) ? View.VISIBLE : View.GONE);
-        viewTag.mCheckBox.setChecked(checkList.get(position));
+        mCheckBoxList = adapter.getmCheckBoxList();
+        mCheckBoxList.set(position, !mCheckBoxList.get(position));
+        adapter.notifyDataSetChanged();
     }
 }

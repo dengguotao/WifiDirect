@@ -4,11 +4,9 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaScannerConnection;
-import android.net.Uri;
 import android.os.Environment;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -68,8 +66,8 @@ public class MusicFragment extends Fragment implements View.OnClickListener, Ada
                     songList.clear();
                     nameList.clear();
                     iconList.clear();
-                    songList = AudioUtils.getAllSongs(getActivity());
                 }
+                songList = AudioUtils.getAllSongs(getActivity());
                 for (Song song : songList) {
                     nameList.add(song.getTitle());
                     iconList.add(new BitmapDrawable(BitmapFactory.decodeResource(getResources(), R.drawable.icon)));
@@ -83,10 +81,8 @@ public class MusicFragment extends Fragment implements View.OnClickListener, Ada
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        ArrayList<Boolean> checkList = adapter.getmCheckBoxList();
-        checkList.set(position, !checkList.get(position));
-        MyListViewAdapter.ItemViewTag viewTag = (MyListViewAdapter.ItemViewTag) view.getTag();
-        viewTag.mCheckBox.setVisibility(checkList.get(position) ? View.VISIBLE : View.GONE);
-        viewTag.mCheckBox.setChecked(checkList.get(position));
+        checkBoxList = adapter.getmCheckBoxList();
+        checkBoxList.set(position, !checkBoxList.get(position));
+        adapter.notifyDataSetChanged();
     }
 }

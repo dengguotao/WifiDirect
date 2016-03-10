@@ -66,6 +66,7 @@ public class MyGridViewAdapter extends BaseAdapter {
         viewTag.mName.setText(mNameList.get(position));
         viewTag.mIcon.setImageDrawable(mIconList.get(position));
         viewTag.mCheckBox.setChecked(mCheckBoxList.get(position));
+        viewTag.mCheckBox.setVisibility(mCheckBoxList.get(position) ? View.VISIBLE : View.GONE);
         return convertView;
     }
 
