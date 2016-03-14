@@ -26,6 +26,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <provider
+            android:authorities="com.ckt.io.wifidirect"
+            android:name=".provider.WifiDirectContentProvider"
+            android:exported="false"/>
     </application>
 
 </manifest>
