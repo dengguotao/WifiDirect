@@ -301,7 +301,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     if(i==1) {
                         f = new File(sdcard, activity.getPackageName() + File.separator + name);
                     }else {
-                        f = new File(sdcard, "(" + i + ")" + activity.getPackageName() + File.separator + name);
+                        f = new File(activity.getPackageName() + File.separator + "(" + i + ")" + name);
                     }
                     i ++;
                     if(!f.exists()) {
