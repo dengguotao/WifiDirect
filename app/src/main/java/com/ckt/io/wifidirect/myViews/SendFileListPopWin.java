@@ -18,7 +18,7 @@ import java.util.ArrayList;
 
 public class SendFileListPopWin extends PopupWindow implements AdapterView.OnItemClickListener, View.OnClickListener {
     private MainActivity activity;
-    ArrayList<String> list; //可供操作的音乐列表
+    ArrayList<String> list;
     private String title;
     private boolean isAdd;
     private ImageView img_ok;
@@ -43,7 +43,7 @@ public class SendFileListPopWin extends PopupWindow implements AdapterView.OnIte
             this.isItemSeleced.add(false);
         }
         this.title = title;
-        //设置popList宽和Activity一样,高是Activity的一半
+
         WindowManager.LayoutParams lp = activity.getWindow().getAttributes();
         this.setWidth(lp.width);
 
@@ -55,7 +55,6 @@ public class SendFileListPopWin extends PopupWindow implements AdapterView.OnIte
         this.setFocusable(true);
         this.setAnimationStyle(R.style.sendfilelist_popwin_animal_style);
 
-        //查找组件
         this.listView = (ListView) view.findViewById(R.id.listView);
         this.txt_title = (TextView) view.findViewById(R.id.txt_title);
         this.img_ok = (ImageView) view.findViewById(R.id.img_ok);
@@ -110,8 +109,8 @@ public class SendFileListPopWin extends PopupWindow implements AdapterView.OnIte
             case R.id.img_cancel:
                 this.dismiss();
                 break;
-            case R.id.txt_title:  //双点击标题栏---->全选--->全不选
-                if(isAllowDoubleClick) { //双击事件
+            case R.id.txt_title:
+                if(isAllowDoubleClick) { //double click
                     int count = 0;
                     for(int i=0; i<isItemSeleced.size(); i++) {
                         if(isItemSeleced.get(i)) {
@@ -120,7 +119,7 @@ public class SendFileListPopWin extends PopupWindow implements AdapterView.OnIte
                         isItemSeleced.set(i, true);
                     }
                     txt_title.setText(title+"--->"+isItemSeleced.size());
-                    if(count == isItemSeleced.size()) { //全选--->全不选
+                    if(count == isItemSeleced.size()) { //all choosed ---> all not choosed
                         for(int i=0; i<isItemSeleced.size(); i++) {
                             isItemSeleced.set(i, false);
                         }
@@ -129,7 +128,7 @@ public class SendFileListPopWin extends PopupWindow implements AdapterView.OnIte
 
                     adapter.notifyDataSetChanged();
                     isAllowDoubleClick = false;
-                }else {//开始计算第一次,倒计时
+                }else {//first click and wait 300ms for next click to finshed a doubleclick
                     isAllowDoubleClick = true;
                     handler.postDelayed(runnable_doubleClick, 300);
                 }
@@ -171,7 +170,7 @@ public class SendFileListPopWin extends PopupWindow implements AdapterView.OnIte
             Object obj = list.get(position);
             String info= (String) list.get(position);
             holder.txt_info.setText(info);
-            if(isItemSeleced.get(position)) {  //选中,没有选中
+            if(isItemSeleced.get(position)) {
                 convertView.setBackgroundResource(R.drawable.sendfilelist_popwin_item_selected_bg);
             }else {
                 convertView.setBackgroundDrawable(null);
@@ -180,7 +179,6 @@ public class SendFileListPopWin extends PopupWindow implements AdapterView.OnIte
         }
     }
 
-    //选择ok的监听
     public interface IOnOkListener {
         public void onOk(ArrayList<String> seleckedList, boolean isAdd);
     }

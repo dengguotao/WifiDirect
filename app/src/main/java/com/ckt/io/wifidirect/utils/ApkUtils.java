@@ -27,4 +27,22 @@ public class ApkUtils {
         }
         return null;
     }
+    public static String getApkLable(Context context, String apkPath) {
+        PackageManager pm = context.getPackageManager();
+        PackageInfo info = pm.getPackageArchiveInfo(apkPath,
+                PackageManager.GET_ACTIVITIES);
+        String lable = null;
+        if (info != null) {
+            ApplicationInfo appInfo = info.applicationInfo;
+            appInfo.sourceDir = apkPath;
+            appInfo.publicSourceDir = apkPath;
+            try {
+                lable = pm.getApplicationLabel(appInfo).toString();
+
+            } catch (OutOfMemoryError e) {
+                lable = null;
+            }
+        }
+        return lable;
+    }
 }

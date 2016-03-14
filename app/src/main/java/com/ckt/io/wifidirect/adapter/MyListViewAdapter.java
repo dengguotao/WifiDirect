@@ -68,10 +68,6 @@ public class MyListViewAdapter extends BaseAdapter {
         } else {
             viewTag = (ItemViewTag) convertView.getTag();
         }
-        String name = mNameList.get(position).toLowerCase();
-        if(name.endsWith(".apk")) { //apk file
-
-        }
         viewTag.mName.setText(mNameList.get(position));
         viewTag.mIcon.setImageDrawable(mIconList.get(position));
         viewTag.mCheckBox.setChecked(mCheckBoxList.get(position));

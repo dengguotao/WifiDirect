@@ -94,11 +94,12 @@ public class FileExplorerFragment extends Fragment implements
 				state.list.addAll(sort(tempFileList));
 			}
 			adapter.setList(state.list);
-		}else { //a old state
+		}else {
+			//reset the listview pos
 			adapter.setData(state.list, state.checkList);
-			listView.setSelectionFromTop(state.pos, state.top);
-			Log.d(WifiP2pHelper.TAG, adapter.getmCheckBoxList().toString());
 		}
+		listView.setSelectionFromTop(state.pos, state.top);
+
 		if (state.list.size() != 0) {
 			lin_no_file.setVisibility(View.GONE);
 		} else {
@@ -107,6 +108,7 @@ public class FileExplorerFragment extends Fragment implements
 	}
 
 	public boolean back() {
+		Log.d(WifiP2pHelper.TAG, "FileExplorerFragment-->back-->stateList.size() ="+stateList.size());
 		if (stateList.size() == 0) {
 			return false;
 		} else {
@@ -167,8 +169,8 @@ public class FileExplorerFragment extends Fragment implements
 	}
 
 	class MyListViewAdapter extends BaseAdapter {
-		private ArrayList<Boolean> mCheckBoxList;
-		private ArrayList<File> list;
+		private ArrayList<Boolean> mCheckBoxList = new ArrayList<>();
+		private ArrayList<File> list = new ArrayList<>();
 		public MyListViewAdapter(ArrayList<File> list) {
 			setList(list);
 		}
@@ -184,7 +186,11 @@ public class FileExplorerFragment extends Fragment implements
 		}
 		public void setData(ArrayList<File> list, ArrayList<Boolean> checkList) {
 			this.list = list;
-			this.mCheckBoxList = checkList;
+			if(checkList == null) {
+				setList(list);
+			}else {
+				this.mCheckBoxList = checkList;
+			}
 			notifyDataSetChanged();
 		}
 		public boolean isChecked(int pos) {
@@ -335,5 +341,8 @@ public class FileExplorerFragment extends Fragment implements
 				activity.removeFileFromSendFileList(f.getPath());
 			}
 		}
+		int len = f.getName().getBytes().length;
+		Integer x = 500;
+		Log.d(WifiP2pHelper.TAG, "fileName len(byte) = "+len + "  test:"+x.byteValue());
 	}
 }

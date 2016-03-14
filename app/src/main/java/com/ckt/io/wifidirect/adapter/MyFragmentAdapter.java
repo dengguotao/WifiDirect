@@ -12,7 +12,6 @@ import java.util.ArrayList;
 public class MyFragmentAdapter extends FragmentPagerAdapter {
     private ArrayList<Fragment> list;
 
-
     public MyFragmentAdapter(FragmentManager supportFragmentManager, ArrayList<Fragment> fragmentArrayList) {
         super(supportFragmentManager);
         this.list = fragmentArrayList;

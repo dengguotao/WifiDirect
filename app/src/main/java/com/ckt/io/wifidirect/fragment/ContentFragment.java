@@ -198,6 +198,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
                         list.add(new File(activity.getSendFiles().get(i)));
                     }
                     wifiP2pHelper.sendFiles(list);
+                    activity.clearSendFileList();
                 }else {
                     activity.getDeviceConnectDialog().show();
                 }
@@ -221,12 +222,18 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
     //the others has changed the sendFile-List, do update views here
     //this listen was seted in MainActivity
     @Override
-    public void onChange(ArrayList<String> sendFiles, int num) {
+    public void onSendFileListChange(ArrayList<String> sendFiles, int num) {
         txt_sendFileNum.setText(""+num);
         if(num == 0) {
             toggleButtomFun(false);
         }else {
             toggleButtomFun(true);
+        }
+        for(int i=0; i<fragmentArrayList.size(); i++) {
+            Object obj = fragmentArrayList.get(i);
+            if(obj instanceof MainActivity.OnSendFileListChangeListener) {
+                ((MainActivity.OnSendFileListChangeListener)obj).onSendFileListChange(sendFiles, num);
+            }
         }
     }
 

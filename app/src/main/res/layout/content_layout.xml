@@ -26,7 +26,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="application" />
+                android:text="@string/fragment_title_application" />
 
             <TextView
                 android:id="@+id/id_music_title"
@@ -34,7 +34,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="music" />
+                android:text="@string/fragment_title_music" />
 
             <TextView
                 android:id="@+id/id_movie_title"
@@ -42,7 +42,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="movie" />
+                android:text="@string/fragment_title_movie" />
 
             <TextView
                 android:id="@+id/id_file_title"
@@ -50,7 +50,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="file" />
+                android:text="@string/fragment_title_fileExplore" />
         </LinearLayout>
 
         <ImageView

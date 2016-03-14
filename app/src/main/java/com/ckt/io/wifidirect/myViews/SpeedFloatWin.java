@@ -30,7 +30,7 @@ public class SpeedFloatWin {
     static View view;
 
     public static void show(final Context context) {
-        if (isFirstShow) { //读取x,y
+        if (isFirstShow) { //read the stored position
             SharedPreferences mySharedPreferences = context.getSharedPreferences(
                     "WifiDirect", Activity.MODE_PRIVATE);
             try {
@@ -47,10 +47,10 @@ public class SpeedFloatWin {
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams();
         final WindowManager wm = (WindowManager) context.getApplicationContext()
                 .getSystemService(Context.WINDOW_SERVICE);
-        // 设置window type
+        // set window type
         params.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
             /*
-             * 如果设置为params.type = WindowManager.LayoutParams.TYPE_PHONE; 那么优先级会降低一些,
+             * if params.type = WindowManager.LayoutParams.TYPE_PHONE; 那么优先级会降低一些,
              * 即拉下通知栏不可见
              */
         params.format = PixelFormat.RGBA_8888; // 设置图片格式，效果为背景透明
@@ -142,7 +142,7 @@ public class SpeedFloatWin {
     }
 
     public static void updateSpeed(String sendSpeed, String receviceSpeed) {
-        if(view == null) return;
+        if (view == null) return;
         TextView txt_sendSpeed = (TextView) view.findViewById(R.id.txt_speed_send);
         txt_sendSpeed.setText(sendSpeed);
         TextView txt_receiveSpeed = (TextView) view.findViewById(R.id.txt_speed_recevice);

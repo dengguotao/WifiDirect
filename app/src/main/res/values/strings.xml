@@ -1,4 +1,8 @@
 <resources>
+    <string name="fragment_title_application">应用</string>
+    <string name="fragment_title_music">音乐</string>
+    <string name="fragment_title_movie">电影</string>
+    <string name="fragment_title_fileExplore">浏览</string>
     <string name="app_name">WifiDirect</string>
     <string name="drawer_open">Open Drawer</string>
     <string name="drawer_close">Close Drawer</string>
@@ -14,4 +18,5 @@
     <string name="clear_sendfilelist_alert_button_cancel">算了</string>
     <string name="delete_sendfilelist_popwin_title">移除要发送的文件</string>
     <string name="refresh_music_list">刷新</string>
+    <string name="gain_permission_error">应用获取权限出错</string>
 </resources>

@@ -1,12 +1,16 @@
 package com.ckt.io.wifidirect.fragment;
 
+import android.app.Notification;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaScannerConnection;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +21,7 @@ import android.widget.TextView;
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyListViewAdapter;
+import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.AudioUtils;
 import com.ckt.io.wifidirect.utils.Song;
 
@@ -26,35 +31,72 @@ import java.util.ArrayList;
 /**
  * Created by ckt on 2/29/16.
  */
-public class MusicFragment extends Fragment implements View.OnClickListener, AdapterView.OnItemClickListener {
-    private ArrayList<Song> songList;
-    private ArrayList<String> nameList;
-    private ArrayList<Drawable> iconList;
-    private ArrayList<Boolean> checkBoxList;
+public class MusicFragment extends Fragment implements View.OnClickListener, AdapterView.OnItemClickListener, MainActivity.OnSendFileListChangeListener {
+    private ArrayList<Song> songList = new ArrayList<>();
+    private ArrayList<String> nameList = new ArrayList<>();
+    private ArrayList<Drawable> iconList = new ArrayList<>();
+    private ArrayList<Boolean> checkBoxList = new ArrayList<>();
     private ListView listView;
     private TextView refresh;
     MyListViewAdapter adapter;
 
+    //用来还原listview的位置
+    private int listViewState_pos = 0;
+    private int listViewState_top = 0;
+
+    public static final int LOAD_DATA_FINISHED=0;
+
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case LOAD_DATA_FINISHED:
+                    listView.setAdapter(adapter);
+                    listView.setSelectionFromTop(listViewState_pos, listViewState_top);
+                    break;
+            }
+        }
+    };
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.d(WifiP2pHelper.TAG, "MusicFragment-->onCreateView()");
         View view = inflater.inflate(R.layout.music_layout, container, false);
-        nameList = new ArrayList<>();
-        iconList = new ArrayList<>();
-        checkBoxList = new ArrayList<>();
         listView = (ListView) view.findViewById(R.id.id_adapter_list_view);
         refresh = (TextView) view.findViewById(R.id.id_music_refresh);
         songList = AudioUtils.getAllSongs(getActivity());
-
-        for (Song song : songList) {
-            nameList.add(song.getTitle());
-            iconList.add(new BitmapDrawable(BitmapFactory.decodeResource(getResources(), R.drawable.icon)));
-            checkBoxList.add(false);
+        if(adapter == null) {
+            loadData();
+        }else {
+            handler.sendEmptyMessage(LOAD_DATA_FINISHED);
         }
-        adapter = new MyListViewAdapter(getActivity(), nameList, iconList, checkBoxList);
-        listView.setAdapter(adapter);
         refresh.setOnClickListener(this);
         listView.setOnItemClickListener(this);
         return view;
+    }
+
+    public void loadData() {
+        new Thread() {
+            @Override
+            public void run() {
+                for (Song song : songList) {
+                    nameList.add(song.getTitle());
+                    iconList.add(new BitmapDrawable(BitmapFactory.decodeResource(getResources(), R.drawable.icon)));
+                    checkBoxList.add(false);
+                }
+                adapter = new MyListViewAdapter(getActivity(), nameList, iconList, checkBoxList);
+                handler.sendEmptyMessage(LOAD_DATA_FINISHED);
+            }
+        }.start();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        Log.d(WifiP2pHelper.TAG, "MusicFragment-->onPause");
+        listViewState_pos = listView.getFirstVisiblePosition();
+        View child = listView.getChildAt(0);
+        listViewState_top = child!=null? child.getTop() : 0;
     }
 
     @Override
@@ -91,5 +133,23 @@ public class MusicFragment extends Fragment implements View.OnClickListener, Ada
             activity.removeFileFromSendFileList(songList.get(position).getFileUrl());
         }
         adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onSendFileListChange(ArrayList<String> sendFiles, int num) {
+        if(adapter!=null) {
+            ArrayList<Boolean> checkList = adapter.getmCheckBoxList();
+            String data = sendFiles.toString();
+            Log.d(WifiP2pHelper.TAG, data);
+            for(int i=0; i<checkList.size(); i++) {
+                String temp = songList.get(i).getFileUrl();
+                if(data.contains(temp)) {
+                    checkList.set(i, true);
+                }else {
+                    checkList.set(i, false);
+                }
+            }
+            adapter.notifyDataSetChanged();
+        }
     }
 }
