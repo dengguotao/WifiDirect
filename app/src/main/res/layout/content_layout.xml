@@ -57,7 +57,7 @@
             android:id="@+id/id_cursor"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/underline" />
+            android:src="@drawable/ic_launcher" />
 
         <android.support.v4.view.ViewPager
             android:id="@+id/id_view_pager"

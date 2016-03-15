@@ -148,6 +148,11 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
         return mSendCount;
     }
 
+    public File getReceivedFileDirPath() {
+        File sdcard = SdcardUtils.getUseableSdcardFile(activity, true);
+        return new File(sdcard, activity.getPackageName());
+    }
+
     // 发送文件
     public void sendFiles(final ArrayList<File> fl) {
         if (sendFileList.size() == 0) { //没有文件正在发送-->启动后台发送任务
@@ -221,7 +226,8 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                         mSendCount += len;
                     }
                     Log.d(WifiP2pHelper.TAG, "send a file sucessfully!!!");
-                } catch (IOException e) {
+                } catch (Exception e) {
+                    e.printStackTrace();
                     isSuccessed = false;
                 } finally {
                     try {
@@ -315,7 +321,9 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     if (i == 1) {
                         f = new File(sdcard, activity.getPackageName() + File.separator + name);
                     } else {
-                        f = new File(activity.getPackageName() + File.separator + "(" + i + ")" + name);
+                        int index = name.indexOf(".");
+                        String name2 = name.substring(0, index) + "(" + i + ")" + name.substring(index);
+                        f = new File(sdcard, activity.getPackageName() + File.separator + name2);
                     }
                     i++;
                     if (!f.exists()) {

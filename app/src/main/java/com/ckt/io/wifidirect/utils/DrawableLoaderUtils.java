@@ -59,6 +59,7 @@ public class DrawableLoaderUtils {
             while (loadList.size() != 0) {
                 String path = loadList.get(0);
                 loadList.remove(0);
+                LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->load pic of "+path);
                 String s = path.toLowerCase();
                 Object obj = null;
                 if(s.endsWith(".apk")) { //apkÎÄ¼þ

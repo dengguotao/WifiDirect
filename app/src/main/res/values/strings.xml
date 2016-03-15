@@ -22,4 +22,5 @@
     <string name="inner_sdcard">内置SD卡</string>
     <string name="external_sdcard">外部SD卡</string>
     <string name="root_dir">根目录</string>
+    <string name="home_dir">家目录</string>
 </resources>

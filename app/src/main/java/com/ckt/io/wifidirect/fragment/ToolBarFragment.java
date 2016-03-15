@@ -28,9 +28,6 @@ public class ToolBarFragment extends Fragment {
         View view = inflater.inflate(R.layout.toolbar_layout, container, false);
         activity = (MainActivity) getActivity();
         toolbar = (Toolbar) view.findViewById(R.id.id_toolbar_layout);
-        toolbar.setTitle("Wifi Direct");
-        toolbar.setSubtitle("This is a test");
-        toolbar.setLogo(R.drawable.ic_launcher);
         activity.setSupportActionBar(toolbar);
         return view;
     }
