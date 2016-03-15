@@ -36,6 +36,7 @@ import android.widget.Toast;
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.utils.ApkUtils;
 import com.ckt.io.wifidirect.utils.DataTypeUtils;
+import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
 
 
@@ -66,6 +67,8 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     // 作为服务socket用来接收对方发送的文件
     private ServerSocket serverSocket;
     private InetAddress clientAddress;  //客户端的地址
+    private String currentMAC;
+    private String currentConnectMAC;
 
     private MainActivity activity;
     private Handler handler;
@@ -85,6 +88,14 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
         channel = manager.initialize(activity, activity.getMainLooper(), null);
         deviceList = new ArrayList<WifiP2pDevice>();
         sendFileList = new ArrayList<>();
+        updateWifiMac();
+    }
+
+    private void updateWifiMac() {
+        if (currentMAC == null) {
+            WifiManager wifiManager = (WifiManager) activity.getSystemService(Context.WIFI_SERVICE);
+            currentMAC = wifiManager.getConnectionInfo() == null ? null : wifiManager.getConnectionInfo().getMacAddress();
+        }
     }
 
     // 开始查找设备
@@ -129,8 +140,8 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     }
 
     public boolean isTranfering() {
-        return ((fileReceiveAsyncTask!=null && fileReceiveAsyncTask.isTranfering)
-                || (fileSendAsyncTask!=null && fileSendAsyncTask.isTranfering));
+        return ((fileReceiveAsyncTask != null && fileReceiveAsyncTask.isTranfering)
+                || (fileSendAsyncTask != null && fileSendAsyncTask.isTranfering));
     }
 
     public int getSendCount() {
@@ -139,11 +150,11 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 
     // 发送文件
     public void sendFiles(final ArrayList<File> fl) {
-        if(sendFileList.size() == 0) { //没有文件正在发送-->启动后台发送任务
+        if (sendFileList.size() == 0) { //没有文件正在发送-->启动后台发送任务
             sendFileList.addAll(fl);
             fileSendAsyncTask = new FileSendAsyncTask();
             fileSendAsyncTask.execute(new File(""));
-        }else { //有文件正在发送,添加到发送列表中即可
+        } else { //有文件正在发送,添加到发送列表中即可
             sendFileList.addAll(fl);
         }
         handler.sendEmptyMessage(WIFIP2P_SENDFILELIST_CHANGED);
@@ -157,10 +168,11 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 
     private class FileSendAsyncTask extends AsyncTask<File, Integer, Boolean> {
         private boolean isTranfering = false;
+
         @Override
         protected Boolean doInBackground(File... params) {
             isTranfering = true;
-            while(sendFileList.size()!=0) {
+            while (sendFileList.size() != 0) {
                 boolean isSuccessed = true;
                 File f = sendFileList.get(0);
                 OutputStream out = null;
@@ -174,10 +186,10 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     Log.i(TAG, "sendFiles error!!");
                     e.printStackTrace();
                     try {
-                        if(out != null) {
+                        if (out != null) {
                             out.close();
                         }
-                        if(socket!=null) {
+                        if (socket != null) {
                             socket.close();
                         }
                     } catch (IOException e1) {
@@ -189,11 +201,11 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 try {
                     inputstream = new FileInputStream(f);
                     String name = f.getName();
-                    if(name.toLowerCase().endsWith(".apk")) {
-                        name = ApkUtils.getApkLable(activity, f.getPath())+".apk";
+                    if (name.toLowerCase().endsWith(".apk")) {
+                        name = ApkUtils.getApkLable(activity, f.getPath()) + ".apk";
                     }
                     name = name.replace("&", ""); //去掉文件名中的&符号
-                    String info = name+"&"+String.valueOf(f.length()); //info = name&fileSize
+                    String info = name + "&" + String.valueOf(f.length()); //info = name&fileSize
                     byte nameBytes[] = info.getBytes();
                     //1.发送文件信息的长度(int型的长度要转化为byte[]型来发送);
                     byte nameLenByte[] = DataTypeUtils.intToBytes2(nameBytes.length);
@@ -216,19 +228,20 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                         if (inputstream != null) {
                             inputstream.close();
                         }
-                        if(out != null) {
+                        if (out != null) {
                             out.close();
                         }
-                        if(socket != null) {
+                        if (socket != null) {
                             socket.close();
                         }
-                    } catch (IOException e) {}
+                    } catch (IOException e) {
+                    }
                 }
                 Message msg = new Message();
                 msg.obj = f;
-                if(isSuccessed) {
+                if (isSuccessed) {
                     msg.what = WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY;
-                }else {
+                } else {
                     msg.what = WIFIP2P_SEND_ONE_FILE_FAILURE;
                 }
                 handler.sendMessage(msg);
@@ -251,11 +264,12 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 
     private class FileReceiveAsyncTask extends AsyncTask<Socket, Integer, Boolean> {
         private boolean isTranfering = false;
+
         @Override
         protected Boolean doInBackground(Socket... params) {
             isTranfering = true;
             Socket socket = params[0];
-            if(socket == null) return false;
+            if (socket == null) return false;
             InputStream inputstream = null;
             OutputStream out = null;
             try {
@@ -292,19 +306,19 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 String infos[] = info.split("&");
                 String name = infos[0]; //文件名
                 size = Long.valueOf(infos[1]);
-                Log.d(TAG, "recevice fileinfo: name=" + name + " size="+size);
+                Log.d(TAG, "recevice fileinfo: name=" + name + " size=" + size);
                 //create the new file
                 File f = null;
                 //防止文件名冲突
-                int i=1;
-                while(true) {
-                    if(i==1) {
+                int i = 1;
+                while (true) {
+                    if (i == 1) {
                         f = new File(sdcard, activity.getPackageName() + File.separator + name);
-                    }else {
+                    } else {
                         f = new File(activity.getPackageName() + File.separator + "(" + i + ")" + name);
                     }
-                    i ++;
-                    if(!f.exists()) {
+                    i++;
+                    if (!f.exists()) {
                         break;
                     }
                 }
@@ -377,7 +391,6 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     }
 
 
-
     public int getReceviceCount() {
         return mReceviceCount;
     }
@@ -410,11 +423,24 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                         try {
                             Socket firstClientSocket = serverSocket.accept();
                             InputStream inputStream = firstClientSocket.getInputStream();
+                            OutputStream outputStream = firstClientSocket.getOutputStream();
                             byte buf[] = new byte[128];
-                            int len = inputStream.read(buf);
-                            String clientIp = new String(buf, 0, len);
-                            Log.d(TAG, "server has receviced clientIP:" + clientIp);
+                            StringBuffer stringBuffer =new StringBuffer();
+                            int len = 0;
+                            while ((len = inputStream.read(buf)) != 0) {
+                                stringBuffer.append(new String(buf, 0, len));
+                            }
+                            String clientMac = stringBuffer.toString();
+                            if(clientMac != null && clientMac.equals("")) {
+                                currentConnectMAC = clientMac;
+                            }
+                            LogUtils.d(TAG, "server has receviced clientMAC:" + currentConnectMAC);
                             clientAddress = firstClientSocket.getInetAddress(); //get the client addr
+                            if(currentMAC != null) {
+                                outputStream.write(currentMAC.getBytes());
+                            }
+                            outputStream.flush();
+                            outputStream.close();
                             inputStream.close();
                             firstClientSocket.close();
                         } catch (Exception e) {
@@ -452,8 +478,22 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                         socket.bind(null);
                         socket.connect((new InetSocketAddress(connectInfo.groupOwnerAddress, SOCKET_PORT)), SOCKET_TIMEOUT);
                         OutputStream outputStream = socket.getOutputStream();
-                        String ip = socket.getLocalAddress().toString();
-                        outputStream.write(ip.getBytes());
+                        InputStream inputStream = socket.getInputStream();
+                        if (currentMAC != null) {
+                            outputStream.write(currentMAC.getBytes());
+                        }
+                        byte buf[] = new byte[128];
+                        StringBuffer stringBuffer =new StringBuffer();
+                        int len = 0;
+                        while ((len = inputStream.read(buf)) != 0) {
+                            stringBuffer.append(new String(buf, 0, len));
+                        }
+                        String serverMac = stringBuffer.toString();
+                        if(serverMac != null && serverMac.equals("")) {
+                            currentConnectMAC = serverMac;
+                        }
+                        LogUtils.d(TAG, "client has receviced serverMAC:" + currentConnectMAC);
+                        inputStream.close();
                         outputStream.flush();
                         outputStream.close();
                     } catch (IOException e) {
@@ -591,6 +631,8 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 //                    .findFragmentById(R.id.frag_list);
 //            fragment.updateThisDevice((WifiP2pDevice) intent.getParcelableExtra(
 //                    WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
+        } else if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
+            updateWifiMac();
         }
     }
 
