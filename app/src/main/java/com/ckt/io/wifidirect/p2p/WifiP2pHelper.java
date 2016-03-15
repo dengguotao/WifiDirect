@@ -422,31 +422,71 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     if (isServer()) {//recevive the client address
                         try {
                             Socket firstClientSocket = serverSocket.accept();
+                            LogUtils.d(TAG, "serverSocket.accept() max=");
                             InputStream inputStream = firstClientSocket.getInputStream();
                             OutputStream outputStream = firstClientSocket.getOutputStream();
-                            byte buf[] = new byte[128];
-                            StringBuffer stringBuffer =new StringBuffer();
-                            int len = 0;
-                            while ((len = inputStream.read(buf)) != 0) {
-                                stringBuffer.append(new String(buf, 0, len));
-                            }
-                            String clientMac = stringBuffer.toString();
-                            if(clientMac != null && clientMac.equals("")) {
-                                currentConnectMAC = clientMac;
-                            }
-                            LogUtils.d(TAG, "server has receviced clientMAC:" + currentConnectMAC);
                             clientAddress = firstClientSocket.getInetAddress(); //get the client addr
+                            //1.发送MAC地址给客户端
                             if(currentMAC != null) {
                                 outputStream.write(currentMAC.getBytes());
                             }
                             outputStream.flush();
-                            outputStream.close();
+                            firstClientSocket.shutdownOutput();
+                            //2.读取客户端的MAC地址
+                            byte buf[] = new byte[128];
+                            StringBuffer stringBuffer =new StringBuffer();
+                            int len = 0;
+                            while ((len = inputStream.read(buf)) != -1) {
+                                stringBuffer.append(new String(buf, 0, len));
+                            }
                             inputStream.close();
+                            String clientMac = stringBuffer.toString();
+                            if(clientMac != null && !clientMac.equals("")) {
+                                currentConnectMAC = clientMac;
+                            }
+                            LogUtils.d(TAG, "server has receviced clientMAC:" + currentConnectMAC);
+                            outputStream.close();
                             firstClientSocket.close();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
+                    }else if(isClient()) {
+                        Socket socket = new Socket();
+                        try {
+                            LogUtils.d(TAG, "client start transfer MAC cuMAC: "+currentMAC);
+                            socket.bind(null);
+                            socket.connect((new InetSocketAddress(connectInfo.groupOwnerAddress, SOCKET_PORT)), SOCKET_TIMEOUT);
+                            OutputStream outputStream = socket.getOutputStream();
+                            InputStream inputStream = socket.getInputStream();
+                            //1.读取服务端的MAC地址
+                            byte buf[] = new byte[128];
+                            StringBuffer stringBuffer =new StringBuffer();
+                            int len = 0;
+                            while ((len = inputStream.read(buf)) != -1) {
+                                stringBuffer.append(new String(buf, 0, len));
+                            }
+                            String serverMac = stringBuffer.toString();
+                            if(serverMac != null && !serverMac.equals("")) {
+                                currentConnectMAC = serverMac;
+                            }
+                            //2. 发送自己的MAC地址给服务端
+                            if (currentMAC != null) {
+                                outputStream.write(currentMAC.getBytes());
+                            }
+                            outputStream.flush();
+                            outputStream.close();
+                            LogUtils.d(TAG, "client has receviced serverMAC:" + currentConnectMAC);
+                            inputStream.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } finally {
+                            try {
+                                socket.close();
+                            } catch (Exception e1) {
+                            }
+                        }
                     }
+                    //开始等待对方连接
                     while (isConnected) {
                         try {
                             Socket clientSocket = serverSocket.accept();
@@ -464,49 +504,10 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 } catch (IOException e) {
                     try {
                         serverSocket.close();
-                    } catch (Exception e1) {
-                    }
+                    } catch (Exception e1) {}
                 }
             }
         }.start();
-        if (isClient()) { //client-->send the client ip to server
-            new Thread() {
-                @Override
-                public void run() {
-                    Socket socket = new Socket();
-                    try {
-                        socket.bind(null);
-                        socket.connect((new InetSocketAddress(connectInfo.groupOwnerAddress, SOCKET_PORT)), SOCKET_TIMEOUT);
-                        OutputStream outputStream = socket.getOutputStream();
-                        InputStream inputStream = socket.getInputStream();
-                        if (currentMAC != null) {
-                            outputStream.write(currentMAC.getBytes());
-                        }
-                        byte buf[] = new byte[128];
-                        StringBuffer stringBuffer =new StringBuffer();
-                        int len = 0;
-                        while ((len = inputStream.read(buf)) != 0) {
-                            stringBuffer.append(new String(buf, 0, len));
-                        }
-                        String serverMac = stringBuffer.toString();
-                        if(serverMac != null && serverMac.equals("")) {
-                            currentConnectMAC = serverMac;
-                        }
-                        LogUtils.d(TAG, "client has receviced serverMAC:" + currentConnectMAC);
-                        inputStream.close();
-                        outputStream.flush();
-                        outputStream.close();
-                    } catch (IOException e) {
-
-                    } finally {
-                        try {
-                            socket.close();
-                        } catch (Exception e1) {
-                        }
-                    }
-                }
-            }.start();
-        }
         handler.sendEmptyMessage(WIFIP2P_DEVICE_CONNECTED_SUCCESS);//设备已连接
     }
 

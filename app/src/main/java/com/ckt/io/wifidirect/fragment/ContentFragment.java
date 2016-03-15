@@ -105,7 +105,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         ApplicationFragment applicationFragment = new ApplicationFragment();
         MusicFragment musicFragment = new MusicFragment();
         MovieFragment movieFragment = new MovieFragment();
-        mFileFragment = new FileExplorerFragment(SdcardUtils.getInnerSDcardFile(getActivity()));
+        mFileFragment = new FileExplorerFragment();
         mDeviceChooseFragment = new DeviceChooseFragment();
 
         fragmentArrayList.add(applicationFragment);

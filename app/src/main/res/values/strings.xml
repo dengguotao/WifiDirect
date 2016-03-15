@@ -19,4 +19,7 @@
     <string name="delete_sendfilelist_popwin_title">移除要发送的文件</string>
     <string name="refresh_music_list">刷新</string>
     <string name="gain_permission_error">应用获取权限出错</string>
+    <string name="inner_sdcard">内置SD卡</string>
+    <string name="external_sdcard">外部SD卡</string>
+    <string name="root_dir">根目录</string>
 </resources>
