@@ -12,12 +12,12 @@ import com.ckt.io.wifidirect.utils.LogUtils;
  */
 public class WifiDirectDbHelper extends SQLiteOpenHelper {
     private static final String TAG = "WifiDirectDbHelper";
-    public static final int VERSION_0 = 0;
+    public static final int VERSION_1 = 1;
 
     private Context mContext;
 
     public WifiDirectDbHelper(Context context) {
-        super(context, Constants.DATABASE_NAME, null, VERSION_0);
+        super(context, Constants.DATABASE_NAME, null, VERSION_1);
         mContext = context;
     }
 
@@ -26,8 +26,8 @@ public class WifiDirectDbHelper extends SQLiteOpenHelper {
                 Constants.InstanceColumns.ID + " TEXT PRIMARY KEY," +
                 Constants.InstanceColumns.NAME + " TEXT NOT NULL, " +
                 Constants.InstanceColumns.LENGTH + " INTEGER NOT NULL, " +
-                Constants.InstanceColumns.STATE + " INTEGER NOT NULL" +
-                Constants.InstanceColumns.TRANSFER_LENGTH + " INTEGER NOT NULL" +
+                Constants.InstanceColumns.STATE + " INTEGER NOT NULL, " +
+                Constants.InstanceColumns.TRANSFER_LENGTH + " INTEGER NOT NULL, " +
                 Constants.InstanceColumns.TRANSFER_DIRECTION + " INTEGER NOT NULL);");
         LogUtils.i(TAG, "table created");
     }

@@ -40,10 +40,10 @@ public class WifiDirectContentProvider extends ContentProvider {
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
         switch (sURLMatcher.match(uri)) {
             case TRANSFER_INSTANCE:
-                qb.setTables(Constants.DATABASE_NAME);
+                qb.setTables(Constants.TABLE_NAME);
                 break;
             case TRANSFER_INSTANCE_ID:
-                qb.setTables(Constants.DATABASE_NAME);
+                qb.setTables(Constants.TABLE_NAME);
                 qb.appendWhere(Constants.InstanceColumns.ID + "=");
                 qb.appendWhere(uri.getLastPathSegment());
                 break;
