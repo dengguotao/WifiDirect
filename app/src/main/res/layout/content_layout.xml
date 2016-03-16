@@ -2,18 +2,21 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+
     <LinearLayout
         android:id="@+id/lin_send_fun"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:visibility="invisible"
-        android:layout_alignParentBottom="true">
-        <include layout="@layout/file_send_fun_layout"/>
+        android:layout_alignParentBottom="true"
+        android:visibility="invisible">
+
+        <include layout="@layout/file_send_fun_layout" />
     </LinearLayout>
+
     <LinearLayout
-        android:layout_above="@id/lin_send_fun"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_above="@id/lin_send_fun"
         android:orientation="vertical">
 
         <LinearLayout
@@ -51,6 +54,14 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="@string/fragment_title_fileExplore" />
+
+            <TextView
+                android:id="@+id/id_history_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="历史" />
         </LinearLayout>
 
         <ImageView
@@ -69,12 +80,12 @@
 
     <ImageView
         android:id="@+id/img_connect"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginRight="20dp"
-        android:layout_marginBottom="20dp"
         android:layout_width="55dp"
         android:layout_height="55dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="20dp"
+        android:layout_marginRight="20dp"
         android:src="@drawable/send" />
 
 </RelativeLayout>

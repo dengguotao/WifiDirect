@@ -35,7 +35,7 @@ import java.util.ArrayList;
 /**
  * Created by ckt on 2/29/16.
  */
-public class ContentFragment extends Fragment implements View.OnClickListener, MainActivity.OnSendFileListChangeListener{
+public class ContentFragment extends Fragment implements View.OnClickListener, MainActivity.OnSendFileListChangeListener {
     private ViewGroup mButtomFunViewGroup;
     private ViewGroup mButtomFun_fileNum;
     private ViewGroup mButtomFun_send;
@@ -45,8 +45,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
     private ViewPager mPager;
     private ArrayList<Fragment> fragmentArrayList;
     private ImageView image;
-    private int viewPagerTitleIds [] = {R.id.id_application_title, R.id.id_music_title, R.id.id_movie_title, R.id.id_file_title};
-    private TextView view_one, view_two, view_three, view_four, view_five;
+    private int viewPagerTitleIds[] = {R.id.id_application_title, R.id.id_music_title, R.id.id_movie_title, R.id.id_file_title, R.id.id_history_title};
     private int currIndex;
     private int bmpW;
     private int offset;
@@ -77,7 +76,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
     }
 
     public void InitTextView() {
-        for(int i=0; i<viewPagerTitleIds.length; i++) {
+        for (int i = 0; i < viewPagerTitleIds.length; i++) {
             TextView textView = (TextView) view.findViewById(viewPagerTitleIds[i]);
             textView.setOnClickListener(new TextListener(i));
         }
@@ -91,7 +90,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         int screenW = dm.widthPixels;
         offset = 0;
         ViewGroup.LayoutParams lp = image.getLayoutParams();
-        lp.width = screenW/viewPagerTitleIds.length;
+        lp.width = screenW / viewPagerTitleIds.length;
         bmpW = lp.width;
         image.setLayoutParams(lp);
         /*Matrix matrix = new Matrix();
@@ -106,12 +105,14 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         MusicFragment musicFragment = new MusicFragment();
         MovieFragment movieFragment = new MovieFragment();
         mFileFragment = new FileExplorerFragment();
+        HistoryFragment historyFragment = new HistoryFragment();
         mDeviceChooseFragment = new DeviceChooseFragment();
 
         fragmentArrayList.add(applicationFragment);
         fragmentArrayList.add(musicFragment);
         fragmentArrayList.add(movieFragment);
         fragmentArrayList.add(mFileFragment);
+        fragmentArrayList.add(historyFragment);
 
         MainActivity activity = (MainActivity) getActivity();
         mPager.setAdapter(new MyFragmentAdapter(activity.getSupportFragmentManager(), fragmentArrayList));
@@ -120,29 +121,29 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
     }
 
     public void toggleButtomFun() {
-        if(this.mButtomFunViewGroup.getVisibility() == View.VISIBLE) {
+        if (this.mButtomFunViewGroup.getVisibility() == View.VISIBLE) {
             toggleButtomFun(false);
-        }else {
+        } else {
             toggleButtomFun(true);
         }
     }
 
     public void toggleButtomFun(boolean isShow) {
-        if(isShow) {//show
-            if(this.mButtomFunViewGroup.getVisibility() != View.VISIBLE) {
+        if (isShow) {//show
+            if (this.mButtomFunViewGroup.getVisibility() != View.VISIBLE) {
                 mButtomFunViewGroup.setVisibility(View.VISIBLE);
                 TranslateAnimation animation = new TranslateAnimation(0, 0, mButtomFunViewGroup.getHeight(), 0);
                 animation.setDuration(200);
                 animation.setInterpolator(new AccelerateInterpolator());
                 mButtomFunViewGroup.startAnimation(animation);
-                ScaleAnimation scaleAnimation = new ScaleAnimation(1, 0, 1, 0, img_connect.getWidth()/2, img_connect.getHeight()/2);
+                ScaleAnimation scaleAnimation = new ScaleAnimation(1, 0, 1, 0, img_connect.getWidth() / 2, img_connect.getHeight() / 2);
                 scaleAnimation.setDuration(200);
                 scaleAnimation.setInterpolator(new AccelerateInterpolator());
                 img_connect.startAnimation(scaleAnimation);
                 img_connect.setVisibility(View.GONE);
             }
-        }else {//hide
-            if(this.mButtomFunViewGroup.getVisibility() == View.VISIBLE) {
+        } else {//hide
+            if (this.mButtomFunViewGroup.getVisibility() == View.VISIBLE) {
 
                 TranslateAnimation animation = new TranslateAnimation(0, 0, 0, mButtomFunViewGroup.getHeight());
                 animation.setDuration(200);
@@ -165,7 +166,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
                 });
                 mButtomFunViewGroup.startAnimation(animation);
                 img_connect.setVisibility(View.VISIBLE);
-                ScaleAnimation scaleAnimation = new ScaleAnimation(0, 1, 0, 1, img_connect.getWidth()/2, img_connect.getHeight()/2);
+                ScaleAnimation scaleAnimation = new ScaleAnimation(0, 1, 0, 1, img_connect.getWidth() / 2, img_connect.getHeight() / 2);
                 scaleAnimation.setDuration(200);
                 scaleAnimation.setInterpolator(new AccelerateInterpolator());
                 img_connect.startAnimation(scaleAnimation);
@@ -191,15 +192,15 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
                 break;
             case R.id.lin_fun_sendFile: //send the selected files
                 WifiP2pHelper wifiP2pHelper = activity.getWifiP2pHelper();
-                if(wifiP2pHelper.isConnected()) {
+                if (wifiP2pHelper.isConnected()) {
                     Log.d(WifiP2pHelper.TAG, "trying send files");
                     ArrayList<File> list = new ArrayList<>();
-                    for(int i=0; i<activity.getSendFiles().size(); i++) {
+                    for (int i = 0; i < activity.getSendFiles().size(); i++) {
                         list.add(new File(activity.getSendFiles().get(i)));
                     }
                     wifiP2pHelper.sendFiles(list);
                     activity.clearSendFileList();
-                }else {
+                } else {
                     activity.getDeviceConnectDialog().show();
                 }
                 break;
@@ -223,22 +224,23 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
     //this listen was seted in MainActivity
     @Override
     public void onSendFileListChange(ArrayList<String> sendFiles, int num) {
-        txt_sendFileNum.setText(""+num);
-        if(num == 0) {
+        txt_sendFileNum.setText("" + num);
+        if (num == 0) {
             toggleButtomFun(false);
-        }else {
+        } else {
             toggleButtomFun(true);
         }
-        for(int i=0; i<fragmentArrayList.size(); i++) {
+        for (int i = 0; i < fragmentArrayList.size(); i++) {
             Object obj = fragmentArrayList.get(i);
-            if(obj instanceof MainActivity.OnSendFileListChangeListener) {
-                ((MainActivity.OnSendFileListChangeListener)obj).onSendFileListChange(sendFiles, num);
+            if (obj instanceof MainActivity.OnSendFileListChangeListener) {
+                ((MainActivity.OnSendFileListChangeListener) obj).onSendFileListChange(sendFiles, num);
             }
         }
     }
 
     public class MyOnPageChangeListener implements ViewPager.OnPageChangeListener {
         private int one;
+
         public MyOnPageChangeListener() {
             one = offset * 2 + bmpW;
         }
@@ -256,7 +258,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
             animation.setDuration(200);
             image.startAnimation(animation);
             int i = currIndex + 1;
-            Log.d(WifiP2pHelper.TAG, "onPageSelected()"+position+"  "+one);
+            Log.d(WifiP2pHelper.TAG, "onPageSelected()" + position + "  " + one);
         }
 
         @Override
