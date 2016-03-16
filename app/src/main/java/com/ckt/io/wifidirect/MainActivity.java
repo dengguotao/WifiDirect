@@ -1,6 +1,7 @@
 package com.ckt.io.wifidirect;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
@@ -15,26 +16,26 @@ import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 import com.ckt.io.wifidirect.myViews.DeviceConnectDialog;
 import com.ckt.io.wifidirect.fragment.ContentFragment;
 import com.ckt.io.wifidirect.fragment.FileExplorerFragment;
 import com.ckt.io.wifidirect.myViews.SpeedFloatWin;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.PermissionUtils;
+import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
+import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.ToastUtils;
 
-import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends BaseActivity {
     public static final byte REQUEST_CODE_SYSTEM_ALERT_PERMISSION = 5;
+    public static final byte REQUEST_CODE_READ_EXTERNAL = 6;
+    public static final byte REQUEST_CODE_WRITE_EXTERNAL = 7;
 
     private static final String TAG = "MainActivity";
     private DeviceConnectDialog deviceConnectDialog;
@@ -107,7 +108,7 @@ public class MainActivity extends ActionBarActivity {
             }
         }
     };
-    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -135,15 +136,15 @@ public class MainActivity extends ActionBarActivity {
         deviceConnectDialog = new DeviceConnectDialog(this, R.style.FullHeightDialog);
 
         clearSendFileList();
-
-        PermissionUtils.checkPermissionOnAndroidM(this, Manifest.permission.SYSTEM_ALERT_WINDOW, REQUEST_CODE_SYSTEM_ALERT_PERMISSION);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         registerReceiver(wifiP2pHelper, intentFilter);
-        SpeedFloatWin.show(this);
+        /*if(PermissionUtils.checkPermissionOnAndroidM(this, Manifest.permission.SYSTEM_ALERT_WINDOW, 1)) {
+            SpeedFloatWin.show(this);
+        }*/
     }
 
     @Override
@@ -157,6 +158,7 @@ public class MainActivity extends ActionBarActivity {
     public void onDestroy() {
         super.onDestroy();
         wifiP2pHelper.release();
+        DrawableLoaderUtils.release();
     }
 
     @Override
@@ -188,22 +190,6 @@ public class MainActivity extends ActionBarActivity {
             return;
         }
         super.onBackPressed();
-    }
-
-
-    //the back fun--->after user chooseed whether give us the permission we requested
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case REQUEST_CODE_SYSTEM_ALERT_PERMISSION:
-                if(grantResults[0] == PackageManager.PERMISSION_GRANTED) {//gain the permission
-
-                }else {//the user refused
-                    ToastUtils.toast(this, R.string.gain_permission_error);
-                }
-                break;
-        }
     }
 
     //add a new file to the sendFile-list

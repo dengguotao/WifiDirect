@@ -13,7 +13,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
+import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.GridView;
 import android.widget.TextView;
@@ -22,6 +24,8 @@ import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyGridViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
+import com.ckt.io.wifidirect.utils.LogUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +34,9 @@ import java.util.List;
 /**
  * Created by ckt on 2/29/16.
  */
-public class ApplicationFragment extends Fragment implements AdapterView.OnItemClickListener, MainActivity.OnSendFileListChangeListener {
+public class ApplicationFragment extends Fragment implements AdapterView.OnItemClickListener,
+        MainActivity.OnSendFileListChangeListener,
+        DrawableLoaderUtils.OnLoadFinishedListener {
     private MyGridViewAdapter adapter;
     private GridView gridView;
     private PackageManager manager;
@@ -39,28 +45,35 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
     List<PackageInfo> apps = new ArrayList<>();
     ArrayList<String> mNameList = new ArrayList<>();
     ArrayList<String> mPathList = new ArrayList<>();
-    ArrayList<Drawable> mIconList = new ArrayList<>();
+    ArrayList<Object> mIconList = new ArrayList<>();
     ArrayList<Boolean> mCheckBoxList = new ArrayList<>();
+
+    private DrawableLoaderUtils drawableLoaderUtils; //用来异步加载图片
 
     //用来还原gridview的位置
     private int gridViewState_pos = 0;
 
-    public static final int LOAD_DATA_FINISHED=0;
+    public static final int LOAD_DATA_FINISHED = 0;
 
     private Handler handler = new Handler() {
-        @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case LOAD_DATA_FINISHED:
                     gridView.setAdapter(adapter);
                     gridView.setSelection(gridViewState_pos);
-                    applicationNumber.setText("已安装应用" + "(" + mNameList.size() + ")");
+                    applicationNumber.setText(getResources().getString(R.string.installed_apps) + "(" + mNameList.size() + ")");
+                    if (drawableLoaderUtils != null) {
+                        for (int i = 0; i < mNameList.size(); i++) {
+                            //启动异步任务加载图片,加载完成一个图片后会调用onLoadOneFinished
+                            drawableLoaderUtils.load(getContext(), mPathList.get(i));
+                        }
+                    }
+                    adapter.notifyDataSetChanged();
                     break;
             }
         }
     };
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -69,13 +82,27 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
         gridView = (GridView) view.findViewById(R.id.id_grid_view);
         applicationNumber = (TextView) view.findViewById(R.id.id_application_number);
         manager = getActivity().getPackageManager();
-        if(adapter == null) {//first loaded data
+        if (adapter == null) {//first loaded data
+            LogUtils.i(WifiP2pHelper.TAG, "ApplicationFragment first oncreateView()");
+            drawableLoaderUtils = DrawableLoaderUtils.getInstance(this);
             loadData();
-        }else {
+        } else {
             handler.sendEmptyMessage(LOAD_DATA_FINISHED);
         }
-        gridView.setAdapter(adapter);
         gridView.setOnItemClickListener(this);
+        gridView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) { //stop
+                    gridView.setTag(true);
+                    ((BaseAdapter) gridView.getAdapter()).notifyDataSetChanged();
+                } else { //scrolling
+                    gridView.setTag(false);
+                }
+            }
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {}
+        });
         return view;
     }
 
@@ -90,16 +117,14 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                         //第三方应用
                         apps.add(packageInfo);
                         mNameList.add(manager.getApplicationLabel(packageInfo.applicationInfo).toString());
-                        mIconList.add(manager.getApplicationIcon(packageInfo.applicationInfo));
+//                        mIconList.add(manager.getApplicationIcon(packageInfo.applicationInfo));
                         mPathList.add(packageInfo.applicationInfo.sourceDir);
-//                Log.i(WifiP2pHelper.TAG, "packageInfo.applicationInfo.sourceDir=" + packageInfo.applicationInfo.sourceDir);
-//                Log.i(WifiP2pHelper.TAG, "packageInfo.applicationInfo.publicSourceDir="+packageInfo.applicationInfo.publicSourceDir);
+                        mIconList.add(R.drawable.apk_icon);//先默认显示apk_icon
                         mCheckBoxList.add(false);
                     } else {
-                        //系统应用
                     }
                 }
-                adapter = new MyGridViewAdapter(getActivity(), mNameList, mIconList, mCheckBoxList);
+                adapter = new MyGridViewAdapter(getActivity(), mNameList, mIconList, mCheckBoxList, 60);
                 handler.sendEmptyMessage(LOAD_DATA_FINISHED);
             }
         }.start();
@@ -116,9 +141,9 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
         mCheckBoxList = adapter.getmCheckBoxList();
         mCheckBoxList.set(position, !mCheckBoxList.get(position));
         MainActivity activity = (MainActivity) getActivity();
-        if(mCheckBoxList.get(position)) {//checked--->add to sendfile-list
+        if (mCheckBoxList.get(position)) {//checked--->add to sendfile-list
             activity.addFileToSendFileList(mPathList.get(position));
-        }else {//unchecked--->remove from sendfile-list
+        } else {//unchecked--->remove from sendfile-list
             activity.removeFileFromSendFileList(mPathList.get(position));
         }
         adapter.notifyDataSetChanged();
@@ -126,19 +151,33 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
 
     @Override
     public void onSendFileListChange(ArrayList<String> sendFiles, int num) {
-        if(adapter!=null) {
+        if (adapter != null) {
             ArrayList<Boolean> checkList = adapter.getmCheckBoxList();
             String data = sendFiles.toString();
             Log.d(WifiP2pHelper.TAG, data);
-            for(int i=0; i<checkList.size(); i++) {
+            for (int i = 0; i < checkList.size(); i++) {
                 String temp = mPathList.get(i);
-                if(data.contains(temp)) {
+                if (data.contains(temp)) {
                     checkList.set(i, true);
-                }else {
+                } else {
                     checkList.set(i, false);
                 }
             }
             adapter.notifyDataSetChanged();
+        }
+    }
+
+    //加载完一张图片的回调
+    @Override
+    public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
+        int index = mPathList.indexOf(path);
+        if (index >= 0) {
+            mIconList.set(index, obj);
+        }
+        if (gridView.getTag() == null || !(boolean) gridView.getTag()) { //gridview没有滑动
+            if(index == mPathList.size()/2 || isAllFinished) {
+                ((BaseAdapter) (gridView.getAdapter())).notifyDataSetChanged();
+            }
         }
     }
 }

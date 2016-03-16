@@ -11,6 +11,8 @@ public class Song {
     private String album;
     private String size;
     private String fileUrl;
+    private int id;
+    private int album_id;
 
     public String getFileName() {
         return fileName;
@@ -30,6 +32,22 @@ public class Song {
 
     public int getDuration() {
         return duration;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getAlbum_id() {
+        return album_id;
+    }
+
+    public void setAlbum_id(int album_id) {
+        this.album_id = album_id;
     }
 
     public void setDuration(int duration) {

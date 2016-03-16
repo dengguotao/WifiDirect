@@ -14,14 +14,17 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
+import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.TextView;
 
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.adapter.MyGridViewAdapterMovie;
+import com.ckt.io.wifidirect.adapter.MyGridViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
 import com.ckt.io.wifidirect.utils.GetVideoThumbnail;
 import com.ckt.io.wifidirect.utils.Movie;
 import com.ckt.io.wifidirect.utils.MovieUtils;
@@ -32,29 +35,39 @@ import java.util.ArrayList;
 /**
  * Created by ckt on 2/29/16.
  */
-public class MovieFragment extends Fragment implements View.OnClickListener, AdapterView.OnItemClickListener, MainActivity.OnSendFileListChangeListener {
+public class MovieFragment extends Fragment implements View.OnClickListener,
+        AdapterView.OnItemClickListener,
+        MainActivity.OnSendFileListChangeListener,
+        DrawableLoaderUtils.OnLoadFinishedListener {
     private ArrayList<Movie> movieList = new ArrayList<>();
     private ArrayList<String> nameList = new ArrayList<>();
     private ArrayList<String> mPathList = new ArrayList<>();
-    private ArrayList<Drawable> iconList = new ArrayList<>();
+    private ArrayList<Object> iconList = new ArrayList<>();
     private ArrayList<Boolean> checkBoxList = new ArrayList<>();
     private GridView gridView;
     private TextView refresh;
-    MyGridViewAdapterMovie adapterMovie;
+    private MyGridViewAdapter adapterMovie;
+    private DrawableLoaderUtils drawableLoaderUtils;
 
     //用来还原gridview的位置
     private int gridViewState_pos = 0;
 
-    public static final int LOAD_DATA_FINISHED=0;
+    public static final int LOAD_DATA_FINISHED = 0;
 
     private Handler handler = new Handler() {
-        @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case LOAD_DATA_FINISHED:
                     gridView.setAdapter(adapterMovie);
                     gridView.setSelection(gridViewState_pos);
+                    if (drawableLoaderUtils != null) {
+                        for (int i = 0; i < nameList.size(); i++) {
+                            //启动异步任务加载图片,加载完成一个图片后会调用onLoadOneFinished
+                            drawableLoaderUtils.load(getContext(), mPathList.get(i));
+                        }
+                    }
+                    ((BaseAdapter)(gridView.getAdapter())).notifyDataSetChanged();
                     break;
             }
         }
@@ -67,12 +80,26 @@ public class MovieFragment extends Fragment implements View.OnClickListener, Ada
         refresh = (TextView) view.findViewById(R.id.id_movie_refresh);
         gridView = (GridView) view.findViewById(R.id.id_movie_grid_view);
         refresh.setOnClickListener(this);
-        if(adapterMovie == null) {
+        if (adapterMovie == null) { //第一次加载view
+            drawableLoaderUtils = DrawableLoaderUtils.getInstance(this);//获取图片加载器的实例
             loadData();
         }else {
             handler.sendEmptyMessage(LOAD_DATA_FINISHED);
         }
         gridView.setOnItemClickListener(this);
+        gridView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) { //stop
+                    gridView.setTag(true);
+                    ((BaseAdapter) gridView.getAdapter()).notifyDataSetChanged();
+                } else { //scrolling
+                    gridView.setTag(false);
+                }
+            }
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {}
+        });
         return view;
     }
 
@@ -83,14 +110,16 @@ public class MovieFragment extends Fragment implements View.OnClickListener, Ada
                 movieList = MovieUtils.getAllMovies(getActivity());
                 for (Movie movie : movieList) {
                     nameList.add(movie.getTitle());
-                    iconList.add(new BitmapDrawable(GetVideoThumbnail.getVideoThumbnailTool(movie.getFileUrl())));
+//                    iconList.add(new BitmapDrawable(GetVideoThumbnail.getVideoThumbnailTool(movie.getFileUrl())));
+                    iconList.add(R.drawable.film_icon);
                     checkBoxList.add(false);
                     mPathList.add(movie.getFileUrl());
                 }
-                adapterMovie = new MyGridViewAdapterMovie(getActivity(), nameList, iconList, checkBoxList);
+                adapterMovie = new MyGridViewAdapter(getActivity(), nameList, iconList, checkBoxList, 100);
                 handler.sendEmptyMessage(LOAD_DATA_FINISHED);
             }
         }.start();
+
     }
 
     @Override
@@ -127,9 +156,9 @@ public class MovieFragment extends Fragment implements View.OnClickListener, Ada
         checkBoxList = adapterMovie.getmCheckBoxList();
         checkBoxList.set(position, !checkBoxList.get(position));
         MainActivity activity = (MainActivity) getActivity();
-        if(checkBoxList.get(position)) {//checked--->add to sendfile-list
+        if (checkBoxList.get(position)) {//checked--->add to sendfile-list
             activity.addFileToSendFileList(mPathList.get(position));
-        }else {//unchecked--->remove from sendfile-list
+        } else {//unchecked--->remove from sendfile-list
             activity.removeFileFromSendFileList(mPathList.get(position));
         }
         adapterMovie.notifyDataSetChanged();
@@ -137,19 +166,31 @@ public class MovieFragment extends Fragment implements View.OnClickListener, Ada
 
     @Override
     public void onSendFileListChange(ArrayList<String> sendFiles, int num) {
-        if(adapterMovie!=null) {
+        if (adapterMovie != null) {
             ArrayList<Boolean> checkList = adapterMovie.getmCheckBoxList();
             String data = sendFiles.toString();
             Log.d(WifiP2pHelper.TAG, data);
-            for(int i=0; i<checkList.size(); i++) {
+            for (int i = 0; i < checkList.size(); i++) {
                 String temp = mPathList.get(i);
-                if(data.contains(temp)) {
+                if (data.contains(temp)) {
                     checkList.set(i, true);
-                }else {
+                } else {
                     checkList.set(i, false);
                 }
             }
             adapterMovie.notifyDataSetChanged();
+        }
+    }
+
+    //加载完path文件的图片
+    @Override
+    public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
+        int index = mPathList.indexOf(path);
+        if (index >= 0) {
+            iconList.set(index, obj);
+        }
+        if (gridView.getTag() == null || !(boolean) gridView.getTag()) { //gridview没有滑动
+            ((BaseAdapter) (gridView.getAdapter())).notifyDataSetChanged();
         }
     }
 }

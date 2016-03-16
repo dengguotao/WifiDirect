@@ -35,6 +35,7 @@ import android.widget.Toast;
 
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.utils.ApkUtils;
+import com.ckt.io.wifidirect.utils.AudioUtils;
 import com.ckt.io.wifidirect.utils.DataTypeUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
@@ -149,7 +150,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     }
 
     public File getReceivedFileDirPath() {
-        File sdcard = SdcardUtils.getUseableSdcardFile(activity, true);
+        File sdcard = SdcardUtils.getUseableSdcardFile(activity, false);
         return new File(sdcard, activity.getPackageName());
     }
 
@@ -280,7 +281,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
             OutputStream out = null;
             try {
                 inputstream = socket.getInputStream();
-                File sdcard = SdcardUtils.getUseableSdcardFile(activity, true);
+                File sdcard = SdcardUtils.getUseableSdcardFile(activity, false);
                 if (sdcard == null || !sdcard.canWrite()) {
                     Log.d(TAG, "没有sdcard可写");
                     return false;
@@ -364,6 +365,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     }
                 }
                 Log.d(WifiP2pHelper.TAG, "recevice a file sucessfully!!!" + name);
+                AudioUtils.addNewFileToDB(activity, f.getPath());
 
             } catch (IOException e) {
 
@@ -553,6 +555,12 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
         try {
             this.serverSocket.close();
         } catch (Exception e) {
+        }
+        if(fileReceiveAsyncTask!=null) {
+            fileReceiveAsyncTask.cancel(true);
+        }
+        if(fileSendAsyncTask!=null) {
+            fileReceiveAsyncTask.cancel(true);
         }
         manager.removeGroup(channel, new ActionListener() {
             @Override

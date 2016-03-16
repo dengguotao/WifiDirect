@@ -1,9 +1,11 @@
 package com.ckt.io.wifidirect.fragment;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -32,18 +34,15 @@ import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.MainActivity.OnSendFileListChangeListener;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.ApkUtils;
 import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
-import com.ckt.io.wifidirect.utils.ToastUtils;
 
 
 @SuppressLint("ValidFragment")
 public class FileExplorerFragment extends Fragment implements
 		OnItemClickListener, OnSendFileListChangeListener {
 
-	private HashMap<String, Drawable> drawableHashMapCathe = new HashMap<>(); //cathe the loaded img
 	private ArrayList<State> stateList = new ArrayList<State>();
 	private State nowState;
 
@@ -55,24 +54,11 @@ public class FileExplorerFragment extends Fragment implements
 	private File externalSDFile;
 	private File innerSdFile;
 
+	private DrawableLoaderUtils drawableLoaderUtils;
+
 	private boolean isListViewScrolling = false;
 
-	public static final int LOAD_ONE_DRAWABLE_FINISHED = 0; //加载完一个图片
-
-	private Handler handler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-				case LOAD_ONE_DRAWABLE_FINISHED:
-					LogUtils.i(WifiP2pHelper.TAG, "LOAD_ONE_DRAWABLE_FINISHED");
-					if(!isListViewScrolling) {
-						MyListViewAdapter adapter = (MyListViewAdapter) listView.getAdapter();
-						adapter.notifyDataSetChanged();
-					}
-					break;
-			}
-		}
-	};
+	private Handler handler = new Handler();
 
 	private ArrayList<File> sort(ArrayList<File> list) {
 		ArrayList<File> ret = new ArrayList<File>();
@@ -190,7 +176,7 @@ public class FileExplorerFragment extends Fragment implements
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		boolean isFirstCrateView = false;
-		if(mDir == null) {
+		if(mDir == null) { //首次加载
 			externalSDFile = SdcardUtils.getExternalSDcardFile(getActivity());
 			innerSdFile = SdcardUtils.getInnerSDcardFile(getActivity());
 			mDir = externalSDFile;
@@ -198,8 +184,9 @@ public class FileExplorerFragment extends Fragment implements
 				mDir = innerSdFile;
 			}
 			mDir = new File(getResources().getString(R.string.home_dir));
-			ArrayList<File> list = new ArrayList<>();
-			ArrayList<Boolean> checkList= new ArrayList<>();
+			final ArrayList<File> list = new ArrayList<>();
+			final ArrayList<Boolean> checkList= new ArrayList<>();
+			//依次向家目录下添加:  ①内置sdcard ②外置sdcard ③接收文件夹
 			if(innerSdFile != null) {
 				list.add(innerSdFile);
 				checkList.add(false);
@@ -208,9 +195,19 @@ public class FileExplorerFragment extends Fragment implements
 				list.add(externalSDFile);
 				checkList.add(false);
 			}
-			File receiveFileSaveDir = ((MainActivity)getActivity()).getWifiP2pHelper().getReceivedFileDirPath();
-			list.add(receiveFileSaveDir);
-			checkList.add(false);
+			final File receiveFileSaveDir = ((MainActivity)getActivity()).getWifiP2pHelper().getReceivedFileDirPath();
+			MainActivity activity = (MainActivity) getActivity();
+			activity.requestPermission(receiveFileSaveDir.hashCode() + MainActivity.REQUEST_CODE_WRITE_EXTERNAL,
+					Manifest.permission.WRITE_EXTERNAL_STORAGE,
+					new Runnable() {
+						@Override
+						public void run() {
+							LogUtils.i(WifiP2pHelper.TAG, "gain the permission WRITE_EXTERNAL_STORAGE");
+							receiveFileSaveDir.mkdir();
+							list.add(receiveFileSaveDir);
+							checkList.add(false);
+						}
+					},null);
 			isFirstCrateView = true;
 			nowState = new State(mDir, 0, 0, list, checkList, false);
 		}
@@ -221,6 +218,7 @@ public class FileExplorerFragment extends Fragment implements
 		listView = (ListView) view.findViewById(R.id.listview);
 		txt_dir_Path = (TextView) view.findViewById(R.id.txt_dir_path);
 		listView.setAdapter(new MyListViewAdapter());
+		drawableLoaderUtils = DrawableLoaderUtils.getInstance((DrawableLoaderUtils.OnLoadFinishedListener) listView.getAdapter()); //获取图片加载器实例对象
 		listView.setOnItemClickListener(this);
 		listView.setOnScrollListener(new AbsListView.OnScrollListener() {
 			@Override
@@ -258,7 +256,6 @@ public class FileExplorerFragment extends Fragment implements
 			end = adapter.getList().size()-1;
 		}
 		LogUtils.i(WifiP2pHelper.TAG, "loadListViewItemDrawalbe: start="+start+" End="+end);
-		DrawableLoaderUtils drawableLoaderUtils = DrawableLoaderUtils.getInstance(adapter);
 		if(end>=start) {
 			for(int i=start; i<=end; i++) {
 				File f = adapter.getList().get(i);
@@ -391,7 +388,6 @@ public class FileExplorerFragment extends Fragment implements
 			if(tempFile.isDirectory()) {
 				viewHolder.img_icon.setImageResource(R.drawable.folder_icon);
 			}else {
-				DrawableLoaderUtils drawableLoaderUtils = DrawableLoaderUtils.getInstance(this);
 				if(DrawableLoaderUtils.isNeedToLoadDrawable(tempFile.getPath())) {//需要显示加载图片
 					Object object = drawableLoaderUtils.get(tempFile.getPath());
 					if(object instanceof Drawable) {
@@ -411,7 +407,8 @@ public class FileExplorerFragment extends Fragment implements
 					viewHolder.img_icon.setImageResource(R.drawable.sdcard_icon);
 					viewHolder.txt_title.setText(getResources().getString(R.string.inner_sdcard));
 				}
-			}else if(externalSDFile != null) {
+			}
+			if(externalSDFile != null) {
 				if(tempFile.getPath().equals(externalSDFile.getPath())) {
 					viewHolder.img_icon.setImageResource(R.drawable.sdcard_icon);
 					viewHolder.txt_title.setText(getResources().getString(R.string.external_sdcard));
@@ -430,8 +427,12 @@ public class FileExplorerFragment extends Fragment implements
 
 		//加载完一个文件的图片后,的回调
 		@Override
-		public void onLoadOneFinished(String path, Object obj) {
-			handler.sendEmptyMessage(LOAD_ONE_DRAWABLE_FINISHED);
+		public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
+			LogUtils.i(WifiP2pHelper.TAG, "LOAD_ONE_DRAWABLE_FINISHED");
+			if(!isListViewScrolling) {
+				MyListViewAdapter adapter = (MyListViewAdapter) listView.getAdapter();
+				adapter.notifyDataSetChanged();
+			}
 		}
 	}
 
