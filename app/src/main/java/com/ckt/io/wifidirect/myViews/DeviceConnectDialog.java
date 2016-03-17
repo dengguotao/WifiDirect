@@ -41,7 +41,12 @@ public class DeviceConnectDialog extends Dialog {
     @Override
     public void show() {
         super.show();
-        activity.getWifiP2pHelper().discoverDevice();
+        fragment_choose_device.init();
+    }
+
+    @Override
+    public void cancel() {
+        super.cancel();
     }
 
     @Override
@@ -68,7 +73,7 @@ public class DeviceConnectDialog extends Dialog {
         getWindow().setAttributes(lp);
     }
 
-    //update views
+    //update views-->ÓÉActivityµ÷ÓÃ
     public void updateDeviceList(ArrayList<WifiP2pDevice> deviceList) {
         if(this.fragment_choose_device != null) {
             this.fragment_choose_device.updateDeviceList(deviceList);

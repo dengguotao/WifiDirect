@@ -123,21 +123,13 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     }
 
     // 连接到设备
-    public void connectDevice(WifiP2pDevice device) {
+    public void connectDevice(WifiP2pDevice device, ActionListener listener) {
         Log.d(TAG, "WifiP2pHelper-->connectDevice()");
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
         config.wps.setup = WpsInfo.PBC;
-        manager.connect(channel, config, new ActionListener() {
 
-            @Override
-            public void onSuccess() {
-            }
-
-            @Override
-            public void onFailure(int reason) {
-            }
-        });
+        manager.connect(channel, config, listener);
     }
 
     public boolean isTranfering() {

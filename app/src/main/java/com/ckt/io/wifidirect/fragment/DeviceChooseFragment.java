@@ -3,7 +3,9 @@ package com.ckt.io.wifidirect.fragment;
 import java.util.ArrayList;
 
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,6 +19,7 @@ import android.widget.TextView;
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.ckt.io.wifidirect.utils.ToastUtils;
 
 
 public class DeviceChooseFragment extends Fragment{
@@ -24,6 +27,9 @@ public class DeviceChooseFragment extends Fragment{
 	private ListView listView;
 	private ArrayList<WifiP2pDevice> deviceList = new ArrayList<WifiP2pDevice>();
 	private WifiP2pHelper wifiP2pHelper;
+	private boolean isConnecting = false;
+
+	private Handler handler = new Handler();
 	public DeviceChooseFragment() {
 	}
 	
@@ -40,16 +46,44 @@ public class DeviceChooseFragment extends Fragment{
 
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view,
-					int position, long id) {
+									int position, long id) {
 				// TODO Auto-generated method stub
 				WifiP2pDevice device = deviceList.get(position);
-				wifiP2pHelper.connectDevice(device);
+				wifiP2pHelper.connectDevice(device, new WifiP2pManager.ActionListener() {
+					@Override
+					public void onSuccess() {
+						ToastUtils.toast(getContext(), R.string.connect_successed);
+					}
+
+					@Override
+					public void onFailure(int reason) {
+						txt_connected_info.setText(R.string.connect_failed);
+						init();
+					}
+				});
+				listView.setVisibility(View.GONE);
+				txt_connected_info.setText(getResources().getString(R.string.connecting_device) + " " + device.deviceName);
+				isConnecting = true;
 			}
 		});
 		return view;
 	}
 
 	//update views
+	public void init() {
+		MainActivity activity = (MainActivity) getActivity();
+		if(activity.getWifiP2pHelper().isConnected()) {//设备已经连接上了
+			if(txt_connected_info.getText().equals("")) {
+				txt_connected_info.setText(R.string.connect_successed);
+			}
+			listView.setVisibility(View.GONE);
+		}else { //设备未连接
+			listView.setVisibility(View.VISIBLE);
+			activity.getWifiP2pHelper().discoverDevice();
+			txt_connected_info.setText(R.string.searching_hit);
+		}
+	}
+
 	public void updateDeviceList(ArrayList<WifiP2pDevice> deviceList) {
 		this.deviceList.clear();
 		this.deviceList.addAll(deviceList);
@@ -62,8 +96,18 @@ public class DeviceChooseFragment extends Fragment{
 			txt_connected_info.setText("client");
 		}
 	}
+
+	//连接断开
 	public void onDisconnectedInfo() {
-		txt_connected_info.setText("disconnect");
+		listView.setVisibility(View.VISIBLE);
+		txt_connected_info.setText(R.string.disconnected_device);
+		//2s后重新开始搜索
+		handler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				init();
+			}
+		}, 2000);
 	}
 	
 	class MyListViewAdapter extends BaseAdapter {

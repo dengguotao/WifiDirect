@@ -24,5 +24,10 @@
     <string name="root_dir">根目录</string>
     <string name="home_dir">家目录</string>
     <string name="installed_apps">已安装应用</string>
+    <string name="searching_hit">正在搜索设备,请在另外一台手机上进入此界面搜索</string>
+    <string name="connecting_device">正在连接设备</string>
+    <string name="connect_successed">连接设备成功</string>
+    <string name="connect_failed">连接设备失败</string>
+    <string name="disconnected_device">连接已断开</string>
 
 </resources>
