@@ -24,7 +24,6 @@ import android.widget.TextView;
 
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.adapter.MusicListViewAdapter;
 import com.ckt.io.wifidirect.adapter.MyListViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.AudioUtils;
