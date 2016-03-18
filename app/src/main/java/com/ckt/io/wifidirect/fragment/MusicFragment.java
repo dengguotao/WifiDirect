@@ -25,6 +25,7 @@ import android.widget.TextView;
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MusicListViewAdapter;
+import com.ckt.io.wifidirect.adapter.MyListViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.AudioUtils;
 import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
@@ -47,7 +48,7 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
     private ArrayList<Boolean> checkBoxList = new ArrayList<>();
     private ListView listView;
     private TextView refresh;
-    MusicListViewAdapter adapter;
+    MyListViewAdapter adapter;
 
     private DrawableLoaderUtils drawableLoaderUtils;
 
@@ -67,7 +68,7 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
                     if (drawableLoaderUtils != null) {
                         for (int i = 0; i < nameList.size(); i++) {
                             //启动异步任务加载图片,加载完成一个图片后会调用onLoadOneFinished
-                            drawableLoaderUtils.load(getContext(), songList.get(i).getFileUrl());
+//                            drawableLoaderUtils.load(getContext(), songList.get(i).getFileUrl());
                         }
                     }
                     ((BaseAdapter)(listView.getAdapter())).notifyDataSetChanged();
@@ -84,7 +85,7 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
         refresh = (TextView) view.findViewById(R.id.id_music_refresh);
 
         final MainActivity activity = (MainActivity) getActivity();
-        activity.requestPermission(MainActivity.REQUEST_CODE_READ_EXTERNAL + this.hashCode(),
+        activity.requestPermission(MainActivity.REQUEST_CODE_READ_EXTERNAL + this.hashCode()%200,
                 Manifest.permission.READ_EXTERNAL_STORAGE,
                 new Runnable() {
                     @Override
@@ -122,13 +123,15 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
         new Thread() {
             @Override
             public void run() {
+                ArrayList<String> fileList = new ArrayList<String>();
                 songList = AudioUtils.getAllSongs(getContext());
                 for (Song song : songList) {
                     nameList.add(song.getTitle());
                     iconList.add(R.drawable.music_icon);
                     checkBoxList.add(false);
+                    fileList.add(song.getFileUrl());
                 }
-                adapter = new MusicListViewAdapter(getActivity(), nameList, iconList, checkBoxList);
+                adapter = new MyListViewAdapter(getContext(), fileList, nameList);
                 handler.sendEmptyMessage(LOAD_DATA_FINISHED);
             }
         }.start();

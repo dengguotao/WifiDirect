@@ -142,9 +142,15 @@ public class MainActivity extends BaseActivity {
     protected void onResume() {
         super.onResume();
         registerReceiver(wifiP2pHelper, intentFilter);
-        /*if(PermissionUtils.checkPermissionOnAndroidM(this, Manifest.permission.SYSTEM_ALERT_WINDOW, 1)) {
-            SpeedFloatWin.show(this);
-        }*/
+        //显示传输速度窗口
+        /*requestPermission(this.hashCode()%200 + REQUEST_CODE_SYSTEM_ALERT_PERMISSION,
+                Manifest.permission.SYSTEM_ALERT_WINDOW,
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        SpeedFloatWin.show(MainActivity.this);
+                    }
+                },null);*/
     }
 
     @Override

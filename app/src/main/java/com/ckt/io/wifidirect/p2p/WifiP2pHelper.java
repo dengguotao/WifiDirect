@@ -59,6 +59,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     public static final int WIFIP2P_RECEIVE_ONE_FILE_FAILURE = 124; //接收一个文件失败
     public static final int WIFIP2P_BEGIN_SEND_FILE = 125; //开始发送文件
     public static final int WIFIP2P_BEGIN_RECEIVE_FILE = 126; //开始接收文件
+    public File received_file_path = null; //收到的文件的保存路径
     private WifiP2pManager manager;
     private Channel channel;
     private ArrayList<WifiP2pDevice> deviceList;
@@ -142,8 +143,10 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     }
 
     public File getReceivedFileDirPath() {
-        File sdcard = SdcardUtils.getUseableSdcardFile(activity, false);
-        return new File(sdcard, activity.getPackageName());
+        if(received_file_path == null) {
+            received_file_path = new File(SdcardUtils.getUseableSdcardFile(activity, false), activity.getPackageName());
+        }
+        return received_file_path;
     }
 
     // 发送文件

@@ -1,6 +1,7 @@
 package com.ckt.io.wifidirect.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,79 +12,151 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.ckt.io.wifidirect.R;
+import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
+import com.ckt.io.wifidirect.utils.FileTypeUtils;
+import com.ckt.io.wifidirect.utils.LogUtils;
+import com.ckt.io.wifidirect.utils.SdcardUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 
-/**
- * Created by admin on 2016/3/8.
- */
-public class MyListViewAdapter extends BaseAdapter {
-    private ArrayList<String> mNameList;
-    private ArrayList<String> mPathList;
-    private ArrayList<Drawable> mIconList;
-    private ArrayList<Boolean> mCheckBoxList;
-    private LayoutInflater inflater;
-    private Context mContext;
-
-    public MyListViewAdapter() {
-        super();
+public class MyListViewAdapter extends BaseAdapter{
+    private ArrayList<Boolean> mCheckBoxList = new ArrayList<>();
+    private ArrayList<String> list = new ArrayList<>();
+    private File innerSdFile, externalSDFile;
+    private Context context;
+    private ArrayList<String> titleList; //要显示的文件的标题(如果为空,则会自动去获取)
+    public MyListViewAdapter(Context context, ArrayList<String> fileList) {
+        this.context = context;
+        if(fileList != null) {
+            list = fileList;
+            for(int i=0; i<list.size(); i++) {
+                mCheckBoxList.add(false);
+            }
+        }
+        innerSdFile = SdcardUtils.getInnerSDcardFile(context);
+        externalSDFile = SdcardUtils.getExternalSDcardFile(context);
+    }
+    public MyListViewAdapter(Context context, ArrayList<String> fileList, ArrayList<String> titleList) {
+        this(context, fileList);
+        this.titleList = titleList;
+    }
+    public void setData(ArrayList<String> list, ArrayList<String> titleList, ArrayList<Boolean> checkList) {
+        this.list = list;
+        this.mCheckBoxList = checkList;
+        this.titleList = titleList;
+        notifyDataSetChanged();
+    }
+    public boolean isChecked(int pos) {
+        if(pos<0 || pos >= mCheckBoxList.size()) {
+            return false;
+        }
+        return mCheckBoxList.get(pos);
+    }
+    public void clearChecked() {
+        for(int i=0; i<mCheckBoxList.size(); i++) {
+            mCheckBoxList.set(i, false);
+        }
+    }
+    public void toggleChecked(int pos) {
+        mCheckBoxList.set(pos, !mCheckBoxList.get(pos));
     }
 
-    public MyListViewAdapter(Context context, ArrayList<String> nameList, ArrayList<Drawable> iconList, ArrayList<Boolean> checkBoxList) {
-        super();
-        mNameList = nameList;
-        mIconList = iconList;
-        mContext = context;
-        mCheckBoxList = checkBoxList;
-        inflater = LayoutInflater.from(mContext);
+    class ViewHolder {
+        ImageView img_icon;
+        TextView txt_title;
+        TextView txt_info;
+        CheckBox checkBox;
     }
-
     public ArrayList<Boolean> getmCheckBoxList() {
-        return this.mCheckBoxList;
+        return  this.mCheckBoxList;
     }
-
+    public ArrayList<String> getList() {
+        return this.list;
+    }
     @Override
     public int getCount() {
-        return mNameList.size();
+        // TODO Auto-generated method stub
+        return this.list == null ? 0 : this.list.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return mNameList.get(position);
+        // TODO Auto-generated method stub
+        return this.list == null ? null :list.get(position);
     }
 
     @Override
     public long getItemId(int position) {
+        // TODO Auto-generated method stub
         return position;
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        ItemViewTag viewTag;
+        // TODO Auto-generated method stub
         if (convertView == null) {
-            convertView = inflater.inflate(R.layout.listview_item, null);
-            viewTag = new ItemViewTag((ImageView) convertView.findViewById(R.id.list_item_Image),
-                    (TextView) convertView.findViewById(R.id.list_item_Title), (CheckBox) convertView.findViewById(R.id.list_item_checkbox));
-            convertView.setTag(viewTag);
-        } else {
-            viewTag = (ItemViewTag) convertView.getTag();
+            convertView = LayoutInflater.from(context).inflate(
+                    R.layout.fragment_file_explorer_listview_item, null);
+            ViewHolder holder = new ViewHolder();
+            holder.img_icon = (ImageView) convertView
+                    .findViewById(R.id.img_icon);
+            holder.txt_title = (TextView) convertView
+                    .findViewById(R.id.txt_title);
+            holder.txt_info = (TextView) convertView
+                    .findViewById(R.id.txt_info);
+            holder.checkBox = (CheckBox) convertView.findViewById(R.id.list_item_checkbox);
+            convertView.setTag(holder);
         }
-        viewTag.mName.setText(mNameList.get(position));
-        viewTag.mIcon.setImageDrawable(mIconList.get(position));
-        viewTag.mCheckBox.setChecked(mCheckBoxList.get(position));
-        viewTag.mCheckBox.setVisibility(mCheckBoxList.get(position) ? View.VISIBLE : View.GONE);
+        ViewHolder viewHolder = (ViewHolder) convertView.getTag();
+        String path = list.get(position);
+        File tempFile = new File(path);
+        if(tempFile.isDirectory()) {
+            viewHolder.img_icon.setImageResource(R.drawable.folder_icon);
+            //sdcard目录,特别处理:
+            if(innerSdFile != null) {
+                if(tempFile.getPath().equals(innerSdFile.getPath())) {
+                    viewHolder.img_icon.setImageResource(R.drawable.sdcard_icon);
+                }
+            }
+            if(externalSDFile != null) {
+                if(tempFile.getPath().equals(externalSDFile.getPath())) {
+                    viewHolder.img_icon.setImageResource(R.drawable.sdcard_icon);
+                }
+            }
+        }else {
+            if(FileTypeUtils.isNeedToLoadDrawable(tempFile.getPath())) {//需要显示加载图片
+                Object object = DrawableLoaderUtils.get(tempFile.getPath());
+                if(object instanceof Drawable) {
+                    viewHolder.img_icon.setImageDrawable((Drawable) object);
+                }else if(object instanceof Bitmap) {
+                    viewHolder.img_icon.setImageBitmap((Bitmap) object);
+                }else { //图片为空-->加载默认的图片
+                    int icon_id = FileTypeUtils.getDefaultFileIcon(tempFile.getPath());
+                    viewHolder.img_icon.setImageResource(icon_id);
+                }
+            }else {//其他文件-->加载默认图片
+                viewHolder.img_icon.setImageResource(R.drawable.file_icon);
+            }
+        }
+
+        //设置显示的标题
+        if(titleList!=null) {//显示指定的标题
+            viewHolder.txt_title.setText(titleList.get(position));
+        }else { //显示文件名 来 当做文件的标题
+            viewHolder.txt_title.setText(tempFile.getName());
+        }
+
+        //设置是否选中
+        if(mCheckBoxList.get(position)) { //checked
+            viewHolder.checkBox.setVisibility(View.VISIBLE);
+            viewHolder.checkBox.setChecked(true);
+        }else {//unchecked
+            viewHolder.checkBox.setVisibility(View.GONE);
+            viewHolder.checkBox.setChecked(false);
+        }
+
         return convertView;
-    }
-
-    public class ItemViewTag {
-        public ImageView mIcon;
-        public TextView mName;
-        public CheckBox mCheckBox;
-
-        public ItemViewTag(ImageView icon, TextView name, CheckBox checkBox) {
-            mName = name;
-            mIcon = icon;
-            mCheckBox = checkBox;
-        }
     }
 }

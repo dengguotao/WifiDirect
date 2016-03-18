@@ -28,6 +28,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textSize="20sp"
                 android:gravity="center"
                 android:text="@string/fragment_title_application" />
 
@@ -37,6 +38,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
+                android:textSize="20sp"
                 android:text="@string/fragment_title_music" />
 
             <TextView
@@ -45,6 +47,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
+                android:textSize="20sp"
                 android:text="@string/fragment_title_movie" />
 
             <TextView
@@ -53,6 +56,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
+                android:textSize="20sp"
                 android:text="@string/fragment_title_fileExplore" />
 
             <TextView
@@ -61,6 +65,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
+                android:textSize="20sp"
                 android:text="历史" />
         </LinearLayout>
 

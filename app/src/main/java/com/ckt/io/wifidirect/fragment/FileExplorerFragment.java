@@ -33,15 +33,18 @@ import android.widget.Toast;
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.MainActivity.OnSendFileListChangeListener;
 import com.ckt.io.wifidirect.R;
+import com.ckt.io.wifidirect.adapter.MyListViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
+import com.ckt.io.wifidirect.utils.FileTypeUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
 
 
 @SuppressLint("ValidFragment")
 public class FileExplorerFragment extends Fragment implements
-		OnItemClickListener, OnSendFileListChangeListener {
+		OnItemClickListener, OnSendFileListChangeListener,
+		DrawableLoaderUtils.OnLoadFinishedListener{
 
 	private ArrayList<State> stateList = new ArrayList<State>();
 	private State nowState;
@@ -60,18 +63,18 @@ public class FileExplorerFragment extends Fragment implements
 
 	private Handler handler = new Handler();
 
-	private ArrayList<File> sort(ArrayList<File> list) {
-		ArrayList<File> ret = new ArrayList<File>();
+	private ArrayList<String> sort(ArrayList<String> list) {
+		ArrayList<String> ret = new ArrayList<String>();
 		while (list.size() > 0) {
-			File f = list.get(0);
+			String s = list.get(0);
 			for (int j = 1; j < list.size(); j++) {
-				File tmp = list.get(j);
-				if (f.getName().compareTo(tmp.getName()) > 0) {
-					f = tmp;
+				String tmp = list.get(j);
+				if (s.compareTo(tmp) > 0) {
+					s = tmp;
 				}
 			}
-			list.remove(f);
-			ret.add(f);
+			list.remove(s);
+			ret.add(s);
 		}
 		return ret;
 	}
@@ -80,19 +83,19 @@ public class FileExplorerFragment extends Fragment implements
 		mDir = state.dir;
 		MyListViewAdapter adapter = (MyListViewAdapter) listView.getAdapter();
 		if(state.isAutoUpdateChildFiles) {//更新mdir下的childs(如果不更新,需要自己手动设置filelist 和 checklist)--->目前只有家目录是自定义的childs,不会在这里自动更新childs
-			state.list = new ArrayList<File>();
+			state.list = new ArrayList<String >();
 			if (mDir.canRead()) {
-				ArrayList<File> tempFolderList = new ArrayList<File>(); // 暂时保存文件夹
-				ArrayList<File> tempFileList = new ArrayList<File>(); // 用来暂时保存文件
+				ArrayList<String> tempFolderList = new ArrayList<String>(); // 暂时保存文件夹
+				ArrayList<String> tempFileList = new ArrayList<String>(); // 用来暂时保存文件
 				File fs[] = mDir.listFiles();
 				for (File temp : fs) {
 					if (temp.getName().startsWith(".")) {
 						continue;
 					}
 					if (temp.isFile()) {
-						tempFileList.add(temp);
+						tempFileList.add(temp.getPath());
 					} else {
-						tempFolderList.add(temp);
+						tempFolderList.add(temp.getPath());
 					}
 				}
 				state.list.addAll(sort(tempFolderList));
@@ -106,7 +109,7 @@ public class FileExplorerFragment extends Fragment implements
 		//根据文件发送列表来更新checklist
 		MainActivity activity = (MainActivity) getActivity();
 		updateCheckList(activity.getSendFiles(), state.list, state.checkList);
-		adapter.setData(state.list, state.checkList);//reset the data and notifidatasetchanged
+		adapter.setData(state.list, state.titleList, state.checkList);//reset the data and notifidatasetchanged
 		listView.setSelectionFromTop(state.pos, state.top);
 		LogUtils.i(WifiP2pHelper.TAG, "updateViews pos="+state.pos+" top="+state.top);
 		if (state.list.size() != 0) {
@@ -114,7 +117,7 @@ public class FileExplorerFragment extends Fragment implements
 		} else {
 			lin_no_file.setVisibility(View.VISIBLE);
 		}
-		//更新当前文件夹路径
+		//更新顶部显示的当前文件夹路径
 		ArrayList<String> dirs = new ArrayList<>();
 		File f = state.dir;
 		Log.d(WifiP2pHelper.TAG, "f="+f);
@@ -184,32 +187,37 @@ public class FileExplorerFragment extends Fragment implements
 				mDir = innerSdFile;
 			}
 			mDir = new File(getResources().getString(R.string.home_dir));
-			final ArrayList<File> list = new ArrayList<>();
+			final ArrayList<String> list = new ArrayList<>();
 			final ArrayList<Boolean> checkList= new ArrayList<>();
+			final ArrayList<String> titleList = new ArrayList<>();
 			//依次向家目录下添加:  ①内置sdcard ②外置sdcard ③接收文件夹
 			if(innerSdFile != null) {
-				list.add(innerSdFile);
+				list.add(innerSdFile.getPath());
 				checkList.add(false);
+				titleList.add(getResources().getString(R.string.inner_sdcard));
 			}
 			if(externalSDFile != null) {
-				list.add(externalSDFile);
+				list.add(externalSDFile.getPath());
 				checkList.add(false);
+				titleList.add(getResources().getString(R.string.external_sdcard));
 			}
 			final File receiveFileSaveDir = ((MainActivity)getActivity()).getWifiP2pHelper().getReceivedFileDirPath();
 			MainActivity activity = (MainActivity) getActivity();
-			activity.requestPermission(receiveFileSaveDir.hashCode() + MainActivity.REQUEST_CODE_WRITE_EXTERNAL,
+			activity.requestPermission(receiveFileSaveDir.hashCode()%200 + MainActivity.REQUEST_CODE_WRITE_EXTERNAL,
 					Manifest.permission.WRITE_EXTERNAL_STORAGE,
 					new Runnable() {
 						@Override
 						public void run() {
 							LogUtils.i(WifiP2pHelper.TAG, "gain the permission WRITE_EXTERNAL_STORAGE");
 							receiveFileSaveDir.mkdir();
-							list.add(receiveFileSaveDir);
+							list.add(receiveFileSaveDir.getPath());
 							checkList.add(false);
+							titleList.add(getResources().getString(R.string.received_file_dir));
 						}
 					},null);
+			LogUtils.i(WifiP2pHelper.TAG, "if the show first, I was wrong---------------------------------------------");
 			isFirstCrateView = true;
-			nowState = new State(mDir, 0, 0, list, checkList, false);
+			nowState = new State(mDir, 0, 0, list, titleList, checkList, false);
 		}
 
 		View view = inflater.inflate(R.layout.fragment_file_explorer,
@@ -217,8 +225,8 @@ public class FileExplorerFragment extends Fragment implements
 		lin_no_file = (ViewGroup) view.findViewById(R.id.lin_no_file);
 		listView = (ListView) view.findViewById(R.id.listview);
 		txt_dir_Path = (TextView) view.findViewById(R.id.txt_dir_path);
-		listView.setAdapter(new MyListViewAdapter());
-		drawableLoaderUtils = DrawableLoaderUtils.getInstance((DrawableLoaderUtils.OnLoadFinishedListener) listView.getAdapter()); //获取图片加载器实例对象
+		listView.setAdapter(new MyListViewAdapter(getContext(), null));
+		drawableLoaderUtils = DrawableLoaderUtils.getInstance(this); //获取图片加载器实例对象
 		listView.setOnItemClickListener(this);
 		listView.setOnScrollListener(new AbsListView.OnScrollListener() {
 			@Override
@@ -240,11 +248,7 @@ public class FileExplorerFragment extends Fragment implements
 			public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 			}
 		});
-		if(isFirstCrateView) {
-			updateView(nowState);
-		}else {
-			updateView(nowState);
-		}
+		updateView(nowState);
 		return view;
 	}
 
@@ -258,19 +262,19 @@ public class FileExplorerFragment extends Fragment implements
 		LogUtils.i(WifiP2pHelper.TAG, "loadListViewItemDrawalbe: start="+start+" End="+end);
 		if(end>=start) {
 			for(int i=start; i<=end; i++) {
-				File f = adapter.getList().get(i);
-				if(DrawableLoaderUtils.isNeedToLoadDrawable(f.getPath())) {
-					drawableLoaderUtils.load(getContext(), f.getPath());
+				String path = adapter.getList().get(i);
+				if(FileTypeUtils.isNeedToLoadDrawable(path)) {
+					drawableLoaderUtils.load(getContext(), path);
 				}
 			}
 		}
 	}
 
-	private void updateCheckList(ArrayList<String> sendFiles, ArrayList<File> fileList, ArrayList<Boolean> checkList) {
+	private void updateCheckList(ArrayList<String> sendFiles, ArrayList<String> fileList, ArrayList<Boolean> checkList) {
 		String data = sendFiles.toString();
 		for(int i=0; i<fileList.size(); i++) {
-			File f = fileList.get(i);
-			String temp = f.getPath();
+			String temp = fileList.get(i);
+			File f = new File(temp);
 			if(f.isFile() && data.contains(temp)) {
 				checkList.set(i, true);
 			}else {
@@ -284,7 +288,7 @@ public class FileExplorerFragment extends Fragment implements
 		if(listView != null && listView.getAdapter() != null) {
 			MyListViewAdapter adapter = (MyListViewAdapter) listView.getAdapter();
 			ArrayList<Boolean> checkList = adapter.getmCheckBoxList();
-			ArrayList<File> fileList = adapter.getList();
+			ArrayList<String> fileList = adapter.getList();
 			updateCheckList(sendFiles, fileList, checkList);
 			adapter.notifyDataSetInvalidated();
 		}
@@ -294,146 +298,25 @@ public class FileExplorerFragment extends Fragment implements
 	 * 保存浏览一个目录时的状态
 	 */
 	class State {
-		public State(File dir, int pos, int top, ArrayList<File> list, ArrayList<Boolean> checkList) {
-			this(dir, pos, top, list, checkList, true);
+		public State(File dir, int pos, int top, ArrayList<String> list, ArrayList<String> titleList, ArrayList<Boolean> checkList) {
+			this(dir, pos, top, list, titleList, checkList, true);
 		}
-		public State(File dir, int pos, int top, ArrayList<File> list, ArrayList<Boolean> checkList, boolean isAutoUpdateChildFiles) {
+		public State(File dir, int pos, int top, ArrayList<String> list, ArrayList<String> titleList, ArrayList<Boolean> checkList, boolean isAutoUpdateChildFiles) {
 			this.pos = pos;
 			this.dir = dir;
 			this.top = top;
 			this.checkList = checkList;
 			this.list = list;
 			this.isAutoUpdateChildFiles = isAutoUpdateChildFiles;
+			this.titleList = titleList;
 		}
 		private int pos;
 		private File dir;
 		private int top; // listview中第一个view的top
-		private ArrayList<File> list;
+		private ArrayList<String> list;
 		private ArrayList<Boolean> checkList;
+		private ArrayList<String> titleList;
 		private boolean isAutoUpdateChildFiles;
-	}
-
-	class MyListViewAdapter extends BaseAdapter implements DrawableLoaderUtils.OnLoadFinishedListener{
-		private ArrayList<Boolean> mCheckBoxList = new ArrayList<>();
-		private ArrayList<File> list = new ArrayList<>();
-		public void setData(ArrayList<File> list, ArrayList<Boolean> checkList) {
-			this.list = list;
-			this.mCheckBoxList = checkList;
-			notifyDataSetChanged();
-		}
-		public boolean isChecked(int pos) {
-			if(pos<0 || pos >= mCheckBoxList.size()) {
-				return false;
-			}
-			return mCheckBoxList.get(pos);
-		}
-		public void clearChecked() {
-			for(int i=0; i<mCheckBoxList.size(); i++) {
-				mCheckBoxList.set(i, false);
-			}
-		}
-		public void toggleChecked(int pos) {
-			mCheckBoxList.set(pos, !mCheckBoxList.get(pos));
-		}
-
-		class ViewHolder {
-			ImageView img_icon;
-			TextView txt_title;
-			TextView txt_info;
-			CheckBox checkBox;
-		}
-		public ArrayList<Boolean> getmCheckBoxList() {
-			return  this.mCheckBoxList;
-		}
-		public ArrayList<File> getList() {
-			return this.list;
-		}
-		@Override
-		public int getCount() {
-			// TODO Auto-generated method stub
-			return this.list == null ? 0 : this.list.size();
-		}
-
-		@Override
-		public Object getItem(int position) {
-			// TODO Auto-generated method stub
-			return this.list == null ? null :list.get(position);
-		}
-
-		@Override
-		public long getItemId(int position) {
-			// TODO Auto-generated method stub
-			return position;
-		}
-
-		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-			// TODO Auto-generated method stub
-			if (convertView == null) {
-				convertView = LayoutInflater.from(getActivity()).inflate(
-						R.layout.fragment_file_explorer_listview_item, null);
-				ViewHolder holder = new ViewHolder();
-				holder.img_icon = (ImageView) convertView
-						.findViewById(R.id.img_icon);
-				holder.txt_title = (TextView) convertView
-						.findViewById(R.id.txt_title);
-				holder.txt_info = (TextView) convertView
-						.findViewById(R.id.txt_info);
-				holder.checkBox = (CheckBox) convertView.findViewById(R.id.list_item_checkbox);
-				convertView.setTag(holder);
-			}
-			ViewHolder viewHolder = (ViewHolder) convertView.getTag();
-			File tempFile = list.get(position);
-			viewHolder.txt_title.setText(tempFile.getName());
-			if(tempFile.isDirectory()) {
-				viewHolder.img_icon.setImageResource(R.drawable.folder_icon);
-			}else {
-				if(DrawableLoaderUtils.isNeedToLoadDrawable(tempFile.getPath())) {//需要显示加载图片
-					Object object = drawableLoaderUtils.get(tempFile.getPath());
-					if(object instanceof Drawable) {
-						viewHolder.img_icon.setImageDrawable((Drawable) object);
-					}else if(object instanceof Bitmap) {
-						viewHolder.img_icon.setImageBitmap((Bitmap) object);
-					}else { //图片为空-->加载默认的图片
-						viewHolder.img_icon.setImageResource(R.drawable.file_icon);
-					}
-				}else {//其他文件-->加载默认图片
-					viewHolder.img_icon.setImageResource(R.drawable.file_icon);
-				}
-			}
-			//sdcard目录,特别处理:
-			if(innerSdFile != null) {
-				if(tempFile.getPath().equals(innerSdFile.getPath())) {
-					viewHolder.img_icon.setImageResource(R.drawable.sdcard_icon);
-					viewHolder.txt_title.setText(getResources().getString(R.string.inner_sdcard));
-				}
-			}
-			if(externalSDFile != null) {
-				if(tempFile.getPath().equals(externalSDFile.getPath())) {
-					viewHolder.img_icon.setImageResource(R.drawable.sdcard_icon);
-					viewHolder.txt_title.setText(getResources().getString(R.string.external_sdcard));
-				}
-			}
-			//设置是否选中
-			if(mCheckBoxList.get(position)) { //checked
-				viewHolder.checkBox.setVisibility(View.VISIBLE);
-				viewHolder.checkBox.setChecked(true);
-			}else {//unchecked
-				viewHolder.checkBox.setVisibility(View.GONE);
-				viewHolder.checkBox.setChecked(false);
-			}
-			return convertView;
-		}
-
-		//加载完一个文件的图片后,的回调
-		@Override
-		public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
-			LogUtils.i(WifiP2pHelper.TAG, "LOAD_ONE_DRAWABLE_FINISHED");
-			if(!isListViewScrolling) {
-				MyListViewAdapter adapter = (MyListViewAdapter) listView.getAdapter();
-				adapter.notifyDataSetChanged();
-			}
-		}
 	}
 
 	@Override
@@ -442,7 +325,8 @@ public class FileExplorerFragment extends Fragment implements
 		// TODO Auto-generated method stub
 		Log.d(WifiP2pHelper.TAG, "FileExplore-->onItemClick()");
 		MyListViewAdapter adapter = (MyListViewAdapter) listView.getAdapter();
-		File f = adapter.getList().get(position);
+		String path = adapter.getList().get(position);
+		File f = new File(path);
 		if (f.isDirectory()) {
 			final View v = listView.getChildAt(0);
 			int top = (v == null) ? 0 : v.getTop();
@@ -450,7 +334,7 @@ public class FileExplorerFragment extends Fragment implements
 			nowState.top = top;
 //			State state = new State(mDir, listView.getFirstVisiblePosition(), top, adapter.getList(), adapter.getmCheckBoxList());
 			stateList.add(nowState); //save old state
-			updateView(new State(f, 0, 0, null, null)); //update new state
+			updateView(new State(f, 0, 0, null, null, null)); //update new state
 		}else { //click a file ---> add to sendFile-list
 			MainActivity activity = (MainActivity) getActivity();
 			adapter.toggleChecked(position);
@@ -464,5 +348,15 @@ public class FileExplorerFragment extends Fragment implements
 		int len = f.getName().getBytes().length;
 		Integer x = 500;
 		Log.d(WifiP2pHelper.TAG, "fileName len(byte) = "+len + "  test:"+x.byteValue());
+	}
+
+	//加载完一个文件的图片后,的回调
+	@Override
+	public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
+		LogUtils.i(WifiP2pHelper.TAG, "LOAD_ONE_DRAWABLE_FINISHED");
+		if(!isListViewScrolling) {
+			MyListViewAdapter adapter = (MyListViewAdapter) listView.getAdapter();
+			adapter.notifyDataSetChanged();
+		}
 	}
 }

@@ -52,7 +52,7 @@ public class DeviceChooseFragment extends Fragment{
 				wifiP2pHelper.connectDevice(device, new WifiP2pManager.ActionListener() {
 					@Override
 					public void onSuccess() {
-						ToastUtils.toast(getContext(), R.string.connect_successed);
+//						ToastUtils.toast(getContext(), R.string.connect_successed);
 					}
 
 					@Override
@@ -91,9 +91,9 @@ public class DeviceChooseFragment extends Fragment{
 	}
 	public void updateConnectedInfo(boolean isServer) {
 		if(isServer) {
-			txt_connected_info.setText("server");
+			txt_connected_info.setText(R.string.server);
 		}else {
-			txt_connected_info.setText("client");
+			txt_connected_info.setText(R.string.client);
 		}
 	}
 

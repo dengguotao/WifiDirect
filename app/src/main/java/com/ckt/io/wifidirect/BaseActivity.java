@@ -44,12 +44,18 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (grantResults.length!=0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Runnable allowRun = allowablePermissionRunnables.get(requestCode);
-            allowRun.run();
+            if(allowRun!=null) {
+                allowRun.run();
+            }
+
         } else {
             Runnable disallowRun = disallowablePermissionRunnables.get(requestCode);
-            disallowRun.run();
+            if(disallowRun != null) {
+                disallowRun.run();
+            }
+
         }
     }
 }

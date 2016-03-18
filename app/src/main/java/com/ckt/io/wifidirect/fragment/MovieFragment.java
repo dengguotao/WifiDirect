@@ -1,5 +1,6 @@
 package com.ckt.io.wifidirect.fragment;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -82,7 +83,16 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
         refresh.setOnClickListener(this);
         if (adapterMovie == null) { //第一次加载view
             drawableLoaderUtils = DrawableLoaderUtils.getInstance(this);//获取图片加载器的实例
-            loadData();
+            MainActivity activity = (MainActivity) getActivity();
+            activity.requestPermission(this.hashCode() % 200 + MainActivity.REQUEST_CODE_READ_EXTERNAL,
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            loadData();
+                        }
+                    },null);
+
         }else {
             handler.sendEmptyMessage(LOAD_DATA_FINISHED);
         }

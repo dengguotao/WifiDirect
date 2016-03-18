@@ -32,7 +32,7 @@ public class DrawableLoaderUtils {
         return drawableLoader;
     }
 
-    public Object get(String key) {
+    public static Object get(String key) {
         return data.get(key);
     }
 
@@ -66,7 +66,7 @@ public class DrawableLoaderUtils {
             while (loadList.size() != 0) {
                 String path = loadList.get(0);
                 loadList.remove(0);
-                LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->load pic of "+path);
+                LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->loading pic of "+path);
                 String s = path.toLowerCase();
                 Object obj = null;
                 if(s.endsWith(".apk")) { //apk文件
@@ -84,8 +84,11 @@ public class DrawableLoaderUtils {
                     obj = new BitmapDrawable(GetVideoThumbnail.getVideoThumbnailTool(path));
                 }
 
-                data.put(path, obj);
-
+                try {
+                    data.put(path, obj);
+                }catch (Exception e) {
+                    return null;
+                }
                 publishProgress(path, obj);
             }
             isLoadiing = false;
@@ -98,17 +101,6 @@ public class DrawableLoaderUtils {
                 listener.onLoadOneFinished((String) values[0], values[1], loadList.size() == 0);
             }
         }
-    }
-
-    //判断文件是否需要加载图片
-    public static boolean isNeedToLoadDrawable(String path) {
-        String s = path.toLowerCase();
-        if(s.endsWith(".apk") || s.endsWith(".jepg") || s.endsWith(".jpg") || s.endsWith(".mp3")
-                || s.endsWith(".bmp") ||s.endsWith(".gif") || s.endsWith(".png")
-                || s.endsWith(".mp4") ||s.endsWith(".rmvb") ||s.endsWith(".3gp")) {//需要加载图片的一些文件
-            return true;
-        }
-        return false;
     }
 
     public static void release() {

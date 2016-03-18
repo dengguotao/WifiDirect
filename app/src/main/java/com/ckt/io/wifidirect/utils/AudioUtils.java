@@ -68,6 +68,25 @@ public class AudioUtils {
         return songs;
     }
 
+    public static String getMusicName(String path) {
+        if(path == null || songList == null) {
+            return "";
+        }
+        Song s = null;
+        for(int i=0; i<songList.size(); i++) {
+            s = songList.get(i);
+            if(path.equals(s.getFileUrl())) {
+                break;
+            }else {
+                s = null;
+            }
+        }
+        if(s != null) {
+            return s.getTitle();
+        }
+        return "";
+    }
+
     //获取指定音乐专辑-->音乐ID的音乐图片
     public static Bitmap getMusicBitpMap(String path) {
         Bitmap bm = null;
