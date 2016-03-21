@@ -59,8 +59,6 @@ public class FileExplorerFragment extends Fragment implements
 
 	private DrawableLoaderUtils drawableLoaderUtils;
 
-	private boolean isListViewScrolling = false;
-
 	private Handler handler = new Handler();
 
 	private ArrayList<String> sort(ArrayList<String> list) {
@@ -111,6 +109,7 @@ public class FileExplorerFragment extends Fragment implements
 		updateCheckList(activity.getSendFiles(), state.list, state.checkList);
 		adapter.setData(state.list, state.titleList, state.checkList);//reset the data and notifidatasetchanged
 		listView.setSelectionFromTop(state.pos, state.top);
+//		listView.setSelectionFromTop(60, -74);
 		LogUtils.i(WifiP2pHelper.TAG, "updateViews pos="+state.pos+" top="+state.top);
 		if (state.list.size() != 0) {
 			lin_no_file.setVisibility(View.GONE);
@@ -149,7 +148,7 @@ public class FileExplorerFragment extends Fragment implements
 			if(i==0) {
 				buf.append(dirs.get(i));
 			}else {
-				buf.append(dirs.get(i)+" > ");
+				buf.append(dirs.get(i) + " > ");
 			}
 		}
 		txt_dir_Path.setText(buf.toString());
@@ -161,6 +160,7 @@ public class FileExplorerFragment extends Fragment implements
 			}
 		}, 500);//延迟500ms后开始加载可见的listItem的图片(延迟500ms,是为了等待listview重新加载完成, 不然获取到第一个可视位置不对)
 		nowState = state;
+		LogUtils.i(WifiP2pHelper.TAG, "FileExplorerFragment updateView() --> state="+nowState.toString());
 	}
 
 	public boolean back() {
@@ -201,9 +201,9 @@ public class FileExplorerFragment extends Fragment implements
 				checkList.add(false);
 				titleList.add(getResources().getString(R.string.external_sdcard));
 			}
-			final File receiveFileSaveDir = ((MainActivity)getActivity()).getWifiP2pHelper().getReceivedFileDirPath();
 			MainActivity activity = (MainActivity) getActivity();
-			activity.requestPermission(receiveFileSaveDir.hashCode()%200 + MainActivity.REQUEST_CODE_WRITE_EXTERNAL,
+			final File receiveFileSaveDir = activity.getReceivedFileDirPath();
+			activity.requestPermission(receiveFileSaveDir.hashCode() % 200 + MainActivity.REQUEST_CODE_WRITE_EXTERNAL,
 					Manifest.permission.WRITE_EXTERNAL_STORAGE,
 					new Runnable() {
 						@Override
@@ -214,9 +214,8 @@ public class FileExplorerFragment extends Fragment implements
 							checkList.add(false);
 							titleList.add(getResources().getString(R.string.received_file_dir));
 						}
-					},null);
+					}, null);
 			LogUtils.i(WifiP2pHelper.TAG, "if the show first, I was wrong---------------------------------------------");
-			isFirstCrateView = true;
 			nowState = new State(mDir, 0, 0, list, titleList, checkList, false);
 		}
 
@@ -231,16 +230,15 @@ public class FileExplorerFragment extends Fragment implements
 		listView.setOnScrollListener(new AbsListView.OnScrollListener() {
 			@Override
 			public void onScrollStateChanged(AbsListView view, int scrollState) {
-				if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
+				if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {//stoped
 					LogUtils.i(WifiP2pHelper.TAG, "listview stop");
-					isListViewScrolling = false;
-					MyListViewAdapter adapter = (MyListViewAdapter) listView.getAdapter();
-					adapter.notifyDataSetChanged();
+					listView.setTag(false);
+					((BaseAdapter)(listView.getAdapter())).notifyDataSetChanged();
 					//加载需要加载图片的一个文件
 					loadListViewItemDrawalbe();
 				} else {
 					LogUtils.i(WifiP2pHelper.TAG, "listview start scrolling");
-					isListViewScrolling = true;
+					listView.setTag(true);
 				}
 			}
 
@@ -310,6 +308,12 @@ public class FileExplorerFragment extends Fragment implements
 			this.isAutoUpdateChildFiles = isAutoUpdateChildFiles;
 			this.titleList = titleList;
 		}
+
+		@Override
+		public String toString() {
+			return "dir="+dir+" pos="+pos+" top="+top+" isAutoUpdateChildFiles="+isAutoUpdateChildFiles;
+		}
+
 		private int pos;
 		private File dir;
 		private int top; // listview中第一个view的top
@@ -354,9 +358,9 @@ public class FileExplorerFragment extends Fragment implements
 	@Override
 	public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
 		LogUtils.i(WifiP2pHelper.TAG, "LOAD_ONE_DRAWABLE_FINISHED");
-		if(!isListViewScrolling) {
-			MyListViewAdapter adapter = (MyListViewAdapter) listView.getAdapter();
-			adapter.notifyDataSetChanged();
+		Object tag = listView.getTag();
+		if(tag==null || !((Boolean)(tag))) {
+			((BaseAdapter)(listView.getAdapter())).notifyDataSetChanged();
 		}
 	}
 }

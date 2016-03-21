@@ -25,6 +25,23 @@ public class FileTypeUtils {
         return s.endsWith(".3pg") || s.endsWith(".mp4") || s.endsWith(".rmvb");
     }
 
+    //获取文件类型 字符串
+    public static String getTypeString(Context context, String path) {
+        String ret;
+        if(isApk(path)) { //apk文件
+            ret = context.getResources().getString(R.string.type_application);
+        }else if(isMusic(path)) { //音乐文件
+            ret = context.getResources().getString(R.string.type_music);
+        }else if(isPhoto(path)) {//图片文件
+            ret = context.getResources().getString(R.string.type_photo);
+        }else if(isMovie(path)) { //视频文件
+            ret = context.getResources().getString(R.string.type_movie);
+        }else {
+            ret = context.getResources().getString(R.string.type_other);
+        }
+        return ret;
+    }
+
     //获取格式的默认图片
     public static int getDefaultFileIcon(String path) {
         String s = path.toLowerCase();
@@ -46,7 +63,6 @@ public class FileTypeUtils {
         String s = path.toLowerCase();
         //需要加载图片的一些文件
         return isApk(path) || isMusic(path) || isPhoto(path) || isMovie(path);
-
     }
 
     public static String getFileTitle(Context context, String path) {

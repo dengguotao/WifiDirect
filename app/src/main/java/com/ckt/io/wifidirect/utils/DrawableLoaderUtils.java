@@ -21,7 +21,7 @@ import java.util.HashMap;
  */
 public class DrawableLoaderUtils {
     private OnLoadFinishedListener listener;
-    private static HashMap<String, Object> data;
+    private static HashMap<String, Object> data = new HashMap<>();
     private LoadTask loadTask;//用来在后台加载图片
 
     private DrawableLoaderUtils(){}

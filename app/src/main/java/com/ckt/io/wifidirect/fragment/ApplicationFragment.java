@@ -94,10 +94,10 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
                 if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) { //stop
-                    gridView.setTag(true);
+                    gridView.setTag(false);
                     ((BaseAdapter) gridView.getAdapter()).notifyDataSetChanged();
                 } else { //scrolling
-                    gridView.setTag(false);
+                    gridView.setTag(true);
                 }
             }
             @Override
@@ -175,7 +175,7 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
             mIconList.set(index, obj);
         }
         if (gridView.getTag() == null || !(boolean) gridView.getTag()) { //gridview没有滑动
-            if(index == mPathList.size()/2 || isAllFinished) {
+            if(index % 5 == 0  || isAllFinished) {
                 ((BaseAdapter) (gridView.getAdapter())).notifyDataSetChanged();
             }
         }

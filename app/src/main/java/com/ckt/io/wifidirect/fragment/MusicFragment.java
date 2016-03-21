@@ -102,10 +102,10 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
                             public void onScrollStateChanged(AbsListView view, int scrollState) {
 
                                 if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) { //stop
-                                    listView.setTag(true);
+                                    listView.setTag(false);
                                     ((BaseAdapter) listView.getAdapter()).notifyDataSetChanged();
                                 } else { //scrolling
-                                    listView.setTag(false);
+                                    listView.setTag(true);
                                 }
                             }
 

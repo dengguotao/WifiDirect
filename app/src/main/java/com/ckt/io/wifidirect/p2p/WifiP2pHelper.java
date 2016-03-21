@@ -37,6 +37,7 @@ import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.utils.ApkUtils;
 import com.ckt.io.wifidirect.utils.AudioUtils;
 import com.ckt.io.wifidirect.utils.DataTypeUtils;
+import com.ckt.io.wifidirect.utils.FileTypeUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
 
@@ -59,7 +60,6 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     public static final int WIFIP2P_RECEIVE_ONE_FILE_FAILURE = 124; //接收一个文件失败
     public static final int WIFIP2P_BEGIN_SEND_FILE = 125; //开始发送文件
     public static final int WIFIP2P_BEGIN_RECEIVE_FILE = 126; //开始接收文件
-    public File received_file_path = null; //收到的文件的保存路径
     private WifiP2pManager manager;
     private Channel channel;
     private ArrayList<WifiP2pDevice> deviceList;
@@ -140,13 +140,6 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 
     public int getSendCount() {
         return mSendCount;
-    }
-
-    public File getReceivedFileDirPath() {
-        if(received_file_path == null) {
-            received_file_path = new File(SdcardUtils.getUseableSdcardFile(activity, false), activity.getPackageName());
-        }
-        return received_file_path;
     }
 
     // 发送文件
@@ -315,11 +308,13 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 int i = 1;
                 while (true) {
                     if (i == 1) {
-                        f = new File(sdcard, activity.getPackageName() + File.separator + name);
+                        f = new File(activity.getReceivedFileDirPath(),
+                                FileTypeUtils.getTypeString(activity, name) + File.separator + name);
                     } else {
                         int index = name.indexOf(".");
                         String name2 = name.substring(0, index) + "(" + i + ")" + name.substring(index);
-                        f = new File(sdcard, activity.getPackageName() + File.separator + name2);
+                        f = new File(activity.getReceivedFileDirPath(),
+                                FileTypeUtils.getTypeString(activity, name) + File.separator + name2);
                     }
                     i++;
                     if (!f.exists()) {

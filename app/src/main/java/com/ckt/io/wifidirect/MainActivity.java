@@ -27,8 +27,10 @@ import com.ckt.io.wifidirect.myViews.SpeedFloatWin;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
+import com.ckt.io.wifidirect.utils.SdcardUtils;
 import com.ckt.io.wifidirect.utils.ToastUtils;
 
+import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
@@ -42,6 +44,8 @@ public class MainActivity extends BaseActivity {
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
     protected Toolbar toolbar;
+
+    private File received_file_path; //收到的文件的保存路径
 
     private ArrayList<String> sendFiles;  //the selected files to send
 
@@ -163,6 +167,7 @@ public class MainActivity extends BaseActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        LogUtils.i(WifiP2pHelper.TAG, "MainActivity onDestroy");
         wifiP2pHelper.release();
         DrawableLoaderUtils.release();
     }
@@ -196,6 +201,14 @@ public class MainActivity extends BaseActivity {
             return;
         }
         super.onBackPressed();
+    }
+
+    public File getReceivedFileDirPath() {
+        if(received_file_path == null) {
+            received_file_path = new File(SdcardUtils.getUseableSdcardFile(getApplicationContext(), false),
+                    getResources().getString(R.string.received_file_dir));
+        }
+        return received_file_path;
     }
 
     //add a new file to the sendFile-list

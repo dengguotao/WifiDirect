@@ -33,4 +33,9 @@
     <string name="server">服务端</string>
     <string name="client">客户端</string>
 
+    <string name="type_application">应用</string>
+    <string name="type_music">音乐</string>
+    <string name="type_movie">电影</string>
+    <string name="type_photo">图片</string>
+    <string name="type_other">其他</string>
 </resources>

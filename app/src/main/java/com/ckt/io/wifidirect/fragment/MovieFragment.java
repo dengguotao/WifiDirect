@@ -101,10 +101,10 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
                 if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) { //stop
-                    gridView.setTag(true);
+                    gridView.setTag(false);
                     ((BaseAdapter) gridView.getAdapter()).notifyDataSetChanged();
                 } else { //scrolling
-                    gridView.setTag(false);
+                    gridView.setTag(true);
                 }
             }
             @Override
