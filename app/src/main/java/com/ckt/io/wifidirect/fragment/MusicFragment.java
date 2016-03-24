@@ -2,6 +2,7 @@ package com.ckt.io.wifidirect.fragment;
 
 
 import android.Manifest;
+import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -28,10 +29,12 @@ import com.ckt.io.wifidirect.adapter.MyListViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.AudioUtils;
 import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
+import com.ckt.io.wifidirect.utils.FileTypeUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
 import com.ckt.io.wifidirect.utils.Song;
 
+import java.io.File;
 import java.util.ArrayList;
 
 
@@ -39,6 +42,7 @@ import java.util.ArrayList;
  * Created by ckt on 2/29/16.
  */
 public class MusicFragment extends Fragment implements View.OnClickListener,
+        AdapterView.OnItemLongClickListener,
         AdapterView.OnItemClickListener, MainActivity.OnSendFileListChangeListener,
         DrawableLoaderUtils.OnLoadFinishedListener {
     private ArrayList<Song> songList = new ArrayList<>();
@@ -97,6 +101,7 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
                         }
                         refresh.setOnClickListener(MusicFragment.this);
                         listView.setOnItemClickListener(MusicFragment.this);
+                        listView.setOnItemLongClickListener(MusicFragment.this);
                         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
                             @Override
                             public void onScrollStateChanged(AbsListView view, int scrollState) {
@@ -185,6 +190,24 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
             activity.removeFileFromSendFileList(songList.get(position).getFileUrl());
         }
         adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+        Object obj = adapter.getItem(position);
+        if(obj!=null) {
+            LogUtils.i(WifiP2pHelper.TAG, "   uri="+Uri.fromFile(new File((String) obj)));
+            Intent it = new Intent(Intent.ACTION_VIEW);
+//            it.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            it.setDataAndType(Uri.fromFile(new File((String) obj)), "audio/*");
+            try {
+//                startActivity(it);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+        return false;
     }
 
     @Override

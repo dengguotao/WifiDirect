@@ -38,4 +38,16 @@
     <string name="type_movie">电影</string>
     <string name="type_photo">图片</string>
     <string name="type_other">其他</string>
+
+    <string name="group_failed_task">已失败</string>
+    <string name="group_finished_task">已完成</string>
+    <string name="group_sending_task">发送中</string>
+    <string name="group_recevieing_task">接收中</string>
+    <string name="group_paused_task">已暂停</string>
+
+    <string name="state_transporting">传输中</string>
+    <string name="state_finished">已完成</string>
+    <string name="state_failed">已失败</string>
+    <string name="state_paused">已暂停</string>
+    <string name="state_waiting">等待中</string>
 </resources>

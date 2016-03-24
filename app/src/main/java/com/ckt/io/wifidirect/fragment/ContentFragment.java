@@ -52,6 +52,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
     private View view;
 
     private FileExplorerFragment mFileFragment;
+    private HistoryFragment mHistoryFragment;
 
 
     private DeviceChooseFragment mDeviceChooseFragment;
@@ -105,14 +106,14 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         MusicFragment musicFragment = new MusicFragment();
         MovieFragment movieFragment = new MovieFragment();
         mFileFragment = new FileExplorerFragment();
-        HistoryFragment historyFragment = new HistoryFragment();
+        mHistoryFragment = new HistoryFragment();
         mDeviceChooseFragment = new DeviceChooseFragment();
 
         fragmentArrayList.add(applicationFragment);
         fragmentArrayList.add(musicFragment);
         fragmentArrayList.add(movieFragment);
         fragmentArrayList.add(mFileFragment);
-        fragmentArrayList.add(historyFragment);
+        fragmentArrayList.add(mHistoryFragment);
 
         MainActivity activity = (MainActivity) getActivity();
         mPager.setAdapter(new MyFragmentAdapter(activity.getSupportFragmentManager(), fragmentArrayList));
@@ -287,5 +288,9 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
 
     public FileExplorerFragment getFileExplorerFragment() {
         return mFileFragment;
+    }
+
+    public HistoryFragment getHistoryFragment() {
+        return mHistoryFragment;
     }
 }

@@ -107,8 +107,10 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
                     gridView.setTag(true);
                 }
             }
+
             @Override
-            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {}
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+            }
         });
         return view;
     }

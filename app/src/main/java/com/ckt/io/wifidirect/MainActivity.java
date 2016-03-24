@@ -20,11 +20,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
 
+import com.ckt.io.wifidirect.fragment.HistoryFragment;
 import com.ckt.io.wifidirect.myViews.DeviceConnectDialog;
 import com.ckt.io.wifidirect.fragment.ContentFragment;
 import com.ckt.io.wifidirect.fragment.FileExplorerFragment;
 import com.ckt.io.wifidirect.myViews.SpeedFloatWin;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.ckt.io.wifidirect.provider.Record;
+import com.ckt.io.wifidirect.provider.RecordManager;
 import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
@@ -59,6 +62,7 @@ public class MainActivity extends BaseActivity {
     private int mReceviceCount;
     private Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
+            RecordManager recordManager = RecordManager.getInstance();
             switch (msg.what) {
                 case WifiP2pHelper.WIFIP2P_DEVICE_LIST_CHANGED://可用的设备列表更新
                     deviceConnectDialog.updateDeviceList(wifiP2pHelper.getDeviceList());
@@ -70,7 +74,12 @@ public class MainActivity extends BaseActivity {
                     deviceConnectDialog.onDisconnectedInfo();
                     break;
                 case WifiP2pHelper.WIFIP2P_SENDFILELIST_CHANGED://文件发送列表改变(发送完一个文件或者新增了要发送的文件)
-
+                    HistoryFragment fragment = contentfragment.getHistoryFragment();
+                    break;
+                //////////////////////////////////////////////////////////////////////
+                case WifiP2pHelper.WIFIP2P_SENDFILELIST_ADDED: //正在发送列表新增文件
+                    ArrayList<File> addedList = (ArrayList<File>) msg.obj;
+                    recordManager.addNewSendingRecord(addedList);
                     break;
                 case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY:
                 case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_FAILURE:
@@ -284,7 +293,7 @@ public class MainActivity extends BaseActivity {
         this.onSendFileListChangeListener = onSendFileListChangeListener;
     }
 
-    //interface call-back when the sendFile-list changed
+    //选择的发送列表改变
     public interface OnSendFileListChangeListener {
         public abstract void onSendFileListChange(ArrayList<String> sendFiles, int num);
     }

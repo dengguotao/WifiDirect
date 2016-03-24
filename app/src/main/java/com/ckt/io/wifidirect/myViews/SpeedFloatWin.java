@@ -29,9 +29,9 @@ public class SpeedFloatWin {
     static int y;
     static View view;
 
-    public static void show(final Context context) {
+    public static void show(final Activity activity) {
         if (isFirstShow) { //read the stored position
-            SharedPreferences mySharedPreferences = context.getSharedPreferences(
+            SharedPreferences mySharedPreferences = activity.getSharedPreferences(
                     "WifiDirect", Activity.MODE_PRIVATE);
             try {
                 x = mySharedPreferences.getInt("x", 0);
@@ -45,8 +45,10 @@ public class SpeedFloatWin {
         }
 
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams();
-        final WindowManager wm = (WindowManager) context.getApplicationContext()
-                .getSystemService(Context.WINDOW_SERVICE);
+//        final WindowManager wm = (WindowManager) context.getApplicationContext()
+//                .getSystemService(Context.WINDOW_SERVICE);
+        //获取基于Activity的WindowManager
+        final WindowManager wm = activity.getWindowManager();
         // set window type
         params.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
             /*
@@ -63,11 +65,11 @@ public class SpeedFloatWin {
              * LayoutParams.FLAG_NOT_FOCUSABLE | LayoutParams.FLAG_NOT_TOUCHABLE;
              */
         // 设置悬浮窗的长得宽
-        params.width = (int) BitmapUtils.dipTopx(context, 80);
-        params.height = (int) BitmapUtils.dipTopx(context, 60);
+        params.width = (int) BitmapUtils.dipTopx(activity, 80);
+        params.height = (int) BitmapUtils.dipTopx(activity, 60);
         params.x = x;
         params.y = y;
-        LayoutInflater inflater = LayoutInflater.from(context);
+        LayoutInflater inflater = LayoutInflater.from(activity);
         View v = inflater.inflate(R.layout.float_win_layout, null);
         // 设置悬浮窗的Touch监听
         v.setOnTouchListener(new View.OnTouchListener() {

@@ -5,16 +5,18 @@ import android.content.Context;
 import com.ckt.io.wifidirect.R;
 
 import java.io.File;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
 public class FileTypeUtils {
 
     public static boolean isApk(String path) {
-
         return path.toLowerCase().endsWith(".apk");
     }
     public static boolean isMusic(String path) {
         String s = path.toLowerCase();
-        return path.endsWith(".mp3");
+        return s.endsWith(".mp3") || s.endsWith(".m4a") || s.endsWith(".mid")
+                || s.endsWith(".ogg") || s.endsWith(".wav") || s.endsWith(".xmf");
     }
     public static boolean isPhoto(String path) {
         String s = path.toLowerCase();
@@ -75,5 +77,35 @@ public class FileTypeUtils {
             title = (new File(path)).getName();
         }
         return title;
+    }
+
+    /* 判断文件MimeType的method */
+    public static String getMIMEType(String path)
+    {
+        /* 依扩展名的类型决定MimeType */
+        String type = "";
+        if(isMusic(path)) {
+            type = "audio";
+        }else if(isMovie(path)) {
+            type = "video";
+        }else if(isPhoto(path)) {
+            type = "image";
+        }else if(isApk(path)) {
+            /* android.permission.INSTALL_PACKAGES */
+            type = "application/vnd.android.package-archive";
+        }else {
+            type="*";
+        }
+        /*如果无法直接打开，就跳出软件列表给用户选择 */
+        if(!isApk(path)) {
+            type += "/*";
+        }
+        return type;
+    }
+
+    public static String getFileSize(String path) {
+        long size = new File(path).length();
+        DecimalFormat df = new DecimalFormat("0.0");
+        return df.format(size / 1024.0 / 1024.0) + "M";
     }
 }

@@ -53,6 +53,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     public static final int WIFIP2P_DEVICE_DISCONNECTED = 102;//链接断开
 
 
+    public static final int WIFIP2P_SENDFILELIST_ADDED = 119;//新增了一些要发送的文件
     public static final int WIFIP2P_SENDFILELIST_CHANGED = 120;//文件发送列表改变
     public static final int WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY = 121; //成功发送一个文件
     public static final int WIFIP2P_SEND_ONE_FILE_FAILURE = 122; //成功发送一个失败
@@ -78,7 +79,8 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     private int mSendCount;
     private int mReceviceCount;
 
-    private ArrayList<File> sendFileList;
+    private ArrayList<File> sendingFileList; //所有的待发送/正在发送的文件
+    private ArrayList<File> sendingFileInTask; //正在进行发送的文件
     private FileReceiveAsyncTask fileReceiveAsyncTask;
     private FileSendAsyncTask fileSendAsyncTask;
 
@@ -89,7 +91,8 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 .getSystemService(Context.WIFI_P2P_SERVICE);
         channel = manager.initialize(activity, activity.getMainLooper(), null);
         deviceList = new ArrayList<WifiP2pDevice>();
-        sendFileList = new ArrayList<>();
+        sendingFileList = new ArrayList<>();
+        sendingFileInTask = new ArrayList<>();
         updateWifiMac();
     }
 
@@ -144,14 +147,17 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 
     // 发送文件
     public void sendFiles(final ArrayList<File> fl) {
-        if (sendFileList.size() == 0) { //没有文件正在发送-->启动后台发送任务
-            sendFileList.addAll(fl);
+        if (sendingFileList.size() == 0) { //没有文件正在发送-->启动后台发送任务
+            sendingFileList.addAll(fl);
             fileSendAsyncTask = new FileSendAsyncTask();
             fileSendAsyncTask.execute(new File(""));
         } else { //有文件正在发送,添加到发送列表中即可
-            sendFileList.addAll(fl);
+            sendingFileList.addAll(fl);
         }
-        handler.sendEmptyMessage(WIFIP2P_SENDFILELIST_CHANGED);
+        Message msg = new Message();
+        msg.what = WIFIP2P_SENDFILELIST_ADDED;
+        msg.obj = fl;
+        handler.sendMessage(msg);
     }
 
     // 接收文件
@@ -166,9 +172,9 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
         @Override
         protected Boolean doInBackground(File... params) {
             isTranfering = true;
-            while (sendFileList.size() != 0) {
+            while (sendingFileList.size() != 0) {
                 boolean isSuccessed = true;
-                File f = sendFileList.get(0);
+                File f = sendingFileList.get(0);
                 OutputStream out = null;
                 InputStream inputstream = null;
                 Socket socket = new Socket();
@@ -176,8 +182,9 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     socket.bind(null);
                     socket.connect((new InetSocketAddress(getSendToAddress(), SOCKET_PORT)), SOCKET_TIMEOUT);
                     out = socket.getOutputStream();
+
                 } catch (IOException e) {
-                    Log.i(TAG, "sendFiles error!!");
+                    Log.i(TAG, "sendFiles error-->socket.connect error!!!");
                     e.printStackTrace();
                     try {
                         if (out != null) {
@@ -191,47 +198,50 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     }
                     isSuccessed = false;
                 }
-                handler.sendEmptyMessage(WIFIP2P_BEGIN_SEND_FILE);
-                try {
-                    inputstream = new FileInputStream(f);
-                    String name = f.getName();
-                    if (name.toLowerCase().endsWith(".apk")) {
-                        name = ApkUtils.getApkLable(activity, f.getPath()) + ".apk";
-                    }
-                    name = name.replace("&", ""); //去掉文件名中的&符号
-                    String info = name + "&" + String.valueOf(f.length()); //info = name&fileSize
-                    byte nameBytes[] = info.getBytes();
-                    //1.发送文件信息的长度(int型的长度要转化为byte[]型来发送);
-                    byte nameLenByte[] = DataTypeUtils.intToBytes2(nameBytes.length);
-                    out.write(nameLenByte);
-                    //2.发送信息
-                    out.write(nameBytes, 0, nameBytes.length);
-                    //3.发送文件内容
-                    byte buf[] = new byte[1024];
-                    int len;
-                    mSendCount = 0;
-                    while ((len = inputstream.read(buf)) != -1) {
-                        out.write(buf, 0, len);
-                        mSendCount += len;
-                    }
-                    Log.d(WifiP2pHelper.TAG, "send a file sucessfully!!!");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    isSuccessed = false;
-                } finally {
+                if(isSuccessed) {
+                    handler.sendEmptyMessage(WIFIP2P_BEGIN_SEND_FILE);
+                    sendingFileInTask.add(f);
                     try {
-                        if (inputstream != null) {
-                            inputstream.close();
+                        inputstream = new FileInputStream(f);
+                        String name = f.getName();
+                        if (name.toLowerCase().endsWith(".apk")) {
+                            name = ApkUtils.getApkLable(activity, f.getPath()) + ".apk";
                         }
-                        if (out != null) {
-                            out.close();
+                        name = name.replace("&", ""); //去掉文件名中的&符号
+                        String info = name + "&" + String.valueOf(f.length()); //info = name&fileSize
+                        byte nameBytes[] = info.getBytes();
+                        //1.发送文件信息的长度(int型的长度要转化为byte[]型来发送);
+                        byte nameLenByte[] = DataTypeUtils.intToBytes2(nameBytes.length);
+                        out.write(nameLenByte);
+                        //2.发送信息
+                        out.write(nameBytes, 0, nameBytes.length);
+                        //3.发送文件内容
+                        byte buf[] = new byte[1024];
+                        int len;
+                        mSendCount = 0;
+                        while ((len = inputstream.read(buf)) != -1) {
+                            out.write(buf, 0, len);
+                            mSendCount += len;
                         }
-                        if (socket != null) {
-                            socket.close();
-                        }
-                    } catch (IOException e) {
+                        Log.d(WifiP2pHelper.TAG, "send a file sucessfully!!!");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        isSuccessed = false;
+                    } finally {
+                        try {
+                            if (inputstream != null) {
+                                inputstream.close();
+                            }
+                            if (out != null) {
+                                out.close();
+                            }
+                            if (socket != null) {
+                                socket.close();
+                            }
+                        } catch (IOException e) {}
                     }
                 }
+
                 Message msg = new Message();
                 msg.obj = f;
                 if (isSuccessed) {
@@ -239,8 +249,10 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 } else {
                     msg.what = WIFIP2P_SEND_ONE_FILE_FAILURE;
                 }
+                sendingFileList.remove(0);//从要发送文件列表中移除
+                sendingFileInTask.remove(0); //从正在发送列表中移除
                 handler.sendMessage(msg);
-                sendFileList.remove(0);//从发送文件列表中移除
+                handler.sendEmptyMessage(WIFIP2P_SENDFILELIST_CHANGED);
             }
             isTranfering = false;
             return true;
@@ -267,6 +279,9 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
             if (socket == null) return false;
             InputStream inputstream = null;
             OutputStream out = null;
+            boolean isSuccessed = true;
+            //create the new file
+            File f = null;
             try {
                 inputstream = socket.getInputStream();
                 File sdcard = SdcardUtils.getUseableSdcardFile(activity, false);
@@ -274,7 +289,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     Log.d(TAG, "没有sdcard可写");
                     return false;
                 }
-
+                handler.sendEmptyMessage(WIFIP2P_BEGIN_RECEIVE_FILE);
                 //next a few step will recevive a file
                 long size = 0; //fileSize--->使用long类型,因为大文件(G)来说,大小用字节表示的话会超出int的表示范围
                 //1.获取文件信息长度
@@ -302,8 +317,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 String name = infos[0]; //文件名
                 size = Long.valueOf(infos[1]);
                 Log.d(TAG, "recevice fileinfo: name=" + name + " size=" + size);
-                //create the new file
-                File f = null;
+
                 //防止文件名冲突
                 int i = 1;
                 while (true) {
@@ -355,10 +369,10 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     }
                 }
                 Log.d(WifiP2pHelper.TAG, "recevice a file sucessfully!!!" + name);
-                AudioUtils.addNewFileToDB(activity, f.getPath());
+                AudioUtils.addNewFileToDB(activity, f.getPath());//将新接收的文件加入数据库中
 
             } catch (IOException e) {
-
+                isSuccessed = false;
             } finally {
                 try {
                     if (socket != null) {
@@ -373,7 +387,14 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 } catch (Exception e) {
                 }
                 mReceviceCount = 0;
-                handler.sendEmptyMessage(0);
+                Message msg = new Message();
+                msg.obj = f;
+                if(isSuccessed) {
+                    msg.what = WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY;
+                }else {
+                    msg.what = WIFIP2P_RECEIVE_ONE_FILE_FAILURE;
+                }
+                handler.sendMessage(msg);
             }
             isTranfering = false;
             return true;
@@ -393,6 +414,14 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 
     public int getReceviceCount() {
         return mReceviceCount;
+    }
+
+    public ArrayList<File> getSendingFileList() {
+        return sendingFileList;
+    }
+
+    public ArrayList<File> getSendingFileInTask() {
+        return sendingFileInTask;
     }
 
     // 监听的回调
@@ -499,6 +528,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
+                            break;
                         }
                     }
                 } catch (IOException e) {
@@ -550,7 +580,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
             fileReceiveAsyncTask.cancel(true);
         }
         if(fileSendAsyncTask!=null) {
-            fileReceiveAsyncTask.cancel(true);
+            fileSendAsyncTask.cancel(true);
         }
         manager.removeGroup(channel, new ActionListener() {
             @Override
