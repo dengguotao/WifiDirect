@@ -62,7 +62,9 @@ public class MainActivity extends BaseActivity {
     private int mReceviceCount;
     private Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
-            RecordManager recordManager = RecordManager.getInstance();
+            RecordManager recordManager = RecordManager.getInstance(getApplicationContext());
+            Record record = null;
+            File f = null;
             switch (msg.what) {
                 case WifiP2pHelper.WIFIP2P_DEVICE_LIST_CHANGED://可用的设备列表更新
                     deviceConnectDialog.updateDeviceList(wifiP2pHelper.getDeviceList());
@@ -73,36 +75,66 @@ public class MainActivity extends BaseActivity {
                 case WifiP2pHelper.WIFIP2P_DEVICE_DISCONNECTED: //连接已断开
                     deviceConnectDialog.onDisconnectedInfo();
                     break;
-                case WifiP2pHelper.WIFIP2P_SENDFILELIST_CHANGED://文件发送列表改变(发送完一个文件或者新增了要发送的文件)
-                    HistoryFragment fragment = contentfragment.getHistoryFragment();
-                    break;
-                //////////////////////////////////////////////////////////////////////
+
+                /////////////////////////////////////////////////////////////////////////
                 case WifiP2pHelper.WIFIP2P_SENDFILELIST_ADDED: //正在发送列表新增文件
                     ArrayList<File> addedList = (ArrayList<File>) msg.obj;
                     recordManager.addNewSendingRecord(addedList);
                     break;
-                case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY:
-                case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_FAILURE:
-                    if(!wifiP2pHelper.isTranfering()) {
-                        mSendCount = 0;
-                        mReceviceCount = 0;
-                        handler.removeMessages(2);
-                        SpeedFloatWin.updateSpeed("0MB/s", "0MB/s");
-                    }
-                    break;
-                case WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY:
-                case WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_FAILURE:
-                    if(!wifiP2pHelper.isTranfering()) {
-                        mSendCount = 0;
-                        mReceviceCount = 0;
-                        handler.removeMessages(2);
-                        SpeedFloatWin.updateSpeed("0MB/s", "0MB/s");
-                    }
-                    break;
-                case WifiP2pHelper.WIFIP2P_BEGIN_RECEIVE_FILE:
-                case WifiP2pHelper.WIFIP2P_BEGIN_SEND_FILE:
+                case WifiP2pHelper.WIFIP2P_BEGIN_SEND_FILE: //开始发送一个文件
+                    LogUtils.i(WifiP2pHelper.TAG, "handle--->WIFIP2P_BEGIN_SEND_FILE");
+                    f = (File) msg.obj;
+                    record = recordManager.findRecord(f.getPath(), Record.STATE_WAIT_FOR_TRANSPORT, true);
+                    if(record == null) break;
+                    record.setState(Record.STATE_TRANSPORTING);
+                    ////////////////////////////////////////
                     this.sendEmptyMessageDelayed(2, 100);
                     break;
+                case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY:  //发送完一个文件----成功
+                case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_FAILURE:    // 发送完一个文件----失败
+                    f = (File) msg.obj;
+                    record = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, true);
+                    if(record == null) break;
+                    if(msg.what == WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY) {//发送成功
+                        record.setState(Record.STATE_FINISHED);
+                    }else { //发送失败
+                        record.setState(Record.STATE_FAILED);
+                    }
+
+                    if(!wifiP2pHelper.isTranfering()) {
+                        mSendCount = 0;
+                        mReceviceCount = 0;
+                        handler.removeMessages(2);
+                        SpeedFloatWin.updateSpeed("0MB/s", "0MB/s");
+                    }
+                    break;
+
+                case WifiP2pHelper.WIFIP2P_BEGIN_RECEIVE_FILE:  //开始接收文件
+                    LogUtils.i(WifiP2pHelper.TAG, "handle--->WIFIP2P_BEGIN_SEND_FILE");
+                    f = (File) msg.obj;
+                    recordManager.addNewRecevingRecord(f);
+                    break;
+                case WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY: //接收完一个文件----成功
+                case WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_FAILURE:  //接收完一个文件---失败
+                    f = (File) msg.obj;
+                    record = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, false);
+                    if(record == null) {
+                        break;
+                    }
+                    if(msg.what == WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY) {//接收成功
+                        record.setState(Record.STATE_FINISHED);
+                    }else { //接受失败
+                        record.setState(Record.STATE_FAILED);
+                    }
+
+                    if(!wifiP2pHelper.isTranfering()) {
+                        mSendCount = 0;
+                        mReceviceCount = 0;
+                        handler.removeMessages(2);
+                        SpeedFloatWin.updateSpeed("0MB/s", "0MB/s");
+                    }
+                    break;
+
                 case 2:
                     if(wifiP2pHelper.isTranfering()) {
                         int sendCount = wifiP2pHelper.getSendCount();

@@ -1,5 +1,6 @@
 package com.ckt.io.wifidirect.fragment;
 
+import android.database.ContentObserver;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
@@ -7,6 +8,7 @@ import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,9 +18,11 @@ import android.widget.ListView;
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyExpandableListViewAdapter;
+import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.provider.Record;
 import com.ckt.io.wifidirect.provider.RecordManager;
 import com.ckt.io.wifidirect.utils.FileTypeUtils;
+import com.ckt.io.wifidirect.utils.LogUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -42,26 +46,47 @@ public class HistoryFragment extends Fragment implements RecordManager.OnRecords
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.history_fragment, container, false);
         expandableListView = (ExpandableListView) view.findViewById(R.id.expand_listview);
+        boolean isFirstOnCrate = false;
         if(adapter == null) {
             //添加分组,但是暂时不添加每个分组里面的item
             ArrayList<String> names = new ArrayList<>();
             ArrayList<ArrayList<Record>> records = new ArrayList<>();
             for(int i=0; i<groups.length; i++) {
                 ArrayList<Record> recordList = new ArrayList<>();
-                recordList.addAll(getGroupRecordFromRecordManager(groups[i]));
+//                recordList.addAll(getGroupRecordFromRecordManager(groups[i]));
                 names.add(getResources().getString(groups[i]));
                 records.add(recordList);
             }
             adapter = new MyExpandableListViewAdapter(getContext(), names, records);
-            RecordManager.getInstance().addOnRecordsChangedListener(this);//注册监听
+            RecordManager.getInstance(getContext()).addOnRecordsChangedListener(this);//注册监听
+
+            isFirstOnCrate = true;
         }
         expandableListView.setChildDivider(getContext().getResources().getDrawable(R.drawable.expandablelistview_child_divider));
         expandableListView.setAdapter(adapter);
+        //默认展开 正在发送 和 正在接收的  分组
         return view;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateExpandableListView();
+    }
+
+    //更新每个分组
+    public void updateExpandableListView() {
+        if(adapter == null) return;
+        for(int i=0; i<adapter.getGroupList().size(); i++) {
+            MyExpandableListViewAdapter.ExpandableListViewGroup group = adapter.getGroupList().get(i);
+            group.getRecordList().clear();
+            group.getRecordList().addAll(getGroupRecordFromRecordManager(groups[i]));
+        }
+        adapter.notifyDataSetChanged();
+    }
+
     public ArrayList<Record> getGroupRecordFromRecordManager(int id) {
-        RecordManager manager = RecordManager.getInstance();
+        RecordManager manager = RecordManager.getInstance(getContext());
         ArrayList<Record> ret = null;
         if(id == SENDING_GROUP) {
             ret = new ArrayList<>();
@@ -172,7 +197,7 @@ public class HistoryFragment extends Fragment implements RecordManager.OnRecords
         switch (record.getState()) {
             case Record.STATE_TRANSPORTING:
             case Record.STATE_WAIT_FOR_TRANSPORT:
-                if (record.getTransport_direction() == Record.TRANSPORT_DERICTION_SEND) {
+                if (record.isSend()) {
                     groupId = SENDING_GROUP;
                 } else {
                     groupId = RECEVING_GROUP;
@@ -194,22 +219,26 @@ public class HistoryFragment extends Fragment implements RecordManager.OnRecords
     //************下面是一些回调**************************************************************
     @Override
     public void onRecordListChanged(int action, ArrayList<Record> changedRecordList) {
-        //获取 "接收中" 分组--->包含了正在发送和等待发送的
-        for(int i=0; i<changedRecordList.size(); i++) {
-            Record record = changedRecordList.get(i);
-            MyExpandableListViewAdapter.ExpandableListViewGroup group = getOwnerGroup(record);
-            if(action == RecordManager.ACTION_ADD) {
-                group.getRecordList().add(record);
-            }else if(action == RecordManager.ACTION_REMOVE){
-                group.getRecordList().remove(record);
-            }
-            expandableListView.expandGroup(adapter.getGroupPostion(group), true);
+        if(adapter == null) return;
+        if(action == RecordManager.ACTION_ADD) {
+           for(int i=0; i<changedRecordList.size(); i++) {
+               Record record = changedRecordList.get(i);
+               int state = record.getState();
+               if(state == Record.STATE_WAIT_FOR_TRANSPORT || state == Record.STATE_TRANSPORTING) {
+                   Log.i(WifiP2pHelper.TAG, "expand.........");
+                   MyExpandableListViewAdapter.ExpandableListViewGroup group = getOwnerGroup(record);
+                   expandableListView.expandGroup(adapter.getGroupPostion(group), true);
+               }
+           }
         }
-        adapter.notifyDataSetChanged();
+
+        updateExpandableListView();
+        LogUtils.i(WifiP2pHelper.TAG, "onRecordListChanged");
     }
 
     @Override
     public void onRecordChanged(Record record, int state_old, int state_new) {
-
+        updateExpandableListView();
+        LogUtils.i(WifiP2pHelper.TAG, "onRecordChanged");
     }
 }

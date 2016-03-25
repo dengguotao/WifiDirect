@@ -59,6 +59,10 @@ public class MyExpandableListViewAdapter extends BaseExpandableListAdapter{
         }
     }
 
+    public ArrayList<ExpandableListViewGroup> getGroupList() {
+        return groupList;
+    }
+
     @Override
     public int getGroupCount() {
         return groupList.size();
@@ -166,7 +170,7 @@ public class MyExpandableListViewAdapter extends BaseExpandableListAdapter{
 
         Record record = (Record) getChild(groupPosition, childPosition);
         //set send or receive flag
-        if(record.isSend()) {
+        if(record.isSend()) { //·¢ËÍ
             holder.view_send_recevice_flag.setBackgroundColor(Color.GREEN);
         }else {
             holder.view_send_recevice_flag.setBackgroundColor(Color.RED);

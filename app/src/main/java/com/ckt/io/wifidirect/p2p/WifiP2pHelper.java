@@ -13,9 +13,12 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -33,6 +36,7 @@ import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.ckt.io.wifidirect.Constants;
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.utils.ApkUtils;
 import com.ckt.io.wifidirect.utils.AudioUtils;
@@ -54,7 +58,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 
 
     public static final int WIFIP2P_SENDFILELIST_ADDED = 119;//新增了一些要发送的文件
-    public static final int WIFIP2P_SENDFILELIST_CHANGED = 120;//文件发送列表改变
+
     public static final int WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY = 121; //成功发送一个文件
     public static final int WIFIP2P_SEND_ONE_FILE_FAILURE = 122; //成功发送一个失败
     public static final int WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY = 123; //成功接收一个文件
@@ -199,7 +203,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     isSuccessed = false;
                 }
                 if(isSuccessed) {
-                    handler.sendEmptyMessage(WIFIP2P_BEGIN_SEND_FILE);
+                    handler.obtainMessage(WIFIP2P_BEGIN_SEND_FILE, f).sendToTarget();
                     sendingFileInTask.add(f);
                     try {
                         inputstream = new FileInputStream(f);
@@ -241,18 +245,13 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                         } catch (IOException e) {}
                     }
                 }
-
-                Message msg = new Message();
-                msg.obj = f;
-                if (isSuccessed) {
-                    msg.what = WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY;
-                } else {
-                    msg.what = WIFIP2P_SEND_ONE_FILE_FAILURE;
-                }
                 sendingFileList.remove(0);//从要发送文件列表中移除
                 sendingFileInTask.remove(0); //从正在发送列表中移除
-                handler.sendMessage(msg);
-                handler.sendEmptyMessage(WIFIP2P_SENDFILELIST_CHANGED);
+                if (isSuccessed) {
+                    handler.obtainMessage(WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY, f).sendToTarget();
+                } else {
+                    handler.obtainMessage(WIFIP2P_SEND_ONE_FILE_FAILURE, f).sendToTarget();
+                }
             }
             isTranfering = false;
             return true;
@@ -289,7 +288,6 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     Log.d(TAG, "没有sdcard可写");
                     return false;
                 }
-                handler.sendEmptyMessage(WIFIP2P_BEGIN_RECEIVE_FILE);
                 //next a few step will recevive a file
                 long size = 0; //fileSize--->使用long类型,因为大文件(G)来说,大小用字节表示的话会超出int的表示范围
                 //1.获取文件信息长度
@@ -339,6 +337,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     f.getParentFile().mkdirs();
                 }
                 f.createNewFile();
+                handler.obtainMessage(WIFIP2P_BEGIN_RECEIVE_FILE, f).sendToTarget();
                 //3.获取文件内容
                 long receivedSize = 0;
                 long leftSize = size;
@@ -387,14 +386,11 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 } catch (Exception e) {
                 }
                 mReceviceCount = 0;
-                Message msg = new Message();
-                msg.obj = f;
                 if(isSuccessed) {
-                    msg.what = WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY;
+                    handler.obtainMessage(WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY, f).sendToTarget();
                 }else {
-                    msg.what = WIFIP2P_RECEIVE_ONE_FILE_FAILURE;
+                    handler.obtainMessage(WIFIP2P_RECEIVE_ONE_FILE_FAILURE, f).sendToTarget();
                 }
-                handler.sendMessage(msg);
             }
             isTranfering = false;
             return true;

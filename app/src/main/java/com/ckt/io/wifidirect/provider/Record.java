@@ -11,8 +11,10 @@ import java.util.Calendar;
  * every sended file has a unique record
  */
 public class Record {
-    public static final int TRANSPORT_DERICTION_SEND = 0; //发送
-    public static final int TRANSPORT_DERICTION_RECEVING = 1; //接收
+
+    public final static int DIRECTION_OUT = 1;
+    public final static int DIRECTION_IN = 0;
+
 
     public static final int STATE_FINISHED = 0; //完成
     public static final int STATE_FAILED = 1; //失败
@@ -27,17 +29,15 @@ public class Record {
     private long transported_len;
     private int state;
     private int transport_direction;
-    private boolean isSend; //true -- send  false----receive
 
     private OnStateChangeListener listener;
 
-    public Record(String path, long length, long transported_len, int state, int transport_direction, boolean isSend) {
+    public Record(String path, long length, long transported_len, int state, int transport_direction) {
         this.path = path;
         this.length = length;
         this.transported_len = transported_len;
         this.state = state;
         this.transport_direction = transport_direction;
-        this.isSend = isSend;
         //使用当前时间来作为id
         Calendar c = Calendar.getInstance();
         int day = c.get(Calendar.DAY_OF_YEAR);
@@ -49,23 +49,21 @@ public class Record {
         LogUtils.i(WifiP2pHelper.TAG, "id=" + this.id);
     }
 
-    public Record(String name, String path, long length, long transported_len, int state, int transport_direction, boolean isSend) {
-        this(path, length, transported_len, state, transport_direction, isSend);
+    public Record(String name, String path, long length, long transported_len, int state, int transport_direction) {
+        this(path, length, transported_len, state, transport_direction);
         this.name = name;
     }
 
-    public Record(long id, String path, long length, long transported_len, int state, int transport_direction, boolean isSend) {
+    public Record(long id, String path, long length, long transported_len, int state, int transport_direction) {
         this.id = id;
         this.path = path;
         this.length = length;
         this.transported_len = transported_len;
         this.state = state;
         this.transport_direction = transport_direction;
-        this.isSend = isSend;
     }
 
-    public Record(long id, String name, String path, long length, long transported_len, int state, int transport_direction, boolean isSend) {
-        this.isSend = isSend;
+    public Record(long id, String name, String path, long length, long transported_len, int state, int transport_direction) {
         this.id = id;
         this.name = name;
         this.path = path;
@@ -75,6 +73,9 @@ public class Record {
         this.transport_direction = transport_direction;
     }
 
+    public boolean isSend() {
+        return transport_direction == DIRECTION_OUT;
+    }
     public long getId() {
         return id;
     }
@@ -133,14 +134,6 @@ public class Record {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public boolean isSend() {
-        return isSend;
-    }
-
-    public void setIsSend(boolean isSend) {
-        this.isSend = isSend;
     }
 
     public OnStateChangeListener getListener() {
