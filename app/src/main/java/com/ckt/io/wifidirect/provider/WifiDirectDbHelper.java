@@ -28,7 +28,8 @@ public class WifiDirectDbHelper extends SQLiteOpenHelper {
                 Constants.InstanceColumns.LENGTH + " INTEGER NOT NULL, " +
                 Constants.InstanceColumns.STATE + " INTEGER NOT NULL, " +
                 Constants.InstanceColumns.TRANSFER_LENGTH + " INTEGER NOT NULL, " +
-                Constants.InstanceColumns.TRANSFER_DIRECTION + " INTEGER NOT NULL);");
+                Constants.InstanceColumns.TRANSFER_DIRECTION + " INTEGER NOT NULL, " +
+                Constants.InstanceColumns.TRANSFER_MAC + " TEXT NOT NULL);");
         LogUtils.i(TAG, "table created");
     }
 

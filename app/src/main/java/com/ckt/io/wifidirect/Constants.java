@@ -18,5 +18,18 @@ public class Constants {
         public static final String TRANSFER_LENGTH = "_tlength";
         public static final String STATE = "_state";
         public static final String TRANSFER_DIRECTION = "_direction";
+        public static final String TRANSFER_MAC = "_mac";
+    }
+
+    // transfer direction
+    public final static int DIRECTION_OUT = 1;
+    public final static int DIRECTION_IN = 2;
+
+    // transfer state
+    public static class State {
+        public final static int STATE_IDEL = 1;
+        public final static int STATE_TRANSFERING = 2;
+        public final static int STATE_PENDING = 3;
+        public final static int STATE_TRANSFER_DONE = 4;
     }
 }
