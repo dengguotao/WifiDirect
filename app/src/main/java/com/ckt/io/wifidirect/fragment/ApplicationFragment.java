@@ -1,24 +1,29 @@
 package com.ckt.io.wifidirect.fragment;
 
-import android.annotation.TargetApi;
+import android.app.ActivityManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
+import android.content.pm.ResolveInfo;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.CheckBox;
 import android.widget.GridView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
@@ -28,6 +33,7 @@ import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -46,6 +52,8 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
     ArrayList<String> mNameList = new ArrayList<>();
     ArrayList<String> mPathList = new ArrayList<>();
     ArrayList<Object> mIconList = new ArrayList<>();
+    ArrayList<String> mPackageList = new ArrayList<>();
+    ArrayList<String> mClassList = new ArrayList<>();
     ArrayList<Boolean> mCheckBoxList = new ArrayList<>();
 
     private DrawableLoaderUtils drawableLoaderUtils; //用来异步加载图片
@@ -90,6 +98,13 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
             handler.sendEmptyMessage(LOAD_DATA_FINISHED);
         }
         gridView.setOnItemClickListener(this);
+        gridView.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
+            @Override
+            public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+                MenuInflater inflater = new MenuInflater(getActivity());
+                inflater.inflate(R.menu.menu_context, menu);
+            }
+        });
         gridView.setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
@@ -100,10 +115,33 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                     gridView.setTag(true);
                 }
             }
+
             @Override
-            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {}
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+            }
         });
         return view;
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.id_open:
+                AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+                Intent intent = new Intent();
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                ComponentName componentName = new ComponentName(mPackageList.get((int) menuInfo.id), mClassList.get((int) menuInfo.id));
+                intent.setComponent(componentName);
+                intent.setAction("android.intent.action.View");
+                startActivity(intent);
+                Log.i("Activity", mPackageList.get((int) menuInfo.id) + "---->" + mClassList.get((int) menuInfo.id));
+                break;
+            case R.id.id_delete:
+                break;
+            default:
+                break;
+        }
+        return super.onContextItemSelected(item);
     }
 
     public void loadData() {
@@ -115,12 +153,15 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                     PackageInfo packageInfo = packageInfoList.get(i);
                     if ((packageInfo.applicationInfo.flags & packageInfo.applicationInfo.FLAG_SYSTEM) <= 0) {
                         //第三方应用
-                        apps.add(packageInfo);
-                        mNameList.add(manager.getApplicationLabel(packageInfo.applicationInfo).toString());
-//                        mIconList.add(manager.getApplicationIcon(packageInfo.applicationInfo));
-                        mPathList.add(packageInfo.applicationInfo.sourceDir);
-                        mIconList.add(R.drawable.apk_icon);//先默认显示apk_icon
-                        mCheckBoxList.add(false);
+                        if (!getApplicationClass(packageInfo.packageName).equals("")) {
+                            apps.add(packageInfo);
+                            mNameList.add(manager.getApplicationLabel(packageInfo.applicationInfo).toString());
+                            mPathList.add(packageInfo.applicationInfo.sourceDir);
+                            mIconList.add(R.drawable.apk_icon);//先默认显示apk_icon
+                            mPackageList.add(packageInfo.packageName);
+                            mClassList.add(getApplicationClass(packageInfo.packageName));
+                            mCheckBoxList.add(false);
+                        }
                     } else {
                     }
                 }
@@ -128,6 +169,21 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                 handler.sendEmptyMessage(LOAD_DATA_FINISHED);
             }
         }.start();
+    }
+
+    public String getApplicationClass(String packageName) {
+        Intent intent = new Intent(Intent.ACTION_MAIN, null);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        PackageManager manager = getActivity().getPackageManager();
+        List<ResolveInfo> appList = manager.queryIntentActivities(intent, 0);
+        String name = "";
+        for (ResolveInfo info : appList) {
+            if (packageName.equals(info.activityInfo.applicationInfo.packageName)) {
+                name = info.activityInfo.name;
+                break;
+            }
+        }
+        return name;
     }
 
     @Override
@@ -175,7 +231,7 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
             mIconList.set(index, obj);
         }
         if (gridView.getTag() == null || !(boolean) gridView.getTag()) { //gridview没有滑动
-            if(index % 5 == 0  || isAllFinished) {
+            if (index % 5 == 0 || isAllFinished) {
                 ((BaseAdapter) (gridView.getAdapter())).notifyDataSetChanged();
             }
         }
