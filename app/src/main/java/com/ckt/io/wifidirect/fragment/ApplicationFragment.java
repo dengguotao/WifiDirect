@@ -52,7 +52,6 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
     ArrayList<String> mNameList = new ArrayList<>();
     ArrayList<String> mPathList = new ArrayList<>();
     ArrayList<String> mPackageList = new ArrayList<>();
-    ArrayList<String> mClassList = new ArrayList<>();
     ArrayList<Boolean> mCheckBoxList = new ArrayList<>();
 
     private FileResLoaderUtils drawableLoaderUtils; //用来异步加载图片
@@ -127,13 +126,10 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
         switch (item.getItemId()) {
             case R.id.id_open:
                 AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-                Intent intent = new Intent();
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                ComponentName componentName = new ComponentName(mPackageList.get((int) menuInfo.id), mClassList.get((int) menuInfo.id));
-                intent.setComponent(componentName);
-                intent.setAction("android.intent.action.View");
-                startActivity(intent);
-                Log.i("Activity", mPackageList.get((int) menuInfo.id) + "---->" + mClassList.get((int) menuInfo.id));
+                String packageName = mPackageList.get((int) menuInfo.id);
+                Intent it = getActivity().getPackageManager().getLaunchIntentForPackage(packageName);
+                startActivity(it);
+                Log.i("Activity", mPackageList.get((int) menuInfo.id) + "---->");
                 break;
             case R.id.id_delete:
                 break;
@@ -152,14 +148,11 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                     PackageInfo packageInfo = packageInfoList.get(i);
                     if ((packageInfo.applicationInfo.flags & packageInfo.applicationInfo.FLAG_SYSTEM) <= 0) {
                         //第三方应用
-                        if (!getApplicationClass(packageInfo.packageName).equals("")) {
-                            apps.add(packageInfo);
-                            mNameList.add(manager.getApplicationLabel(packageInfo.applicationInfo).toString());
-                            mPathList.add(packageInfo.applicationInfo.sourceDir);
-                            mPackageList.add(packageInfo.packageName);
-                            mClassList.add(getApplicationClass(packageInfo.packageName));
-                            mCheckBoxList.add(false);
-                        }
+                        apps.add(packageInfo);
+                        mNameList.add(manager.getApplicationLabel(packageInfo.applicationInfo).toString());
+                        mPathList.add(packageInfo.applicationInfo.sourceDir);
+                        mPackageList.add(packageInfo.packageName);
+                        mCheckBoxList.add(false);
                     } else {
                     }
                 }
@@ -167,21 +160,6 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                 handler.sendEmptyMessage(LOAD_DATA_FINISHED);
             }
         }.start();
-    }
-
-    public String getApplicationClass(String packageName) {
-        Intent intent = new Intent(Intent.ACTION_MAIN, null);
-        intent.addCategory(Intent.CATEGORY_LAUNCHER);
-        PackageManager manager = getActivity().getPackageManager();
-        List<ResolveInfo> appList = manager.queryIntentActivities(intent, 0);
-        String name = "";
-        for (ResolveInfo info : appList) {
-            if (packageName.equals(info.activityInfo.applicationInfo.packageName)) {
-                name = info.activityInfo.name;
-                break;
-            }
-        }
-        return name;
     }
 
     @Override
