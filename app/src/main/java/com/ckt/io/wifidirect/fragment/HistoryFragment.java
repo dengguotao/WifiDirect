@@ -179,7 +179,7 @@ public class HistoryFragment extends Fragment implements RecordManager.OnRecords
                int state = record.getState();
                if(state == Record.STATE_WAIT_FOR_TRANSPORT || state == Record.STATE_TRANSPORTING) {
                    MyExpandableListViewAdapter.ExpandableListViewGroup group = getOwnerGroup(record);
-                   if(this.isVisible()) {
+                   if(this.isResumed()) {
                        expandableListView.expandGroup(adapter.getGroupPostion(group), true);
                    }
                }

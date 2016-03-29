@@ -51,7 +51,6 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
     List<PackageInfo> apps = new ArrayList<>();
     ArrayList<String> mNameList = new ArrayList<>();
     ArrayList<String> mPathList = new ArrayList<>();
-    ArrayList<Object> mIconList = new ArrayList<>();
     ArrayList<String> mPackageList = new ArrayList<>();
     ArrayList<String> mClassList = new ArrayList<>();
     ArrayList<Boolean> mCheckBoxList = new ArrayList<>();
@@ -157,7 +156,6 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                             apps.add(packageInfo);
                             mNameList.add(manager.getApplicationLabel(packageInfo.applicationInfo).toString());
                             mPathList.add(packageInfo.applicationInfo.sourceDir);
-                            mIconList.add(R.drawable.apk_icon);//先默认显示apk_icon
                             mPackageList.add(packageInfo.packageName);
                             mClassList.add(getApplicationClass(packageInfo.packageName));
                             mCheckBoxList.add(false);
@@ -165,7 +163,7 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                     } else {
                     }
                 }
-                adapter = new MyGridViewAdapter(getActivity(), mNameList, mIconList, mCheckBoxList, 60);
+                adapter = new MyGridViewAdapter(getActivity(), mNameList, mPathList, mCheckBoxList, 60);
                 handler.sendEmptyMessage(LOAD_DATA_FINISHED);
             }
         }.start();
@@ -227,9 +225,6 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
     @Override
     public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
         int index = mPathList.indexOf(path);
-        if (index >= 0) {
-            mIconList.set(index, obj);
-        }
         if (gridView.getTag() == null || !(boolean) gridView.getTag()) { //gridview没有滑动
             if (index % 5 == 0 || isAllFinished) {
                 ((BaseAdapter) (gridView.getAdapter())).notifyDataSetChanged();

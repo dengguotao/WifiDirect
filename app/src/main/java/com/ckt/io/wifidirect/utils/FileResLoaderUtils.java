@@ -34,7 +34,10 @@ public class FileResLoaderUtils {
     }
 
     public static Object getPic(String key) {
-        return picMap.get(key);
+        if(picMap != null) {
+            return picMap.get(key);
+        }
+        return null;
     }
 
     public static String getFileName(String key) {
@@ -113,7 +116,8 @@ public class FileResLoaderUtils {
     }
 
     public static void release() {
-        picMap = null;
+        /*picMap = null;
+        fileNameMap = null;*/
     }
 
     public interface OnLoadFinishedListener {

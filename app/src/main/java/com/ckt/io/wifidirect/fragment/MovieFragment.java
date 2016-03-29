@@ -43,7 +43,6 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
     private ArrayList<Movie> movieList = new ArrayList<>();
     private ArrayList<String> nameList = new ArrayList<>();
     private ArrayList<String> mPathList = new ArrayList<>();
-    private ArrayList<Object> iconList = new ArrayList<>();
     private ArrayList<Boolean> checkBoxList = new ArrayList<>();
     private GridView gridView;
     private TextView refresh;
@@ -123,11 +122,10 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
                 for (Movie movie : movieList) {
                     nameList.add(movie.getTitle());
 //                    iconList.add(new BitmapDrawable(GetVideoThumbnail.getVideoThumbnailTool(movie.getFileUrl())));
-                    iconList.add(R.drawable.film_icon);
                     checkBoxList.add(false);
                     mPathList.add(movie.getFileUrl());
                 }
-                adapterMovie = new MyGridViewAdapter(getActivity(), nameList, iconList, checkBoxList, 100);
+                adapterMovie = new MyGridViewAdapter(getActivity(), nameList, mPathList, checkBoxList, 100);
                 handler.sendEmptyMessage(LOAD_DATA_FINISHED);
             }
         }.start();
@@ -149,12 +147,10 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
                 if (movieList != null) {
                     movieList.clear();
                     nameList.clear();
-                    iconList.clear();
                 }
                 movieList = MovieUtils.getAllMovies(getActivity());
                 for (Movie movie : movieList) {
                     nameList.add(movie.getTitle());
-                    iconList.add(new BitmapDrawable(GetVideoThumbnail.getVideoThumbnailTool(movie.getFileUrl())));
                 }
                 adapterMovie.notifyDataSetChanged();
                 break;
@@ -198,9 +194,6 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
     @Override
     public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
         int index = mPathList.indexOf(path);
-        if (index >= 0) {
-            iconList.set(index, obj);
-        }
         if (gridView.getTag() == null || !(boolean) gridView.getTag()) { //gridview√ª”–ª¨∂Ø
             ((BaseAdapter) (gridView.getAdapter())).notifyDataSetChanged();
         }

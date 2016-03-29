@@ -16,6 +16,8 @@ import android.widget.TextView;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.BitmapUtils;
+import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
+import com.ckt.io.wifidirect.utils.FileTypeUtils;
 
 import java.util.ArrayList;
 
@@ -24,15 +26,15 @@ import java.util.ArrayList;
  */
 public class MyGridViewAdapter extends BaseAdapter {
     private ArrayList<String> mNameList = new ArrayList<>();
-    private ArrayList<Object> mIconList = new ArrayList<>();
+    private ArrayList<String> mPathList = new ArrayList<>();
     private ArrayList<Boolean> mCheckBoxList = new ArrayList<>();
     private LayoutInflater mInflater;
     private Context mContext;
     private int imagetViewHeight;
 
-    public MyGridViewAdapter(Context context, ArrayList<String> nameList, ArrayList<Object> iconList, ArrayList<Boolean> checkBoxList, int imageViewHeigth) {
+    public MyGridViewAdapter(Context context, ArrayList<String> nameList, ArrayList<String> pathList, ArrayList<Boolean> checkBoxList, int imageViewHeigth) {
         mNameList = nameList;
-        mIconList = iconList;
+        mPathList = pathList;
         mCheckBoxList = checkBoxList;
         mContext = context;
         mInflater = LayoutInflater.from(mContext);
@@ -74,15 +76,16 @@ public class MyGridViewAdapter extends BaseAdapter {
             viewTag = (ItemViewTag) convertView.getTag();
         }
         viewTag.mName.setText(mNameList.get(position));
-        Object obj = mIconList.get(position);
-        if(obj instanceof Drawable) {
-            viewTag.mIcon.setImageDrawable((Drawable) obj);
-        }else if(obj instanceof Integer) {
-            viewTag.mIcon.setImageResource((Integer) obj);
-        }else if(obj instanceof Bitmap) {
-            viewTag.mIcon.setImageBitmap((Bitmap) obj);
+        String path = mPathList.get(position);
+        Object pic = FileResLoaderUtils.getPic(path);
+        if(pic instanceof Drawable) {
+            viewTag.mIcon.setImageDrawable((Drawable) pic);
+        }else if(pic instanceof Integer) {
+            viewTag.mIcon.setImageResource((Integer) pic);
+        }else if(pic instanceof Bitmap) {
+            viewTag.mIcon.setImageBitmap((Bitmap) pic);
         }else {
-            viewTag.mIcon.setImageResource(R.drawable.file_icon);
+            viewTag.mIcon.setImageResource(FileTypeUtils.getDefaultFileIcon(path));
         }
         viewTag.mCheckBox.setChecked(mCheckBoxList.get(position));
         viewTag.mCheckBox.setVisibility(mCheckBoxList.get(position) ? View.VISIBLE : View.GONE);
