@@ -19,28 +19,33 @@ import java.util.HashMap;
 /**
  * Created by admin on 2016/3/15.
  */
-public class DrawableLoaderUtils {
+public class FileResLoaderUtils {
     private OnLoadFinishedListener listener;
-    private static HashMap<String, Object> data = new HashMap<>();
+    private static HashMap<String, Object> picMap = new HashMap<>();
+    private static HashMap<String, String> fileNameMap = new HashMap<>();
     private LoadTask loadTask;//用来在后台加载图片
 
-    private DrawableLoaderUtils(){}
+    private FileResLoaderUtils(){}
 
-    public static DrawableLoaderUtils getInstance(OnLoadFinishedListener listener) {
-        DrawableLoaderUtils drawableLoader = new DrawableLoaderUtils();
+    public static FileResLoaderUtils getInstance(OnLoadFinishedListener listener) {
+        FileResLoaderUtils drawableLoader = new FileResLoaderUtils();
         drawableLoader.listener = listener;
         return drawableLoader;
     }
 
-    public static Object get(String key) {
-        return data.get(key);
+    public static Object getPic(String key) {
+        return picMap.get(key);
+    }
+
+    public static String getFileName(String key) {
+        return fileNameMap.get(key);
     }
 
     public void load(Context context, String path) {
-        if(data == null) {
-            data = new HashMap<>();
+        if(picMap == null) {
+            picMap = new HashMap<>();
         }
-        if(data.keySet().contains(path)) {
+        if(picMap.keySet().contains(path)) {
             LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->load() warning:"+path+" has been loaded before");
             return;
         }
@@ -71,8 +76,12 @@ public class DrawableLoaderUtils {
                 Object obj = null;
                 if(s.endsWith(".apk")) { //apk文件
                     obj = ApkUtils.getApkIcon(context, path);
+                    //顺便把apk文件的lable也一起加载了
+                    fileNameMap.put(path, ApkUtils.getApkLable(context, path));
                 }else if(s.endsWith(".mp3")) { //音乐文件
                     obj = AudioUtils.getMusicBitpMap(path);
+                    //顺便把音乐文件的lable也一起加载了
+                    fileNameMap.put(path, AudioUtils.getMusicName(path));
                 }else if(s.endsWith(".jpg") || s.endsWith(".jpeg") || s.endsWith(".bmp") || s.endsWith(".gif") || s.endsWith(".png")) {//图片文件
                     BitmapFactory.Options options = new BitmapFactory.Options();
                     options.inSampleSize = 10;
@@ -85,7 +94,7 @@ public class DrawableLoaderUtils {
                 }
 
                 try {
-                    data.put(path, obj);
+                    picMap.put(path, obj);
                 }catch (Exception e) {
                     return null;
                 }
@@ -104,7 +113,7 @@ public class DrawableLoaderUtils {
     }
 
     public static void release() {
-        data = null;
+        picMap = null;
     }
 
     public interface OnLoadFinishedListener {

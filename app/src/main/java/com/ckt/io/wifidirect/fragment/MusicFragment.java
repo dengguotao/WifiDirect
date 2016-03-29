@@ -28,7 +28,7 @@ import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyListViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.AudioUtils;
-import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
+import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
 import com.ckt.io.wifidirect.utils.FileTypeUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
@@ -44,7 +44,7 @@ import java.util.ArrayList;
 public class MusicFragment extends Fragment implements View.OnClickListener,
         AdapterView.OnItemLongClickListener,
         AdapterView.OnItemClickListener, MainActivity.OnSendFileListChangeListener,
-        DrawableLoaderUtils.OnLoadFinishedListener {
+        FileResLoaderUtils.OnLoadFinishedListener {
     private ArrayList<Song> songList = new ArrayList<>();
     private ArrayList<String> nameList = new ArrayList<>();
     private ArrayList<Object> iconList = new ArrayList<>();
@@ -53,7 +53,7 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
     private TextView refresh;
     MyListViewAdapter adapter;
 
-    private DrawableLoaderUtils drawableLoaderUtils;
+    private FileResLoaderUtils drawableLoaderUtils;
 
     //用来还原listview的位置
     private int listViewState_pos = 0;
@@ -94,7 +94,7 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
                     @Override
                     public void run() {
                         if (adapter == null) {
-                            drawableLoaderUtils = DrawableLoaderUtils.getInstance(MusicFragment.this);
+                            drawableLoaderUtils = FileResLoaderUtils.getInstance(MusicFragment.this);
                             loadData();
                         }else {
                             handler.sendEmptyMessage(LOAD_DATA_FINISHED);
@@ -185,7 +185,7 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
         checkBoxList.set(position, !checkBoxList.get(position));
         MainActivity activity = (MainActivity) getActivity();
         if (checkBoxList.get(position)) {//checked--->add to sendfile-list
-            activity.addFileToSendFileList(songList.get(position).getFileUrl());
+            activity.addFileToSendFileList(songList.get(position).getFileUrl(), songList.get(position).getFileName());
         } else {//unchecked--->remove from sendfile-list
             activity.removeFileFromSendFileList(songList.get(position).getFileUrl());
         }

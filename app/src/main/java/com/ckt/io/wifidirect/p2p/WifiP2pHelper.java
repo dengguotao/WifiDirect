@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -158,10 +159,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
         } else { //有文件正在发送,添加到发送列表中即可
             sendingFileList.addAll(fl);
         }
-        Message msg = new Message();
-        msg.what = WIFIP2P_SENDFILELIST_ADDED;
-        msg.obj = fl;
-        handler.sendMessage(msg);
+        handler.obtainMessage(WIFIP2P_SENDFILELIST_ADDED, fl).sendToTarget();
     }
 
     // 接收文件
@@ -337,7 +335,10 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     f.getParentFile().mkdirs();
                 }
                 f.createNewFile();
-                handler.obtainMessage(WIFIP2P_BEGIN_RECEIVE_FILE, f).sendToTarget();
+                HashMap<String, Object> map = new HashMap<>();
+                map.put("path", f);
+                map.put("name", name);
+                handler.obtainMessage(WIFIP2P_BEGIN_RECEIVE_FILE, map).sendToTarget();
                 //3.获取文件内容
                 long receivedSize = 0;
                 long leftSize = size;
@@ -386,6 +387,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 } catch (Exception e) {
                 }
                 mReceviceCount = 0;
+                LogUtils.i(WifiP2pHelper.TAG, "接收完一个文件----->isSuccessed="+isSuccessed);
                 if(isSuccessed) {
                     handler.obtainMessage(WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY, f).sendToTarget();
                 }else {
@@ -407,6 +409,10 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
         }
     }
 
+
+    public String getCurrentConnectMAC() {
+        return this.currentConnectMAC;
+    }
 
     public int getReceviceCount() {
         return mReceviceCount;

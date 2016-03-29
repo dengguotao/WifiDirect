@@ -12,8 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
+import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
 import com.ckt.io.wifidirect.utils.FileTypeUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
@@ -127,7 +126,7 @@ public class MyListViewAdapter extends BaseAdapter{
             }
         }else {
             if(FileTypeUtils.isNeedToLoadDrawable(tempFile.getPath())) {//需要显示加载图片
-                Object object = DrawableLoaderUtils.get(tempFile.getPath());
+                Object object = FileResLoaderUtils.getPic(tempFile.getPath());
                 if(object instanceof Drawable) {
                     viewHolder.img_icon.setImageDrawable((Drawable) object);
                 }else if(object instanceof Bitmap) {

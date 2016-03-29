@@ -7,6 +7,8 @@ import com.ckt.io.wifidirect.R;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class FileTypeUtils {
 
@@ -65,18 +67,6 @@ public class FileTypeUtils {
         String s = path.toLowerCase();
         //需要加载图片的一些文件
         return isApk(path) || isMusic(path) || isPhoto(path) || isMovie(path);
-    }
-
-    public static String getFileTitle(Context context, String path) {
-        String title = "";
-        if(isApk(path)) { //apk文件
-            title = ApkUtils.getApkLable(context, path);
-        }else if(isMusic(path)) { //音乐文件
-            title = AudioUtils.getMusicName(path);
-        }else {
-            title = (new File(path)).getName();
-        }
-        return title;
     }
 
     /* 判断文件MimeType的method */

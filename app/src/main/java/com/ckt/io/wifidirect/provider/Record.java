@@ -29,41 +29,37 @@ public class Record {
     private long transported_len;
     private int state;
     private int transport_direction;
+    private String mac;
 
     private OnStateChangeListener listener;
 
-    public Record(String path, long length, long transported_len, int state, int transport_direction) {
+    public Record(String name, String path, long length, long transported_len, int state, int transport_direction, String mac) {
         this.path = path;
         this.length = length;
         this.transported_len = transported_len;
         this.state = state;
         this.transport_direction = transport_direction;
+        this.mac = mac;
         //使用当前时间来作为id
         Calendar c = Calendar.getInstance();
         int day = c.get(Calendar.DAY_OF_YEAR);
         long ms = System.currentTimeMillis();
         StringBuffer buffer = new StringBuffer();
         buffer.append(day).append(ms);
-
         this.id = Long.valueOf(buffer.toString()) + length;
-        LogUtils.i(WifiP2pHelper.TAG, "id=" + this.id);
-    }
-
-    public Record(String name, String path, long length, long transported_len, int state, int transport_direction) {
-        this(path, length, transported_len, state, transport_direction);
         this.name = name;
+        if(path == null) {
+            this.path = "";
+        }
+        if(name == null) {
+            this.name = "";
+        }
+        if(mac == null) {
+            this.mac = "";
+        }
     }
 
-    public Record(long id, String path, long length, long transported_len, int state, int transport_direction) {
-        this.id = id;
-        this.path = path;
-        this.length = length;
-        this.transported_len = transported_len;
-        this.state = state;
-        this.transport_direction = transport_direction;
-    }
-
-    public Record(long id, String name, String path, long length, long transported_len, int state, int transport_direction) {
+    public Record(long id, String name, String path, long length, long transported_len, int state, int transport_direction, String mac) {
         this.id = id;
         this.name = name;
         this.path = path;
@@ -71,6 +67,16 @@ public class Record {
         this.transported_len = transported_len;
         this.state = state;
         this.transport_direction = transport_direction;
+        this.mac = mac;
+        if(path == null) {
+            this.path = "";
+        }
+        if(name == null) {
+            this.name = "";
+        }
+        if(mac == null) {
+            this.mac = "";
+        }
     }
 
     public boolean isSend() {
@@ -148,4 +154,11 @@ public class Record {
         public abstract void onStateChanged(Record record, int state_olad, int state_new);
     }
 
+    public String getMac() {
+        return mac;
+    }
+
+    public void setMac(String mac) {
+        this.mac = mac;
+    }
 }

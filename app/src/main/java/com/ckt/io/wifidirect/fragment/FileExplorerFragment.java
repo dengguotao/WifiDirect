@@ -35,7 +35,7 @@ import com.ckt.io.wifidirect.MainActivity.OnSendFileListChangeListener;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyListViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
+import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
 import com.ckt.io.wifidirect.utils.FileTypeUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
@@ -44,7 +44,7 @@ import com.ckt.io.wifidirect.utils.SdcardUtils;
 @SuppressLint("ValidFragment")
 public class FileExplorerFragment extends Fragment implements
 		OnItemClickListener, OnSendFileListChangeListener,
-		DrawableLoaderUtils.OnLoadFinishedListener{
+		FileResLoaderUtils.OnLoadFinishedListener{
 
 	private ArrayList<State> stateList = new ArrayList<State>();
 	private State nowState;
@@ -57,7 +57,7 @@ public class FileExplorerFragment extends Fragment implements
 	private File externalSDFile;
 	private File innerSdFile;
 
-	private DrawableLoaderUtils drawableLoaderUtils;
+	private FileResLoaderUtils drawableLoaderUtils;
 
 	private Handler handler = new Handler();
 
@@ -225,7 +225,7 @@ public class FileExplorerFragment extends Fragment implements
 		listView = (ListView) view.findViewById(R.id.listview);
 		txt_dir_Path = (TextView) view.findViewById(R.id.txt_dir_path);
 		listView.setAdapter(new MyListViewAdapter(getContext(), null));
-		drawableLoaderUtils = DrawableLoaderUtils.getInstance(this); //获取图片加载器实例对象
+		drawableLoaderUtils = FileResLoaderUtils.getInstance(this); //获取图片加载器实例对象
 		listView.setOnItemClickListener(this);
 		listView.setOnScrollListener(new AbsListView.OnScrollListener() {
 			@Override
@@ -344,7 +344,8 @@ public class FileExplorerFragment extends Fragment implements
 			adapter.toggleChecked(position);
 			adapter.notifyDataSetInvalidated();
 			if(adapter.isChecked(position)) {//checked-->add to sendfile-list
-				activity.addFileToSendFileList(f.getPath());
+				String name = FileResLoaderUtils.getFileName(path);
+				activity.addFileToSendFileList(f.getPath(), name);
 			}else { //unchecked--->remove from sendfile-list
 				activity.removeFileFromSendFileList(f.getPath());
 			}

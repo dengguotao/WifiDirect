@@ -25,7 +25,7 @@ import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyGridViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
+import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
 import com.ckt.io.wifidirect.utils.GetVideoThumbnail;
 import com.ckt.io.wifidirect.utils.Movie;
 import com.ckt.io.wifidirect.utils.MovieUtils;
@@ -39,7 +39,7 @@ import java.util.ArrayList;
 public class MovieFragment extends Fragment implements View.OnClickListener,
         AdapterView.OnItemClickListener,
         MainActivity.OnSendFileListChangeListener,
-        DrawableLoaderUtils.OnLoadFinishedListener {
+        FileResLoaderUtils.OnLoadFinishedListener {
     private ArrayList<Movie> movieList = new ArrayList<>();
     private ArrayList<String> nameList = new ArrayList<>();
     private ArrayList<String> mPathList = new ArrayList<>();
@@ -48,7 +48,7 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
     private GridView gridView;
     private TextView refresh;
     private MyGridViewAdapter adapterMovie;
-    private DrawableLoaderUtils drawableLoaderUtils;
+    private FileResLoaderUtils drawableLoaderUtils;
 
     //用来还原gridview的位置
     private int gridViewState_pos = 0;
@@ -82,7 +82,7 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
         gridView = (GridView) view.findViewById(R.id.id_movie_grid_view);
         refresh.setOnClickListener(this);
         if (adapterMovie == null) { //第一次加载view
-            drawableLoaderUtils = DrawableLoaderUtils.getInstance(this);//获取图片加载器的实例
+            drawableLoaderUtils = FileResLoaderUtils.getInstance(this);//获取图片加载器的实例
             MainActivity activity = (MainActivity) getActivity();
             activity.requestPermission(this.hashCode() % 200 + MainActivity.REQUEST_CODE_READ_EXTERNAL,
                     Manifest.permission.READ_EXTERNAL_STORAGE,

@@ -29,7 +29,7 @@ import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyGridViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
+import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ import java.util.List;
  */
 public class ApplicationFragment extends Fragment implements AdapterView.OnItemClickListener,
         MainActivity.OnSendFileListChangeListener,
-        DrawableLoaderUtils.OnLoadFinishedListener {
+        FileResLoaderUtils.OnLoadFinishedListener {
     private MyGridViewAdapter adapter;
     private GridView gridView;
     private PackageManager manager;
@@ -56,7 +56,7 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
     ArrayList<String> mClassList = new ArrayList<>();
     ArrayList<Boolean> mCheckBoxList = new ArrayList<>();
 
-    private DrawableLoaderUtils drawableLoaderUtils; //用来异步加载图片
+    private FileResLoaderUtils drawableLoaderUtils; //用来异步加载图片
 
     //用来还原gridview的位置
     private int gridViewState_pos = 0;
@@ -92,7 +92,7 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
         manager = getActivity().getPackageManager();
         if (adapter == null) {//first loaded data
             LogUtils.i(WifiP2pHelper.TAG, "ApplicationFragment first oncreateView()");
-            drawableLoaderUtils = DrawableLoaderUtils.getInstance(this);
+            drawableLoaderUtils = FileResLoaderUtils.getInstance(this);
             loadData();
         } else {
             handler.sendEmptyMessage(LOAD_DATA_FINISHED);
@@ -198,7 +198,7 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
         mCheckBoxList.set(position, !mCheckBoxList.get(position));
         MainActivity activity = (MainActivity) getActivity();
         if (mCheckBoxList.get(position)) {//checked--->add to sendfile-list
-            activity.addFileToSendFileList(mPathList.get(position));
+            activity.addFileToSendFileList(mPathList.get(position), mNameList.get(position));
         } else {//unchecked--->remove from sendfile-list
             activity.removeFileFromSendFileList(mPathList.get(position));
         }

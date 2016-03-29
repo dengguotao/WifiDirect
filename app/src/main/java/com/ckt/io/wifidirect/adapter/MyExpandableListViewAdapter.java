@@ -14,7 +14,7 @@ import android.widget.TextView;
 
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.provider.Record;
-import com.ckt.io.wifidirect.utils.DrawableLoaderUtils;
+import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
 import com.ckt.io.wifidirect.utils.FileTypeUtils;
 
 import java.io.File;
@@ -176,7 +176,7 @@ public class MyExpandableListViewAdapter extends BaseExpandableListAdapter{
             holder.view_send_recevice_flag.setBackgroundColor(Color.RED);
         }
         //set image icon
-        Object obj = DrawableLoaderUtils.get(record.getPath());
+        Object obj = FileResLoaderUtils.getPic(record.getPath());
         if(obj != null) {
             if(obj instanceof Drawable) {
                 holder.img_icon.setImageDrawable((Drawable) obj);

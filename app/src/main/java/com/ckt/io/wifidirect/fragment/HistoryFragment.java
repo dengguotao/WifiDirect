@@ -59,12 +59,15 @@ public class HistoryFragment extends Fragment implements RecordManager.OnRecords
             }
             adapter = new MyExpandableListViewAdapter(getContext(), names, records);
             RecordManager.getInstance(getContext()).addOnRecordsChangedListener(this);//注册监听
-
             isFirstOnCrate = true;
         }
         expandableListView.setChildDivider(getContext().getResources().getDrawable(R.drawable.expandablelistview_child_divider));
         expandableListView.setAdapter(adapter);
         //默认展开 正在发送 和 正在接收的  分组
+        if(isFirstOnCrate) {
+            expandGroup(SENDING_GROUP);
+            expandGroup(RECEVING_GROUP);
+        }
         return view;
     }
 
@@ -130,66 +133,16 @@ public class HistoryFragment extends Fragment implements RecordManager.OnRecords
         return ret;
     }
 
-    //获取expandablelistview对应id的分组
-    public MyExpandableListViewAdapter.ExpandableListViewGroup findGroup(int id) {
-        return adapter.getGroupByName(getContext().getResources().getString(id));
-    }
-
-    //从adapter里面查找对应的发送记录
-    public Record findRecord(int groupId, String recordPath) {
-        MyExpandableListViewAdapter.ExpandableListViewGroup group = findGroup(groupId);
-        if(group == null) return null;
-        ArrayList<Record> records = group.getRecordList();
-        for(int i=0; i<records.size(); i++) {
-            Record temp = records.get(i);
-            if(temp.equals(recordPath)) {
-                return temp;
+    //展开对应的分组
+    public void expandGroup(int nameStrId) {
+        for(int i=0; i<adapter.getGroupList().size(); i++) {
+            String s = getResources().getString(nameStrId);
+            MyExpandableListViewAdapter.ExpandableListViewGroup group = adapter.getGroupList().get(i);
+            if(group.getName().equals(s)) {
+                expandableListView.expandGroup(i, true);
+                break;
             }
         }
-        return null;
-    }
-
-    public Record findRecord(MyExpandableListViewAdapter.ExpandableListViewGroup group, String recordPath) {
-        if(group == null) return null;
-        ArrayList<Record> records = group.getRecordList();
-        for(int i=0; i<records.size(); i++) {
-            Record temp = records.get(i);
-            if(temp.equals(recordPath)) {
-                return temp;
-            }
-        }
-        return null;
-    }
-
-    public void updateSendRecordState(MyExpandableListViewAdapter.ExpandableListViewGroup group, Record record, int state) {
-        if(group == null || record == null) return;
-        MyExpandableListViewAdapter.ExpandableListViewGroup tempGroup = null;
-        switch (state) {
-            case Record.STATE_FAILED:
-                tempGroup = findGroup(FAILED_GROUP);
-                break;
-            case Record.STATE_FINISHED:
-                tempGroup = findGroup(FINISHED_GROUP);
-                break;
-            case Record.STATE_WAIT_FOR_TRANSPORT:
-                tempGroup = findGroup(PAUSED_GROUP);
-                break;
-            case Record.STATE_TRANSPORTING:
-                tempGroup = findGroup(SENDING_GROUP);
-                break;
-            default:
-
-                break;
-        }
-        //如果record没有在 group 组里面
-        //①从原来的组里面移除   ②新增到已失败里面
-        if(tempGroup != null && group != tempGroup) {
-            tempGroup.getRecordList().add(0, record);
-            group.getRecordList().remove(record);
-        }else {
-            record.setState(state);
-        }
-        adapter.notifyDataSetChanged();
     }
 
     public MyExpandableListViewAdapter.ExpandableListViewGroup getOwnerGroup(Record record) {
@@ -225,9 +178,10 @@ public class HistoryFragment extends Fragment implements RecordManager.OnRecords
                Record record = changedRecordList.get(i);
                int state = record.getState();
                if(state == Record.STATE_WAIT_FOR_TRANSPORT || state == Record.STATE_TRANSPORTING) {
-                   Log.i(WifiP2pHelper.TAG, "expand.........");
                    MyExpandableListViewAdapter.ExpandableListViewGroup group = getOwnerGroup(record);
-                   expandableListView.expandGroup(adapter.getGroupPostion(group), true);
+                   if(this.isVisible()) {
+                       expandableListView.expandGroup(adapter.getGroupPostion(group), true);
+                   }
                }
            }
         }

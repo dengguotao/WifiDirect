@@ -25,6 +25,7 @@ public class WifiDirectDbHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE " + Constants.TABLE_NAME + " (" +
                 Constants.InstanceColumns.ID + " INTEGER PRIMARY KEY," +
                 Constants.InstanceColumns.NAME + " TEXT NOT NULL, " +
+                Constants.InstanceColumns.PATH + " TEXT NOT NULL, " +
                 Constants.InstanceColumns.LENGTH + " INTEGER NOT NULL, " +
                 Constants.InstanceColumns.STATE + " INTEGER NOT NULL, " +
                 Constants.InstanceColumns.TRANSFER_LENGTH + " INTEGER NOT NULL, " +
