@@ -8,6 +8,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -43,6 +44,9 @@ public class MainActivity extends BaseActivity {
     public static final byte REQUEST_CODE_SYSTEM_ALERT_PERMISSION = 5;
     public static final byte REQUEST_CODE_READ_EXTERNAL = 6;
     public static final byte REQUEST_CODE_WRITE_EXTERNAL = 7;
+
+    public static final int UPDATE_TRANSPORT_SPEED_INTERVAL = 500; //更新速度的时间间隔
+    public static final int UPDATE_TRANSPORT_PROGRESS_INTERVAL = 50; //更新速度的时间间隔
 
     private static final String TAG = "MainActivity";
     private DeviceConnectDialog deviceConnectDialog;
@@ -94,8 +98,10 @@ public class MainActivity extends BaseActivity {
                     record = recordManager.findRecord(f.getPath(), Record.STATE_WAIT_FOR_TRANSPORT, true);
                     if(record == null) break;
                     record.setState(Record.STATE_TRANSPORTING);
-                    ////////////////////////////////////////
-                    this.sendEmptyMessageDelayed(2, 100);
+                    //开始更新传输速度和传输进度
+                    handler.obtainMessage(WifiP2pHelper.WIFIP2P_UPDATE_SPEED, f).sendToTarget();
+                    handler.obtainMessage(WifiP2pHelper.WIFIP2P_UPDATE_PROGRESS, f).sendToTarget();
+                    /////////////////////////////////////////////////////////////
                     break;
                 case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY:  //发送完一个文件----成功
                 case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_FAILURE:    // 发送完一个文件----失败
@@ -107,13 +113,6 @@ public class MainActivity extends BaseActivity {
                     }else { //发送失败
                         record.setState(Record.STATE_FAILED);
                     }
-
-                    if(!wifiP2pHelper.isTranfering()) {
-                        mSendCount = 0;
-                        mReceviceCount = 0;
-                        handler.removeMessages(2);
-                        SpeedFloatWin.updateSpeed("0MB/s", "0MB/s");
-                    }
                     break;
 
                 case WifiP2pHelper.WIFIP2P_BEGIN_RECEIVE_FILE:  //开始接收文件
@@ -121,7 +120,11 @@ public class MainActivity extends BaseActivity {
                     HashMap<String, Object> map = (HashMap<String, Object>) msg.obj;
                     f = (File) map.get("path");
                     String sName = (String) map.get("name");
-                    recordManager.addNewRecevingRecord(f, sName, wifiP2pHelper.getCurrentConnectMAC());
+                    long size = (long) map.get("size");
+                    recordManager.addNewRecevingRecord(f, sName, size, wifiP2pHelper.getCurrentConnectMAC());
+                    //开始更新传输速度和传输进度
+                    handler.obtainMessage(WifiP2pHelper.WIFIP2P_UPDATE_SPEED, f).sendToTarget();
+                    handler.obtainMessage(WifiP2pHelper.WIFIP2P_UPDATE_PROGRESS, f).sendToTarget();
                     break;
                 case WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY: //接收完一个文件----成功
                 case WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_FAILURE:  //接收完一个文件---失败
@@ -137,30 +140,59 @@ public class MainActivity extends BaseActivity {
                     }else { //接受失败
                         record.setState(Record.STATE_FAILED);
                     }
-
-                    if(!wifiP2pHelper.isTranfering()) {
-                        mSendCount = 0;
-                        mReceviceCount = 0;
-                        handler.removeMessages(2);
-                        SpeedFloatWin.updateSpeed("0MB/s", "0MB/s");
-                    }
                     break;
 
-                case 2:
-                    if(wifiP2pHelper.isTranfering()) {
-                        int sendCount = wifiP2pHelper.getSendCount();
-                        int receviceCount = wifiP2pHelper.getReceviceCount();
-                        double sendSpeed = (sendCount - mSendCount) / 1024.0 /1024;
-                        double receSpeed = (receviceCount - mReceviceCount) / 1024.0 /1024;
-                        mSendCount = sendCount;
-                        mReceviceCount = receviceCount;
-                        Log.d(TAG, "speed: " + (sendSpeed > receSpeed ? sendSpeed : receSpeed) + " MB");
-                        DecimalFormat df = new DecimalFormat("0.0");
-                        SpeedFloatWin.updateSpeed(df.format(sendSpeed)+"MB/s", df.format(receSpeed)+"MB/s");
-                        this.sendEmptyMessageDelayed(2, 1000);
+                case WifiP2pHelper.WIFIP2P_UPDATE_SPEED:
+                    f = (File) msg.obj;
+                    double sendSpeed = 0, receiveSpeed = 0;
+                    Record tempRecord;
+                    //计算发送速度
+                    tempRecord = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, true);//查找正在发送的记录
+                    if(tempRecord != null) {
+                        tempRecord.setSpeedAndTranportLen(wifiP2pHelper.getSendSpeed(UPDATE_TRANSPORT_SPEED_INTERVAL), wifiP2pHelper.getSendCount());
+                        sendSpeed = tempRecord.getSpeed();
                     }else {
-                        SpeedFloatWin.updateSpeed("0MB/s", "0MB/s");
+                        LogUtils.i(WifiP2pHelper.TAG, "handler update speed ---> do not find the sending record");
                     }
+                    //计算接收速度
+                    tempRecord = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, false);//查找正在接收的记录
+                    if(tempRecord != null) {
+                        tempRecord.setSpeedAndTranportLen(wifiP2pHelper.getReceiveSpeed(UPDATE_TRANSPORT_SPEED_INTERVAL), wifiP2pHelper.getReceviedCount());
+                        receiveSpeed = tempRecord.getSpeed();
+                    }else {
+                        LogUtils.i(WifiP2pHelper.TAG, "handler update speed ---> do not find the receving record");
+                    }
+                    //更新悬浮窗显示的速度
+                    SpeedFloatWin.updateSpeed(sendSpeed+"M/S",
+                            receiveSpeed+"M/S");
+                    handler.removeMessages(WifiP2pHelper.WIFIP2P_UPDATE_SPEED);
+                    if(wifiP2pHelper.isTranfering()) {
+                        Message msg2 = new Message();
+                        msg2.what = WifiP2pHelper.WIFIP2P_UPDATE_SPEED;
+                        msg2.obj = f;
+                        handler.sendMessageDelayed(msg2, UPDATE_TRANSPORT_SPEED_INTERVAL);
+                    }
+                    break;
+                case WifiP2pHelper.WIFIP2P_UPDATE_PROGRESS:
+                    f = (File) msg.obj;
+                    //更新已接受的长度
+                    record = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, true);//查找正在发送的记录
+                    if(record != null) {
+                        record.setTransported_len(wifiP2pHelper.getSendCount());
+                    }
+                    //更新已发送的长度
+                    record = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, false);//查找正在接收的记录
+                    if(record != null) {
+                        record.setTransported_len(wifiP2pHelper.getReceviedCount());
+                    }
+                    handler.removeMessages(WifiP2pHelper.WIFIP2P_UPDATE_PROGRESS);
+                    if(wifiP2pHelper.isTranfering()) {
+                        Message msg2 = new Message();
+                        msg2.what = WifiP2pHelper.WIFIP2P_UPDATE_PROGRESS;
+                        msg2.obj = f;
+                        handler.sendMessageDelayed(msg2, UPDATE_TRANSPORT_PROGRESS_INTERVAL);
+                    }
+                    break;
             }
         }
     };
@@ -199,14 +231,14 @@ public class MainActivity extends BaseActivity {
         super.onResume();
         registerReceiver(wifiP2pHelper, intentFilter);
         //显示传输速度窗口
-        /*requestPermission(this.hashCode()%200 + REQUEST_CODE_SYSTEM_ALERT_PERMISSION,
+        requestPermission(this.hashCode()%200 + REQUEST_CODE_SYSTEM_ALERT_PERMISSION,
                 Manifest.permission.SYSTEM_ALERT_WINDOW,
                 new Runnable() {
                     @Override
                     public void run() {
                         SpeedFloatWin.show(MainActivity.this);
                     }
-                },null);*/
+                },null);
         RecordManager manager = RecordManager.getInstance(this);
         manager.clearAllRecord();
     }

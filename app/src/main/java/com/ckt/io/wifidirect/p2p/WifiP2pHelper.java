@@ -10,8 +10,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Timer;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -66,6 +68,9 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     public static final int WIFIP2P_RECEIVE_ONE_FILE_FAILURE = 124; //接收一个文件失败
     public static final int WIFIP2P_BEGIN_SEND_FILE = 125; //开始发送文件
     public static final int WIFIP2P_BEGIN_RECEIVE_FILE = 126; //开始接收文件
+
+    public static final int WIFIP2P_UPDATE_SPEED = 135; //更新速度
+    public static final int WIFIP2P_UPDATE_PROGRESS = 136; //更新进度
     private WifiP2pManager manager;
     private Channel channel;
     private ArrayList<WifiP2pDevice> deviceList;
@@ -81,7 +86,9 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     private MainActivity activity;
     private Handler handler;
 
+    private int mLastSendCount;
     private int mSendCount;
+    private int mLastRceviceCount;
     private int mReceviceCount;
 
     private ArrayList<File> sendingFileList; //所有的待发送/正在发送的文件
@@ -144,10 +151,6 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     public boolean isTranfering() {
         return ((fileReceiveAsyncTask != null && fileReceiveAsyncTask.isTranfering)
                 || (fileSendAsyncTask != null && fileSendAsyncTask.isTranfering));
-    }
-
-    public int getSendCount() {
-        return mSendCount;
     }
 
     // 发送文件
@@ -220,7 +223,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                         //3.发送文件内容
                         byte buf[] = new byte[1024];
                         int len;
-                        mSendCount = 0;
+                        mLastSendCount = mSendCount = 0;
                         while ((len = inputstream.read(buf)) != -1) {
                             out.write(buf, 0, len);
                             mSendCount += len;
@@ -268,7 +271,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
 
     private class FileReceiveAsyncTask extends AsyncTask<Socket, Integer, Boolean> {
         private boolean isTranfering = false;
-
+        Timer timer = new Timer();
         @Override
         protected Boolean doInBackground(Socket... params) {
             isTranfering = true;
@@ -337,13 +340,14 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 f.createNewFile();
                 HashMap<String, Object> map = new HashMap<>();
                 map.put("path", f);
-                map.put("name", name);
+                map.put("name", f.getName());
+                map.put("size", size);
                 handler.obtainMessage(WIFIP2P_BEGIN_RECEIVE_FILE, map).sendToTarget();
                 //3.获取文件内容
                 long receivedSize = 0;
                 long leftSize = size;
                 out = new FileOutputStream(f);
-                mReceviceCount = 0;
+                mLastRceviceCount = mReceviceCount = 0;
                 handler.sendEmptyMessage(1);
                 byte buf[] = new byte[1024];
                 int len;
@@ -409,13 +413,41 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
         }
     }
 
+    public double getSendSpeed(int ms) {
+        double ret = 0;
+        if(mSendCount>=mLastSendCount) {
+            ret = (mSendCount-mLastSendCount)/(ms/1000.0f);
+            LogUtils.i(TAG, "send speed = " + ret);
+            ret = ret / 1024 / 1024.0f;
+            ret = Double.valueOf(DataTypeUtils.format(ret));
+        }
+        mLastSendCount = mSendCount;
+        return ret;
+    }
+
+    public double getReceiveSpeed(int ms) {
+        DecimalFormat df = new DecimalFormat("0.00");
+        double ret = 0;
+        if(mReceviceCount>=mLastRceviceCount) {
+            ret = (mReceviceCount-mLastRceviceCount)/(ms/1000.0f);
+            LogUtils.i(TAG, "recevied speed = " + ret);
+            ret = ret / 1024 / 1024.0f;
+            ret = Double.valueOf(DataTypeUtils.format(ret));
+        }
+        mLastRceviceCount = mReceviceCount;
+        return ret;
+    }
+
+    public long getSendCount() {
+        return this.mSendCount;
+    }
+
+    public long getReceviedCount() {
+        return this.mReceviceCount;
+    }
 
     public String getCurrentConnectMAC() {
         return this.currentConnectMAC;
-    }
-
-    public int getReceviceCount() {
-        return mReceviceCount;
     }
 
     public ArrayList<File> getSendingFileList() {

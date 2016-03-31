@@ -12,6 +12,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
+import android.widget.BaseAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
 
@@ -21,6 +23,7 @@ import com.ckt.io.wifidirect.adapter.MyExpandableListViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.provider.Record;
 import com.ckt.io.wifidirect.provider.RecordManager;
+import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
 import com.ckt.io.wifidirect.utils.FileTypeUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
 
@@ -30,7 +33,8 @@ import java.util.ArrayList;
 /**
  * Created by admin on 2016/3/16.
  */
-public class HistoryFragment extends Fragment implements RecordManager.OnRecordsChangedListener{
+public class HistoryFragment extends Fragment implements
+        RecordManager.OnRecordsChangedListener, FileResLoaderUtils.OnLoadFinishedListener{
 
     public static final int RECEVING_GROUP = R.string.group_recevieing_task;
     public static final int SENDING_GROUP = R.string.group_sending_task;
@@ -42,6 +46,8 @@ public class HistoryFragment extends Fragment implements RecordManager.OnRecords
     private ExpandableListView expandableListView;
     private MyExpandableListViewAdapter adapter;
 
+    private FileResLoaderUtils drawLoader;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.history_fragment, container, false);
@@ -49,17 +55,37 @@ public class HistoryFragment extends Fragment implements RecordManager.OnRecords
         boolean isFirstOnCrate = false;
         if(adapter == null) {
             //添加分组,但是暂时不添加每个分组里面的item
+            ArrayList<Integer> groupIds = new ArrayList<>();
             ArrayList<String> names = new ArrayList<>();
             ArrayList<ArrayList<Record>> records = new ArrayList<>();
             for(int i=0; i<groups.length; i++) {
                 ArrayList<Record> recordList = new ArrayList<>();
 //                recordList.addAll(getGroupRecordFromRecordManager(groups[i]));
+                groupIds.add(groups[i]);
                 names.add(getResources().getString(groups[i]));
                 records.add(recordList);
             }
-            adapter = new MyExpandableListViewAdapter(getContext(), names, records);
+
+            adapter = new MyExpandableListViewAdapter(getContext(), groupIds, names, records);
             RecordManager.getInstance(getContext()).addOnRecordsChangedListener(this);//注册监听
             isFirstOnCrate = true;
+            drawLoader = FileResLoaderUtils.getInstance(this);
+
+            expandableListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+                @Override
+                public void onScrollStateChanged(AbsListView view, int scrollState) {
+                    if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) { //stop
+                        expandableListView.setTag(false);
+                        ((BaseAdapter) expandableListView.getAdapter()).notifyDataSetChanged();
+                    } else { //scrolling
+                        expandableListView.setTag(true);
+                    }
+                }
+
+                @Override
+                public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {}
+            });
+            loadDrawable();
         }
         expandableListView.setChildDivider(getContext().getResources().getDrawable(R.drawable.expandablelistview_child_divider));
         expandableListView.setAdapter(adapter);
@@ -166,7 +192,17 @@ public class HistoryFragment extends Fragment implements RecordManager.OnRecords
                 groupId = PAUSED_GROUP;
                 break;
         }
-        return adapter.getGroupByName(getResources().getString(groupId));
+        return adapter.getGroupById(groupId);
+    }
+
+    public void loadDrawable() {
+        for(int i=0; i<adapter.getGroupList().size(); i++) {
+            MyExpandableListViewAdapter.ExpandableListViewGroup group = adapter.getGroupList().get(i);
+            for(int j=0; j<group.getRecordList().size(); j++) {
+                Record record = group.getRecordList().get(j);
+                drawLoader.load(getContext(), record.getPath());
+            }
+        }
     }
 
     //************下面是一些回调**************************************************************
@@ -192,7 +228,27 @@ public class HistoryFragment extends Fragment implements RecordManager.OnRecords
 
     @Override
     public void onRecordChanged(Record record, int state_old, int state_new) {
+        if(state_new == Record.STATE_FINISHED) {
+            drawLoader.load(getContext(), record.getPath());
+        }
         updateExpandableListView();
         LogUtils.i(WifiP2pHelper.TAG, "onRecordChanged");
+    }
+
+    @Override
+    public void onRecordDataChanged(Record record) {
+        Object object = expandableListView.getTag();
+        if(object == null || !(boolean)(object)) { //expandableListView没有滑动
+            ((BaseAdapter)(expandableListView.getAdapter())).notifyDataSetChanged();
+        }
+    }
+
+    //加载完成一张图片的回调
+    @Override
+    public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
+        Object object = expandableListView.getTag();
+        if(object == null || !(boolean)(object)) { //expandableListView没有滑动
+            ((BaseAdapter)(expandableListView.getAdapter())).notifyDataSetChanged();
+        }
     }
 }

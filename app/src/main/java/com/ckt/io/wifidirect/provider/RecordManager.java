@@ -70,11 +70,11 @@ public class RecordManager implements Record.OnStateChangeListener{
     }
 
     //新增正在接收的记录
-    public Record addNewRecevingRecord(File f, String name, String mac) {
+    public Record addNewRecevingRecord(File f, String name, long size, String mac) {
         Record record = new Record(
                 name,
                 f.getPath(),
-                f.length(),
+                size,
                 0,
                 Record.STATE_TRANSPORTING,
                 Record.DIRECTION_IN,
@@ -273,9 +273,22 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
+    //record数据改变
+    @Override
+    public void onDataChanged(Record record) {
+        //回调监听
+        for(int i=0; i<listenerArrayList.size(); i++) {
+            OnRecordsChangedListener listener = listenerArrayList.get(i);
+            if(listener!=null) {
+                listener.onRecordDataChanged(record);
+            }
+        }
+    }
+
     //记录发生改变的监听
     public interface OnRecordsChangedListener {
         public abstract void onRecordListChanged(int action, ArrayList<Record> changedRecordList);
         public abstract void onRecordChanged(Record record, int state_old, int state_new);
+        public abstract void onRecordDataChanged(Record record);
     }
 }

@@ -31,6 +31,8 @@ public class Record {
     private int transport_direction;
     private String mac;
 
+    private double speed; //传输的速度
+
     private OnStateChangeListener listener;
 
     public Record(String name, String path, long length, long transported_len, int state, int transport_direction, String mac) {
@@ -104,6 +106,9 @@ public class Record {
 
     public void setTransported_len(long transported_len) {
         this.transported_len = transported_len;
+        if(listener != null) {
+            listener.onDataChanged(this);
+        }
     }
 
     public long getLength() {
@@ -121,6 +126,10 @@ public class Record {
     public void setState(int state) {
         int old = state;
         this.state = state;
+        if(this.state == STATE_FINISHED) {
+            transported_len = length;
+            speed = 0;
+        }
         if(listener != null) {
             listener.onStateChanged(this, old, state);
         }
@@ -152,6 +161,7 @@ public class Record {
 
     public interface OnStateChangeListener {
         public abstract void onStateChanged(Record record, int state_olad, int state_new);
+        public abstract void onDataChanged(Record record);
     }
 
     public String getMac() {
@@ -160,5 +170,17 @@ public class Record {
 
     public void setMac(String mac) {
         this.mac = mac;
+    }
+
+    public double getSpeed() {
+        return speed;
+    }
+
+    public void setSpeedAndTranportLen(double speed, long tranportLen) {
+        this.speed = speed;
+        this.transported_len = tranportLen;
+        if(listener != null) {
+            listener.onDataChanged(this);
+        }
     }
 }

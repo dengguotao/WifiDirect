@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.provider.Record;
+import com.ckt.io.wifidirect.utils.DataTypeUtils;
 import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
 import com.ckt.io.wifidirect.utils.FileTypeUtils;
 
@@ -27,21 +28,23 @@ public class MyExpandableListViewAdapter extends BaseExpandableListAdapter{
     private ArrayList<ExpandableListViewGroup> groupList;
     private Context context;
 
-    public MyExpandableListViewAdapter(Context context, ArrayList<String> groupNames, ArrayList<ArrayList<Record>> records) {
+    public MyExpandableListViewAdapter(Context context, ArrayList<Integer> groupIds, ArrayList<String> groupNames, ArrayList<ArrayList<Record>> records) {
         this.context = context;
         this.groupList = new ArrayList<>();
         int size = groupNames.size();
         size = size < records.size() ? size : records.size();
         for(int i=0; i<size; i++) {
-            ExpandableListViewGroup group = new ExpandableListViewGroup(groupNames.get(i), records.get(i));
+            ExpandableListViewGroup group = new ExpandableListViewGroup(groupIds.get(i), groupNames.get(i), records.get(i));
             this.groupList.add(group);
         }
     }
 
     public class ExpandableListViewGroup {
+        private int id;
         private String name;
         private ArrayList<Record> recordList;
-        public ExpandableListViewGroup(String name, ArrayList<Record> recordList) {
+        public ExpandableListViewGroup(int id, String name, ArrayList<Record> recordList) {
+            this.id = id;
             this.name = name;
             this.recordList = recordList;
         }
@@ -74,10 +77,10 @@ public class MyExpandableListViewAdapter extends BaseExpandableListAdapter{
         return group.recordList.size();
     }
 
-    public ExpandableListViewGroup getGroupByName(String name) {
+    public ExpandableListViewGroup getGroupById(int id) {
         for(int i=0; i<groupList.size(); i++) {
             ExpandableListViewGroup group = groupList.get(i);
-            if(group.name.endsWith(name)) {
+            if(group.id == id) {
                 return group;
             }
         }
@@ -96,7 +99,7 @@ public class MyExpandableListViewAdapter extends BaseExpandableListAdapter{
 
     @Override
     public long getGroupId(int groupPosition) {
-        return groupPosition;
+        return groupList.get(groupPosition).id;
     }
     public long getGroupId(ExpandableListViewGroup group) {
         for(int i=0; i<groupList.size(); i++) {
@@ -167,8 +170,23 @@ public class MyExpandableListViewAdapter extends BaseExpandableListAdapter{
             convertView.setTag(childViewHolder);
         }
         ChildViewHolder holder = (ChildViewHolder) convertView.getTag();
-
         Record record = (Record) getChild(groupPosition, childPosition);
+
+        //set translate speed
+        holder.txt_send_speed.setText(record.getSpeed()+"M/S");
+        //set file send/total size
+        StringBuffer sb = new StringBuffer();
+        sb.append(DataTypeUtils.format(record.getTransported_len() / 1024 / 1024.0f)).
+                append("/").
+                append(DataTypeUtils.format(record.getLength() / 1024 / 1024.0f)).
+                append("M");
+        holder.txt_send_size.setText(sb.toString());
+        //set the progress bar
+        int progress = 0;
+        if(record.getLength() != 0) {
+           progress = (int)(record.getTransported_len() / (double)record.getLength() * holder.progressBar.getMax());
+        }
+        holder.progressBar.setProgress(progress);
         //set send or receive flag
         if(record.isSend()) { //·¢ËÍ
             holder.view_send_recevice_flag.setBackgroundColor(Color.GREEN);

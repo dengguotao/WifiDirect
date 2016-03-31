@@ -50,7 +50,8 @@
             android:id="@+id/progressbar"
             style="@style/DownloadProgressBar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:max="100"/>
 
         <TextView
             android:id="@+id/txt_name"
@@ -71,8 +72,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="12sp"
-                android:textColor="#888"
-                android:text="20M/S"/>
+                android:textColor="#888" />
 
             <TextView
                 android:id="@+id/txt_send_size"
@@ -81,8 +81,7 @@
                 android:layout_height="wrap_content"
                 android:singleLine="true"
                 android:textSize="12sp"
-                android:textColor="#888"
-                android:text="12M/100M"/>
+                android:textColor="#888" />
 
             <TextView
                 android:id="@+id/txt_state"
