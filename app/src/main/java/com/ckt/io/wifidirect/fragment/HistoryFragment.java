@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.BaseAdapter;
+import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
 
@@ -70,25 +71,25 @@ public class HistoryFragment extends Fragment implements
             RecordManager.getInstance(getContext()).addOnRecordsChangedListener(this);//注册监听
             isFirstOnCrate = true;
             drawLoader = FileResLoaderUtils.getInstance(this);
-
-            expandableListView.setOnScrollListener(new AbsListView.OnScrollListener() {
-                @Override
-                public void onScrollStateChanged(AbsListView view, int scrollState) {
-                    if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) { //stop
-                        expandableListView.setTag(false);
-                        ((BaseAdapter) expandableListView.getAdapter()).notifyDataSetChanged();
-                    } else { //scrolling
-                        expandableListView.setTag(true);
-                    }
-                }
-
-                @Override
-                public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {}
-            });
             loadDrawable();
         }
         expandableListView.setChildDivider(getContext().getResources().getDrawable(R.drawable.expandablelistview_child_divider));
         expandableListView.setAdapter(adapter);
+        expandableListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) { //stop
+                    expandableListView.setTag(false);
+                    adapter.notifyDataSetChanged();
+                } else { //scrolling
+                    expandableListView.setTag(true);
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+            }
+        });
         //默认展开 正在发送 和 正在接收的  分组
         if(isFirstOnCrate) {
             expandGroup(SENDING_GROUP);
@@ -239,7 +240,7 @@ public class HistoryFragment extends Fragment implements
     public void onRecordDataChanged(Record record) {
         Object object = expandableListView.getTag();
         if(object == null || !(boolean)(object)) { //expandableListView没有滑动
-            ((BaseAdapter)(expandableListView.getAdapter())).notifyDataSetChanged();
+            adapter.notifyDataSetChanged();
         }
     }
 
@@ -248,7 +249,7 @@ public class HistoryFragment extends Fragment implements
     public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
         Object object = expandableListView.getTag();
         if(object == null || !(boolean)(object)) { //expandableListView没有滑动
-            ((BaseAdapter)(expandableListView.getAdapter())).notifyDataSetChanged();
+            adapter.notifyDataSetChanged();
         }
     }
 }

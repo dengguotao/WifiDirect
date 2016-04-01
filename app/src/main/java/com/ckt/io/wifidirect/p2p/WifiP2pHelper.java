@@ -20,6 +20,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
@@ -77,6 +78,8 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     private WifiP2pInfo connectInfo;
     private boolean isConnected = false;
 
+
+
     // 作为服务socket用来接收对方发送的文件
     private ServerSocket serverSocket;
     private InetAddress clientAddress;  //客户端的地址
@@ -92,11 +95,10 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     private int mReceviceCount;
 
     private ArrayList<File> sendingFileList; //所有的待发送/正在发送的文件
-    private ArrayList<File> sendingFileInTask; //正在进行发送的文件
     private FileReceiveAsyncTask fileReceiveAsyncTask;
     private FileSendAsyncTask fileSendAsyncTask;
 
-    public WifiP2pHelper(MainActivity activity, Handler handler) {
+    public WifiP2pHelper(final MainActivity activity, Handler handler) {
         this.activity = activity;
         this.handler = handler;
         manager = (WifiP2pManager) activity
@@ -104,7 +106,6 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
         channel = manager.initialize(activity, activity.getMainLooper(), null);
         deviceList = new ArrayList<WifiP2pDevice>();
         sendingFileList = new ArrayList<>();
-        sendingFileInTask = new ArrayList<>();
         updateWifiMac();
     }
 
@@ -205,7 +206,6 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                 }
                 if(isSuccessed) {
                     handler.obtainMessage(WIFIP2P_BEGIN_SEND_FILE, f).sendToTarget();
-                    sendingFileInTask.add(f);
                     try {
                         inputstream = new FileInputStream(f);
                         String name = f.getName();
@@ -247,7 +247,6 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                     }
                 }
                 sendingFileList.remove(0);//从要发送文件列表中移除
-                sendingFileInTask.remove(0); //从正在发送列表中移除
                 if (isSuccessed) {
                     handler.obtainMessage(WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY, f).sendToTarget();
                 } else {
@@ -454,16 +453,17 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
         return sendingFileList;
     }
 
-    public ArrayList<File> getSendingFileInTask() {
-        return sendingFileInTask;
-    }
-
     // 监听的回调
     @Override
     public void onPeersAvailable(WifiP2pDeviceList peerList) {
         // TODO Auto-generated method stub
+        WifiP2pDevice device;
         deviceList.clear();
         deviceList.addAll(peerList.getDeviceList());
+        for(int i=0; i<deviceList.size(); i++) {
+            WifiP2pDevice dd = deviceList.get(i);
+            LogUtils.i(WifiP2pHelper.TAG, dd + "---->addr="+dd.deviceAddress);
+        }
         handler.sendEmptyMessage(WIFIP2P_DEVICE_LIST_CHANGED);
     }
 

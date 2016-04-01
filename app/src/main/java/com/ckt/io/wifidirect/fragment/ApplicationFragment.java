@@ -1,12 +1,15 @@
 package com.ckt.io.wifidirect.fragment;
 
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
@@ -56,8 +59,12 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
 
     private FileResLoaderUtils drawableLoaderUtils; //用来异步加载图片
 
+    private boolean isUninstalledApp = false; //只有卸载应用时 = true
+
     //用来还原gridview的位置
     private int gridViewState_pos = 0;
+
+    private BroadcastReceiver appReceiver = new AppReceiver();
 
     public static final int LOAD_DATA_FINISHED = 0;
 
@@ -131,7 +138,14 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                 startActivity(it);
                 Log.i("Activity", mPackageList.get((int) menuInfo.id) + "---->");
                 break;
-            case R.id.id_delete:
+            case R.id.id_uninstall:
+                isUninstalledApp = true;
+                AdapterView.AdapterContextMenuInfo menuInfo_1 = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+                String packageName_1 = mPackageList.get((int) menuInfo_1.id);
+                Uri packageUri = Uri.parse("package:" + packageName_1);
+                Intent uninstallIntent = new Intent(Intent.ACTION_DELETE, packageUri);
+                startActivity(uninstallIntent);
+
                 break;
             default:
                 break;
@@ -143,6 +157,11 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
         new Thread() {
             @Override
             public void run() {
+                apps.clear();
+                mNameList.clear();
+                mPathList.clear();
+                mPackageList.clear();
+                mCheckBoxList.clear();
                 packageInfoList = manager.getInstalledPackages(0);
                 for (int i = 0; i < packageInfoList.size(); i++) {
                     PackageInfo packageInfo = packageInfoList.get(i);
@@ -163,9 +182,24 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        //注册监听
+        IntentFilter filter = new IntentFilter(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addDataScheme("package");
+//        getActivity().registerReceiver(appReceiver, filter);
+        //刚才卸载了应用---->重新更新一下列表
+        if(isUninstalledApp) {
+            loadData();
+            ((MainActivity)(getActivity())).askUpdatSendFileList(this);
+        }
+    }
+
+    @Override
     public void onPause() {
         super.onPause();
         gridViewState_pos = gridView.getFirstVisiblePosition();
+//        getActivity().unregisterReceiver(appReceiver);
     }
 
     @Override
@@ -206,6 +240,19 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
         if (gridView.getTag() == null || !(boolean) gridView.getTag()) { //gridview没有滑动
             if (index % 5 == 0 || isAllFinished) {
                 ((BaseAdapter) (gridView.getAdapter())).notifyDataSetChanged();
+            }
+        }
+    }
+
+    public class AppReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent){
+            LogUtils.i(WifiP2pHelper.TAG, "uninstalled--->");
+            //接收卸载广播
+            if (intent.getAction().equals(Intent.ACTION_PACKAGE_REMOVED)) {
+                String packageName = intent.getDataString();
+                LogUtils.i(WifiP2pHelper.TAG, "uninstalled--->"+packageName);
             }
         }
     }

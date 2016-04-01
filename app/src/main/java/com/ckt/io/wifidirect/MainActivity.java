@@ -53,6 +53,7 @@ public class MainActivity extends BaseActivity {
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
     protected Toolbar toolbar;
+    private final IntentFilter intentFilter = new IntentFilter();
 
     private File received_file_path; //收到的文件的保存路径
 
@@ -61,7 +62,7 @@ public class MainActivity extends BaseActivity {
     private ContentFragment contentfragment;
     private OnSendFileListChangeListener onSendFileListChangeListener;
 
-    private final IntentFilter intentFilter = new IntentFilter();
+
     private WifiP2pHelper wifiP2pHelper;
     private boolean isTranfering;
     private int mSendCount;
@@ -81,10 +82,14 @@ public class MainActivity extends BaseActivity {
                     if(deviceConnectDialog.isShowing()) {
                         deviceConnectDialog.dismiss();
                     }
+                    //隐藏 "传" 按钮
+                    contentfragment.toggleConnectImgBut(false);
                     ToastUtils.toast(MainActivity.this, R.string.connect_successed);
                     break;
                 case WifiP2pHelper.WIFIP2P_DEVICE_DISCONNECTED: //连接已断开
                     deviceConnectDialog.onDisconnectedInfo();
+                    //显示 "传" 按钮
+                    contentfragment.toggleConnectImgBut(true);
                     break;
 
                 /////////////////////////////////////////////////////////////////////////
@@ -206,11 +211,6 @@ public class MainActivity extends BaseActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         selectFiles = new ArrayList<>();
         wifiP2pHelper = new WifiP2pHelper(this, this.handler);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
-        intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
 
         contentfragment = (ContentFragment) getSupportFragmentManager().findFragmentById(R.id.id_content);
         setOnSendFileListChangeListener(contentfragment);
@@ -224,35 +224,45 @@ public class MainActivity extends BaseActivity {
         deviceConnectDialog = new DeviceConnectDialog(this, R.style.FullHeightDialog);
 
         clearSendFileList();
+
+        //注册监听
+
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+        intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+
+        registerReceiver(wifiP2pHelper, intentFilter);
+
+        RecordManager.getInstance(this).clearAllRecord();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        registerReceiver(wifiP2pHelper, intentFilter);
         //显示传输速度窗口
-        requestPermission(this.hashCode()%200 + REQUEST_CODE_SYSTEM_ALERT_PERMISSION,
+        /*requestPermission(this.hashCode()%200 + REQUEST_CODE_SYSTEM_ALERT_PERMISSION,
                 Manifest.permission.SYSTEM_ALERT_WINDOW,
                 new Runnable() {
                     @Override
                     public void run() {
                         SpeedFloatWin.show(MainActivity.this);
                     }
-                },null);
+                },null);*/
         RecordManager manager = RecordManager.getInstance(this);
-        manager.clearAllRecord();
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        unregisterReceiver(wifiP2pHelper);
         SpeedFloatWin.hide(this);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        unregisterReceiver(wifiP2pHelper);
         LogUtils.i(WifiP2pHelper.TAG, "MainActivity onDestroy");
         wifiP2pHelper.release();
         FileResLoaderUtils.release();
@@ -346,6 +356,14 @@ public class MainActivity extends BaseActivity {
         }
         return isExist;
     }
+
+    //其他地方主动请求更新已选择的发送列表
+    public void askUpdatSendFileList(OnSendFileListChangeListener listener) {
+        if(listener != null) {
+            this.onSendFileListChangeListener.onSendFileListChange(this.selectFiles, selectFiles.size());
+        }
+    }
+
     //clear the sendFile-list
     public void clearSendFileList() {
         selectFiles.clear();

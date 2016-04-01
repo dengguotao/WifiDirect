@@ -1,5 +1,6 @@
 package com.ckt.io.wifidirect.fragment;
 
+import android.animation.ValueAnimator;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.net.wifi.p2p.WifiP2pManager;
@@ -19,6 +20,7 @@ import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 
@@ -27,6 +29,8 @@ import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyFragmentAdapter;
 import com.ckt.io.wifidirect.myViews.SendFileListPopWin;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.ckt.io.wifidirect.utils.ApkUtils;
+import com.ckt.io.wifidirect.utils.BitmapUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
 
 import java.io.File;
@@ -42,6 +46,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
     private ViewGroup mButtomFun_clear;
     private TextView txt_sendFileNum;
     private ImageView img_connect; //the right conner "send"
+    private int img_connect_height;
     private ViewPager mPager;
     private ArrayList<Fragment> fragmentArrayList;
     private ImageView image;
@@ -69,6 +74,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         mButtomFun_send.setOnClickListener(this);
         mButtomFun_clear.setOnClickListener(this);
         img_connect = (ImageView) view.findViewById(R.id.img_connect);
+        img_connect_height = (int) BitmapUtils.dipTopx(getContext(), 60);
         img_connect.setOnClickListener(this);
         InitImage();
         InitViewPager();
@@ -121,59 +127,58 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         mPager.setOnPageChangeListener(new MyOnPageChangeListener());
     }
 
-    public void toggleButtomFun() {
-        if (this.mButtomFunViewGroup.getVisibility() == View.VISIBLE) {
-            toggleButtomFun(false);
-        } else {
-            toggleButtomFun(true);
-        }
-    }
-
-    public void toggleButtomFun(boolean isShow) {
-        if (isShow) {//show
-            if (this.mButtomFunViewGroup.getVisibility() != View.VISIBLE) {
-                mButtomFunViewGroup.setVisibility(View.VISIBLE);
-                TranslateAnimation animation = new TranslateAnimation(0, 0, mButtomFunViewGroup.getHeight(), 0);
-                animation.setDuration(200);
-                animation.setInterpolator(new AccelerateInterpolator());
-                mButtomFunViewGroup.startAnimation(animation);
+    public void toggleConnectImgBut(boolean isShow) {
+        if(isShow) {
+            if(img_connect.getVisibility() == View.GONE) { //show
+                img_connect.setVisibility(View.VISIBLE);
+                ScaleAnimation scaleAnimation = new ScaleAnimation(0, 1, 0, 1, img_connect.getWidth() / 2, img_connect.getHeight() / 2);
+                scaleAnimation.setDuration(200);
+                scaleAnimation.setInterpolator(new AccelerateInterpolator());
+                img_connect.startAnimation(scaleAnimation);
+            }
+        }else {
+            if(img_connect.getVisibility() == View.VISIBLE) { //hide
                 ScaleAnimation scaleAnimation = new ScaleAnimation(1, 0, 1, 0, img_connect.getWidth() / 2, img_connect.getHeight() / 2);
                 scaleAnimation.setDuration(200);
                 scaleAnimation.setInterpolator(new AccelerateInterpolator());
                 img_connect.startAnimation(scaleAnimation);
                 img_connect.setVisibility(View.GONE);
             }
-        } else {//hide
-            if (this.mButtomFunViewGroup.getVisibility() == View.VISIBLE) {
-
-                TranslateAnimation animation = new TranslateAnimation(0, 0, 0, mButtomFunViewGroup.getHeight());
-                animation.setDuration(200);
-                animation.setInterpolator(new AccelerateInterpolator());
-                animation.setAnimationListener(new Animation.AnimationListener() {
-                    @Override
-                    public void onAnimationStart(Animation animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animation animation) {
-                        mButtomFunViewGroup.setVisibility(View.INVISIBLE);
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animation animation) {
-
-                    }
-                });
-                mButtomFunViewGroup.startAnimation(animation);
-                img_connect.setVisibility(View.VISIBLE);
-                ScaleAnimation scaleAnimation = new ScaleAnimation(0, 1, 0, 1, img_connect.getWidth() / 2, img_connect.getHeight() / 2);
-                scaleAnimation.setDuration(200);
-                scaleAnimation.setInterpolator(new AccelerateInterpolator());
-                img_connect.startAnimation(scaleAnimation);
-
-            }
         }
+    }
+
+    public void toggleButtomFun(boolean isShow) {
+        final RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) mButtomFunViewGroup.getLayoutParams();
+        ValueAnimator animator;
+        if (isShow) {//show
+            if(img_connect.getTag() == null || !(Boolean)(img_connect.getTag())) {
+
+            }else { //已经显示了
+                return;
+            }
+            img_connect.setTag(true);
+            animator = ValueAnimator.ofInt(0, img_connect_height);
+        } else {//hide
+            if(img_connect.getTag() == null || (Boolean)(img_connect.getTag())) {
+
+            }else { //已经隐藏了
+                return;
+            }
+            img_connect.setTag(false);
+            animator = ValueAnimator.ofInt(img_connect_height, 0);
+        }
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                int value = (int) animation.getAnimatedValue();
+                lp.height = value;
+                mButtomFunViewGroup.setLayoutParams(lp);
+            }
+        });
+        animator.setDuration(500);
+        animator.setInterpolator(new AccelerateInterpolator());
+        animator.start();
+        mButtomFunViewGroup.setLayoutParams(lp);
     }
 
     @Override

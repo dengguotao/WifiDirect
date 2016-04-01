@@ -3,12 +3,9 @@
     <group android:checkableBehavior="none">
         <item
             android:id="@+id/id_open"
-            android:title="打开" />
+            android:title="@string/menu_open" />
         <item
-            android:id="@+id/id_close"
-            android:title="关闭" />
-        <item
-            android:id="@+id/id_delete"
-            android:title="删除" />
+            android:id="@+id/id_uninstall"
+            android:title="@string/menu_uninstall" />
     </group>
 </menu>

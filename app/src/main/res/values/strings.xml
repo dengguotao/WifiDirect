@@ -50,4 +50,8 @@
     <string name="state_failed">已失败</string>
     <string name="state_paused">已暂停</string>
     <string name="state_waiting">等待中</string>
+
+    <string name="menu_open">打开</string>
+    <string name="menu_delete">删除</string>
+    <string name="menu_uninstall">卸载</string>
 </resources>

@@ -49,7 +49,8 @@ public class FileResLoaderUtils {
             picMap = new HashMap<>();
         }
         if(picMap.keySet().contains(path)) {
-            LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->load() warning:"+path+" has been loaded before");
+
+//            LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->load() warning:"+path+" has been loaded before");
             return;
         }
         if(loadTask == null || !loadTask.isLoadiing) {//后台任务没有运行,加入loadlist后启动后台任务
@@ -59,6 +60,7 @@ public class FileResLoaderUtils {
         }else {//后台正在运行,加入loadlist即可
             loadTask.loadList.add(path);
         }
+        loadTask.context = context;
     }
 
     private class LoadTask extends AsyncTask<String, Object, Boolean> {
@@ -74,7 +76,7 @@ public class FileResLoaderUtils {
             while (loadList.size() != 0) {
                 String path = loadList.get(0);
                 loadList.remove(0);
-                LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->loading pic of "+path);
+//                LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->loading pic of "+path);
                 String s = path.toLowerCase();
                 Object obj = null;
                 if(s.endsWith(".apk")) { //apk文件
