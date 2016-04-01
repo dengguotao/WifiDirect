@@ -147,6 +147,9 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
+    public ArrayList<Record> getAllRecord() {
+        return this.recordArrayList;
+    }
 
     //获取 状态为state的 record列表
     public ArrayList<Record> getRecords(int state) {

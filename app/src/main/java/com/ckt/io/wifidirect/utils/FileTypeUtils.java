@@ -47,9 +47,9 @@ public class FileTypeUtils {
     }
 
     //获取格式的默认图片
-    public static int getDefaultFileIcon(String path) {
+    public static int getDefaultFileIcon(String path, int defaultId) {
         String s = path.toLowerCase();
-        int id = R.drawable.file_icon;
+        int id = defaultId;
         if(isApk(path)) { //apk文件
             id = R.drawable.apk_icon;
         }else if(isMusic(path)) { //音乐文件
@@ -60,6 +60,11 @@ public class FileTypeUtils {
             id = R.drawable.film_icon;
         }
         return id;
+    }
+
+    //获取格式的默认图片
+    public static int getDefaultFileIcon(String path) {
+        return getDefaultFileIcon(path, R.drawable.file_icon);
     }
 
     //判断文件是否需要加载图片

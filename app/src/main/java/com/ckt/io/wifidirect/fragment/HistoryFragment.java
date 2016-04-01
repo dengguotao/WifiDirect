@@ -1,5 +1,6 @@
 package com.ckt.io.wifidirect.fragment;
 
+import android.content.Context;
 import android.database.ContentObserver;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -51,6 +52,7 @@ public class HistoryFragment extends Fragment implements
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        LogUtils.i(WifiP2pHelper.TAG, "HistoryFragment onCreateView");
         View view = inflater.inflate(R.layout.history_fragment, container, false);
         expandableListView = (ExpandableListView) view.findViewById(R.id.expand_listview);
         boolean isFirstOnCrate = false;
@@ -197,13 +199,19 @@ public class HistoryFragment extends Fragment implements
     }
 
     public void loadDrawable() {
-        for(int i=0; i<adapter.getGroupList().size(); i++) {
-            MyExpandableListViewAdapter.ExpandableListViewGroup group = adapter.getGroupList().get(i);
-            for(int j=0; j<group.getRecordList().size(); j++) {
-                Record record = group.getRecordList().get(j);
+        if(getContext()!=null) {
+            RecordManager recordManager = RecordManager.getInstance(getContext());
+            for(int i=0; i<recordManager.getAllRecord().size(); i++) {
+                Record record = recordManager.getAllRecord().get(i);
                 drawLoader.load(getContext(), record.getPath());
             }
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        LogUtils.i(WifiP2pHelper.TAG, "HistoryFragment onDestroyView");
     }
 
     //************下面是一些回调**************************************************************
@@ -229,7 +237,7 @@ public class HistoryFragment extends Fragment implements
 
     @Override
     public void onRecordChanged(Record record, int state_old, int state_new) {
-        if(state_new == Record.STATE_FINISHED) {
+        if(state_new == Record.STATE_FINISHED && getContext() != null) {
             drawLoader.load(getContext(), record.getPath());
         }
         updateExpandableListView();
