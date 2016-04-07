@@ -74,7 +74,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         mButtomFun_send.setOnClickListener(this);
         mButtomFun_clear.setOnClickListener(this);
         img_connect = (ImageView) view.findViewById(R.id.img_connect);
-        img_connect_height = (int) BitmapUtils.dipTopx(getContext(), 60);
+        img_connect_height = (int) BitmapUtils.dipTopx(getContext(), 55);
         img_connect.setOnClickListener(this);
         InitImage();
         InitViewPager();
@@ -175,8 +175,8 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
                 mButtomFunViewGroup.setLayoutParams(lp);
             }
         });
-        animator.setDuration(500);
-        animator.setInterpolator(new AccelerateInterpolator());
+        animator.setDuration(200);
+//        animator.setInterpolator(new AccelerateInterpolator());
         animator.start();
         mButtomFunViewGroup.setLayoutParams(lp);
     }

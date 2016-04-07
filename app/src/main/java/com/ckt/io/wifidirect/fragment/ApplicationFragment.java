@@ -34,6 +34,7 @@ import com.ckt.io.wifidirect.adapter.MyGridViewAdapter;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
 import com.ckt.io.wifidirect.utils.LogUtils;
+import com.ckt.io.wifidirect.utils.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,7 +44,7 @@ import java.util.List;
 /**
  * Created by ckt on 2/29/16.
  */
-public class ApplicationFragment extends Fragment implements AdapterView.OnItemClickListener,
+public class ApplicationFragment extends MyBaseFragment implements AdapterView.OnItemClickListener,
         MainActivity.OnSendFileListChangeListener,
         FileResLoaderUtils.OnLoadFinishedListener {
     private MyGridViewAdapter adapter;
@@ -58,8 +59,6 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
     ArrayList<Boolean> mCheckBoxList = new ArrayList<>();
 
     private FileResLoaderUtils drawableLoaderUtils; //用来异步加载图片
-
-    private boolean isUninstalledApp = false; //只有卸载应用时 = true
 
     //用来还原gridview的位置
     private int gridViewState_pos = 0;
@@ -103,13 +102,6 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
             handler.sendEmptyMessage(LOAD_DATA_FINISHED);
         }
         gridView.setOnItemClickListener(this);
-        gridView.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
-            @Override
-            public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-                MenuInflater inflater = new MenuInflater(getActivity());
-                inflater.inflate(R.menu.menu_context, menu);
-            }
-        });
         gridView.setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
@@ -125,10 +117,35 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
             }
         });
+        registerForContextMenu(gridView);
+        //注册广播
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addDataScheme("package");
+        getActivity().registerReceiver(appReceiver, filter);
         return view;
     }
 
     @Override
+    protected String getPositonPath(int position) {
+        return mPathList.get(position);
+    }
+
+    @Override
+    protected boolean isApkInstalled(String path) {
+        return true;
+    }
+
+    /*@Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        AdapterView.AdapterContextMenuInfo menuInfo1 = (AdapterView.AdapterContextMenuInfo) menuInfo;
+        int pos = menuInfo1.position;
+        LogUtils.i(WifiP2pHelper.TAG, "onCreateContextMenu"+pos);
+        MenuInflater inflater = new MenuInflater(getActivity());
+        inflater.inflate(R.menu.menu_context, menu);
+    }*/
+
+   /* @Override
     public boolean onContextItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.id_open:
@@ -138,8 +155,6 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                 startActivity(it);
                 Log.i("Activity", mPackageList.get((int) menuInfo.id) + "---->");
                 break;
-            case R.id.id_uninstall:
-                isUninstalledApp = true;
                 AdapterView.AdapterContextMenuInfo menuInfo_1 = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
                 String packageName_1 = mPackageList.get((int) menuInfo_1.id);
                 Uri packageUri = Uri.parse("package:" + packageName_1);
@@ -151,7 +166,7 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
                 break;
         }
         return super.onContextItemSelected(item);
-    }
+    }*/
 
     public void loadData() {
         new Thread() {
@@ -182,24 +197,17 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        //注册监听
-        IntentFilter filter = new IntentFilter(Intent.ACTION_PACKAGE_REMOVED);
-        filter.addDataScheme("package");
-//        getActivity().registerReceiver(appReceiver, filter);
-        //刚才卸载了应用---->重新更新一下列表
-        if(isUninstalledApp) {
-            loadData();
-            ((MainActivity)(getActivity())).askUpdatSendFileList(this);
-        }
-    }
-
-    @Override
     public void onPause() {
         super.onPause();
         gridViewState_pos = gridView.getFirstVisiblePosition();
-//        getActivity().unregisterReceiver(appReceiver);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        //unregisterReceiver
+        //不要在onPause里面注销
+        getActivity().unregisterReceiver(appReceiver);
     }
 
     @Override
@@ -248,11 +256,34 @@ public class ApplicationFragment extends Fragment implements AdapterView.OnItemC
 
         @Override
         public void onReceive(Context context, Intent intent){
-            LogUtils.i(WifiP2pHelper.TAG, "uninstalled--->");
-            //接收卸载广播
-            if (intent.getAction().equals(Intent.ACTION_PACKAGE_REMOVED)) {
-                String packageName = intent.getDataString();
-                LogUtils.i(WifiP2pHelper.TAG, "uninstalled--->"+packageName);
+            String action = intent.getAction();
+            String packageName = intent.getData().getSchemeSpecificPart();
+            if(Intent.ACTION_PACKAGE_REMOVED.equals(action)) { //卸载
+                LogUtils.i(WifiP2pHelper.TAG, "uninstalled a app--->"+packageName);
+                int index = mPackageList.indexOf(packageName);
+                String appName = "";
+                if(index >=0 ) {
+                    appName = mNameList.get(index);
+                    boolean isChecked = mCheckBoxList.get(index);
+                    String path = mPathList.get(index);
+                    PackageInfo info = apps.get(index);
+                    apps.remove(index);
+                    packageInfoList.remove(info);
+                    mNameList.remove(index);
+                    mPathList.remove(index);
+                    mPackageList.remove(index);
+                    mCheckBoxList.remove(index);
+                    if(isChecked) {
+                        MainActivity activity = (MainActivity) getActivity();
+                        activity.removeFileFromSendFileList(path);
+                    }
+                    if(adapter != null) {
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+                ToastUtils.toast(getContext(), appName + " " + getResources().getString(R.string.package_uninstalled));
+            }else if(Intent.ACTION_PACKAGE_ADDED.equals(action)){//新增
+                LogUtils.i(WifiP2pHelper.TAG, "installed a app------->"+packageName);
             }
         }
     }

@@ -54,4 +54,7 @@
     <string name="menu_open">打开</string>
     <string name="menu_delete">删除</string>
     <string name="menu_uninstall">卸载</string>
+    <string name="menu_property">属性</string>
+
+    <string name="package_uninstalled">已卸载</string>
 </resources>

@@ -1,6 +1,8 @@
 package com.ckt.io.wifidirect.utils;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 
 import com.ckt.io.wifidirect.R;
 
@@ -78,7 +80,7 @@ public class FileTypeUtils {
     public static String getMIMEType(String path)
     {
         /* 依扩展名的类型决定MimeType */
-        String type = "";
+        String type = "*/*";
         if(isMusic(path)) {
             type = "audio";
         }else if(isMovie(path)) {
@@ -96,6 +98,13 @@ public class FileTypeUtils {
             type += "/*";
         }
         return type;
+    }
+
+    public static void openFile(Context context, String path) {
+        Intent it = new Intent(Intent.ACTION_VIEW);
+        it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        it.setDataAndType(Uri.fromFile(new File(path)), getMIMEType(path));
+        context.startActivity(it);
     }
 
     public static String getFileSize(String path) {

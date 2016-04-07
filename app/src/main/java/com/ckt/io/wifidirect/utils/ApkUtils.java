@@ -45,4 +45,11 @@ public class ApkUtils {
         }
         return lable;
     }
+
+    public static String getApkPackageName(Context context, String apkPath) {
+        PackageManager pm = context.getPackageManager();
+        PackageInfo info = pm.getPackageArchiveInfo(apkPath,
+                PackageManager.GET_ACTIVITIES);
+        return info != null ? info.packageName : null;
+    }
 }

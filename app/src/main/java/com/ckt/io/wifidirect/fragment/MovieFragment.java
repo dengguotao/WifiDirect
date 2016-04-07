@@ -36,7 +36,7 @@ import java.util.ArrayList;
 /**
  * Created by ckt on 2/29/16.
  */
-public class MovieFragment extends Fragment implements View.OnClickListener,
+public class MovieFragment extends MyBaseFragment implements View.OnClickListener,
         AdapterView.OnItemClickListener,
         MainActivity.OnSendFileListChangeListener,
         FileResLoaderUtils.OnLoadFinishedListener {
@@ -49,7 +49,7 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
     private MyGridViewAdapter adapterMovie;
     private FileResLoaderUtils drawableLoaderUtils;
 
-    //ÓÃÀ´»¹Ô­gridviewµÄÎ»ÖÃ
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô­gridviewï¿½ï¿½Î»ï¿½ï¿½
     private int gridViewState_pos = 0;
 
     public static final int LOAD_DATA_FINISHED = 0;
@@ -63,7 +63,7 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
                     gridView.setSelection(gridViewState_pos);
                     if (drawableLoaderUtils != null) {
                         for (int i = 0; i < nameList.size(); i++) {
-                            //Æô¶¯Òì²½ÈÎÎñ¼ÓÔØÍ¼Æ¬,¼ÓÔØÍê³ÉÒ»¸öÍ¼Æ¬ºó»áµ÷ÓÃonLoadOneFinished
+                            //ï¿½ï¿½ï¿½ï¿½ï¿½ì²½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¼Æ¬,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Í¼Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½onLoadOneFinished
                             drawableLoaderUtils.load(getContext(), mPathList.get(i));
                         }
                     }
@@ -80,8 +80,8 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
         refresh = (TextView) view.findViewById(R.id.id_movie_refresh);
         gridView = (GridView) view.findViewById(R.id.id_movie_grid_view);
         refresh.setOnClickListener(this);
-        if (adapterMovie == null) { //µÚÒ»´Î¼ÓÔØview
-            drawableLoaderUtils = FileResLoaderUtils.getInstance(this);//»ñÈ¡Í¼Æ¬¼ÓÔØÆ÷µÄÊµÀý
+        if (adapterMovie == null) { //ï¿½ï¿½Ò»ï¿½Î¼ï¿½ï¿½ï¿½view
+            drawableLoaderUtils = FileResLoaderUtils.getInstance(this);//ï¿½ï¿½È¡Í¼Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½
             MainActivity activity = (MainActivity) getActivity();
             activity.requestPermission(this.hashCode() % 200 + MainActivity.REQUEST_CODE_READ_EXTERNAL,
                     Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -111,6 +111,7 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
             }
         });
+        registerForContextMenu(gridView);
         return view;
     }
 
@@ -190,12 +191,17 @@ public class MovieFragment extends Fragment implements View.OnClickListener,
         }
     }
 
-    //¼ÓÔØÍêpathÎÄ¼þµÄÍ¼Æ¬
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½pathï¿½Ä¼ï¿½ï¿½ï¿½Í¼Æ¬
     @Override
     public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
         int index = mPathList.indexOf(path);
-        if (gridView.getTag() == null || !(boolean) gridView.getTag()) { //gridviewÃ»ÓÐ»¬¶¯
+        if (gridView.getTag() == null || !(boolean) gridView.getTag()) { //gridviewÃ»ï¿½Ð»ï¿½ï¿½ï¿½
             ((BaseAdapter) (gridView.getAdapter())).notifyDataSetChanged();
         }
+    }
+
+    @Override
+    protected String getPositonPath(int position) {
+        return mPathList.get(position);
     }
 }

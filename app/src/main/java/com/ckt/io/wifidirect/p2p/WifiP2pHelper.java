@@ -12,7 +12,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Timer;
 
 import android.content.BroadcastReceiver;
@@ -28,6 +30,7 @@ import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.WifiP2pManager.ActionListener;
@@ -50,7 +53,9 @@ import com.ckt.io.wifidirect.utils.LogUtils;
 import com.ckt.io.wifidirect.utils.SdcardUtils;
 
 
-public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener, ConnectionInfoListener {
+public class WifiP2pHelper extends BroadcastReceiver implements
+        PeerListListener,
+        ConnectionInfoListener {
     public static final String TAG = "WifiDirect";
     public static final int SOCKET_PORT = 8989;
     public static final int SOCKET_TIMEOUT = 5000;
@@ -425,7 +430,6 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
     }
 
     public double getReceiveSpeed(int ms) {
-        DecimalFormat df = new DecimalFormat("0.00");
         double ret = 0;
         if(mReceviceCount>=mLastRceviceCount) {
             ret = (mReceviceCount-mLastRceviceCount)/(ms/1000.0f);
@@ -462,11 +466,10 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
         deviceList.addAll(peerList.getDeviceList());
         for(int i=0; i<deviceList.size(); i++) {
             WifiP2pDevice dd = deviceList.get(i);
-            LogUtils.i(WifiP2pHelper.TAG, dd + "---->addr="+dd.deviceAddress);
+//            LogUtils.i(WifiP2pHelper.TAG, dd + "---->addr="+dd.deviceAddress);
         }
         handler.sendEmptyMessage(WIFIP2P_DEVICE_LIST_CHANGED);
     }
-
 
     //获取到了设备连接信息-->准备用Socket通信
     @Override
@@ -489,6 +492,9 @@ public class WifiP2pHelper extends BroadcastReceiver implements PeerListListener
                                 InputStream inputStream = firstClientSocket.getInputStream();
                                 OutputStream outputStream = firstClientSocket.getOutputStream();
                                 clientAddress = firstClientSocket.getInetAddress(); //get the client addr
+                                LogUtils.i(TAG, "clientAddress="+clientAddress);
+                                LogUtils.i(TAG, "serverAddress="+connectInfo.groupOwnerAddress);
+
                                 //1.发送MAC地址给客户端
                                 if(currentMAC != null) {
                                     outputStream.write(currentMAC.getBytes());

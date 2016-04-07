@@ -41,7 +41,7 @@ import java.util.ArrayList;
 /**
  * Created by ckt on 2/29/16.
  */
-public class MusicFragment extends Fragment implements View.OnClickListener,
+public class MusicFragment extends MyBaseFragment implements View.OnClickListener,
         AdapterView.OnItemLongClickListener,
         AdapterView.OnItemClickListener, MainActivity.OnSendFileListChangeListener,
         FileResLoaderUtils.OnLoadFinishedListener {
@@ -55,7 +55,7 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
 
     private FileResLoaderUtils drawableLoaderUtils;
 
-    //ÓÃÀ´»¹Ô­listviewµÄÎ»ÖÃ
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô­listviewï¿½ï¿½Î»ï¿½ï¿½
     private int listViewState_pos = 0;
     private int listViewState_top = 0;
 
@@ -70,7 +70,7 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
                     listView.setSelectionFromTop(listViewState_pos, listViewState_top);
                     if (drawableLoaderUtils != null) {
                         for (int i = 0; i < nameList.size(); i++) {
-                            //Æô¶¯Òì²½ÈÎÎñ¼ÓÔØÍ¼Æ¬,¼ÓÔØÍê³ÉÒ»¸öÍ¼Æ¬ºó»áµ÷ÓÃonLoadOneFinished
+                            //ï¿½ï¿½ï¿½ï¿½ï¿½ì²½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¼Æ¬,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Í¼Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½onLoadOneFinished
 //                            drawableLoaderUtils.load(getContext(), songList.get(i).getFileUrl());
                         }
                     }
@@ -120,6 +120,7 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
                     }
                 },
                 null);
+        registerForContextMenu(listView);
         return view;
     }
 
@@ -241,10 +242,15 @@ public class MusicFragment extends Fragment implements View.OnClickListener,
             iconList.set(index, obj);
         }
 
-        if (listView.getTag() == null || !(boolean) listView.getTag()) { //gridviewÃ»ÓÐ»¬¶¯
+        if (listView.getTag() == null || !(boolean) listView.getTag()) { //gridviewÃ»ï¿½Ð»ï¿½ï¿½ï¿½
             if(index==songList.size()/2 || isAllFinished) {
                 ((BaseAdapter) (listView.getAdapter())).notifyDataSetChanged();
             }
         }
+    }
+
+    @Override
+    protected String getPositonPath(int position) {
+        return songList.get(position).getFileUrl();
     }
 }

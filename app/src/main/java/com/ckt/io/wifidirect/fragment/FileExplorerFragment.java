@@ -42,7 +42,7 @@ import com.ckt.io.wifidirect.utils.SdcardUtils;
 
 
 @SuppressLint("ValidFragment")
-public class FileExplorerFragment extends Fragment implements
+public class FileExplorerFragment extends MyBaseFragment implements
 		OnItemClickListener, OnSendFileListChangeListener,
 		FileResLoaderUtils.OnLoadFinishedListener{
 
@@ -233,7 +233,7 @@ public class FileExplorerFragment extends Fragment implements
 				if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {//stoped
 					LogUtils.i(WifiP2pHelper.TAG, "listview stop");
 					listView.setTag(false);
-					((BaseAdapter)(listView.getAdapter())).notifyDataSetChanged();
+					((BaseAdapter) (listView.getAdapter())).notifyDataSetChanged();
 					//加载需要加载图片的一个文件
 					loadListViewItemDrawalbe();
 				} else {
@@ -247,6 +247,7 @@ public class FileExplorerFragment extends Fragment implements
 			}
 		});
 		updateView(nowState);
+		registerForContextMenu(listView);
 		return view;
 	}
 
@@ -290,6 +291,11 @@ public class FileExplorerFragment extends Fragment implements
 			updateCheckList(sendFiles, fileList, checkList);
 			adapter.notifyDataSetInvalidated();
 		}
+	}
+
+	@Override
+	protected String getPositonPath(int position) {
+		return nowState.list.get(position);
 	}
 
 	/**
