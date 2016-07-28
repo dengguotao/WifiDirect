@@ -8,6 +8,8 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 
+import com.ckt.io.wifidirect.utils.LogUtils;
+
 /**
  * Created by guotao.deng on 2016/7/28.
  */
@@ -35,6 +37,7 @@ public class WifiDirectService extends Service {
 
     @Override
     public void onCreate() {
+        LogUtils.d(TAG, "WifiDirectService onCreate()");
         getContentResolver().registerContentObserver(Constants.InstanceColumns.CONTENT_URI,
                 true, contentObserver);
     }
