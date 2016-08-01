@@ -57,7 +57,7 @@ public class HistoryFragment extends Fragment implements
         expandableListView = (ExpandableListView) view.findViewById(R.id.expand_listview);
         boolean isFirstOnCrate = false;
         if(adapter == null) {
-            //添加分组,但是暂时不添加每个分组里面的item
+
             ArrayList<Integer> groupIds = new ArrayList<>();
             ArrayList<String> names = new ArrayList<>();
             ArrayList<ArrayList<Record>> records = new ArrayList<>();
@@ -70,7 +70,7 @@ public class HistoryFragment extends Fragment implements
             }
 
             adapter = new MyExpandableListViewAdapter(getContext(), groupIds, names, records);
-            RecordManager.getInstance(getContext()).addOnRecordsChangedListener(this);//注册监听
+            RecordManager.getInstance(getContext()).addOnRecordsChangedListener(this);
             isFirstOnCrate = true;
             drawLoader = FileResLoaderUtils.getInstance(this);
             loadDrawable();
@@ -92,7 +92,7 @@ public class HistoryFragment extends Fragment implements
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
             }
         });
-        //默认展开 正在发送 和 正在接收的  分组
+
         if(isFirstOnCrate) {
             expandGroup(SENDING_GROUP);
             expandGroup(RECEVING_GROUP);
@@ -106,7 +106,7 @@ public class HistoryFragment extends Fragment implements
         updateExpandableListView();
     }
 
-    //更新每个分组
+
     public void updateExpandableListView() {
         if(adapter == null) return;
         for(int i=0; i<adapter.getGroupList().size(); i++) {
@@ -162,7 +162,6 @@ public class HistoryFragment extends Fragment implements
         return ret;
     }
 
-    //展开对应的分组
     public void expandGroup(int nameStrId) {
         for(int i=0; i<adapter.getGroupList().size(); i++) {
             String s = getResources().getString(nameStrId);
@@ -214,7 +213,6 @@ public class HistoryFragment extends Fragment implements
         LogUtils.i(WifiP2pHelper.TAG, "HistoryFragment onDestroyView");
     }
 
-    //************下面是一些回调**************************************************************
     @Override
     public void onRecordListChanged(int action, ArrayList<Record> changedRecordList) {
         if(adapter == null) return;
@@ -247,16 +245,15 @@ public class HistoryFragment extends Fragment implements
     @Override
     public void onRecordDataChanged(Record record) {
         Object object = expandableListView.getTag();
-        if(object == null || !(boolean)(object)) { //expandableListView没有滑动
+        if(object == null || !(boolean)(object)) {
             adapter.notifyDataSetChanged();
         }
     }
 
-    //加载完成一张图片的回调
     @Override
     public void onLoadOneFinished(String path, Object obj, boolean isAllFinished) {
         Object object = expandableListView.getTag();
-        if(object == null || !(boolean)(object)) { //expandableListView没有滑动
+        if(object == null || !(boolean)(object)) {
             adapter.notifyDataSetChanged();
         }
     }

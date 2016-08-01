@@ -478,7 +478,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements
         Log.d(TAG, "onConnectionInfoAvailable()");
         connectInfo = info;
         clientAddress = null;
-        new Thread() {
+        /*new Thread() {
             @Override
             public void run() {
                 // TODO Auto-generated method stub
@@ -582,7 +582,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements
                     }
                 }
             }
-        }.start();
+        }.start();*/
         handler.sendEmptyMessage(WIFIP2P_DEVICE_CONNECTED_SUCCESS);//设备已连接
     }
 

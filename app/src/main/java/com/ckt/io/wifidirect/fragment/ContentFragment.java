@@ -28,6 +28,7 @@ import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyFragmentAdapter;
 import com.ckt.io.wifidirect.myViews.SendFileListPopWin;
+import com.ckt.io.wifidirect.p2p.WiFiP2pState;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
 import com.ckt.io.wifidirect.utils.ApkUtils;
 import com.ckt.io.wifidirect.utils.BitmapUtils;
@@ -153,7 +154,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         if (isShow) {//show
             if(img_connect.getTag() == null || !(Boolean)(img_connect.getTag())) {
 
-            }else { //已经显示了
+            }else {
                 return;
             }
             img_connect.setTag(true);
@@ -161,7 +162,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         } else {//hide
             if(img_connect.getTag() == null || (Boolean)(img_connect.getTag())) {
 
-            }else { //已经隐藏了
+            }else {
                 return;
             }
             img_connect.setTag(false);
@@ -204,7 +205,12 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
                     for (int i = 0; i < activity.getSendFiles().size(); i++) {
                         list.add(new File(activity.getSendFiles().get(i)));
                     }
-                    wifiP2pHelper.sendFiles(list);
+//                    wifiP2pHelper.sendFiles(list);
+                    for(int i=0; i<list.size(); i++) {
+                        File temp = list.get(i);
+                        WiFiP2pState.getInstance(getContext()).wifiTransferManager.sendFile(1, temp.getPath());
+                    }
+
                     activity.clearSendFileList();
                 } else {
                     activity.getDeviceConnectDialog().show();

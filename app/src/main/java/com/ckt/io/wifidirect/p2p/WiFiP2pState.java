@@ -15,9 +15,14 @@ import android.util.Log;
 
 import com.ckt.io.wifidirect.utils.LogUtils;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -37,6 +42,9 @@ public class WiFiP2pState extends BroadcastReceiver implements
 
     private ConnectedDeviceInfo connectedDeviceInfo;
 
+    public WifiTransferManager wifiTransferManager;
+
+    private boolean sendClientIpThreadRunning = false;
 
     private static WiFiP2pState instance = null;
     public static WiFiP2pState getInstance(Context context) {
@@ -99,7 +107,6 @@ public class WiFiP2pState extends BroadcastReceiver implements
                 // we are connected with the other device, request connection info
                 //to find group owner IP
                 connectedDeviceInfo = new ConnectedDeviceInfo();
-                manager.requestConnectionInfo(channel, this);
                 manager.requestGroupInfo(channel, this);
                 Log.d(TAG, "device Connected!!--->requestConnectionInfo()");
             } else {
@@ -116,9 +123,97 @@ public class WiFiP2pState extends BroadcastReceiver implements
 
     @Override
     public void onConnectionInfoAvailable(WifiP2pInfo info) {
+        LogUtils.d(TAG, "onConnectionInfoAvailable  isGroupOwner:"+info.isGroupOwner);
         connectedDeviceInfo.connectInfo = info;
         if(!info.isGroupOwner) { //the client
             connectedDeviceInfo.connectedDeviceAddr = info.groupOwnerAddress;
+        }
+
+        if (info.isGroupOwner) { //groupOwner
+            connectedDeviceInfo.connectedDeviceAddr = null;
+        } else {//client
+            if (connectedDeviceInfo.connectInfo != null) {
+                connectedDeviceInfo.connectedDeviceAddr = connectedDeviceInfo.connectInfo.groupOwnerAddress;
+            }
+        }
+
+        wifiTransferManager = new WifiTransferManager(context,
+                connectedDeviceInfo.connectedDeviceAddr,
+                8080,
+                null,
+                null,
+                new WifiTransferManager.OnGetClientIpListener() {
+                    @Override
+                    public void onGetClientIp(InetAddress address) {
+                        LogUtils.d(TAG, "Group owner get the client addr:"+address.toString());
+                        if (connectedDeviceInfo != null) {
+                            connectedDeviceInfo.connectedDeviceAddr = address;
+                        }
+                    }
+                },
+                new WifiTransferManager.OnSendClientIpResponseListener() {
+                    @Override
+                    public void onSendClientIpResponse(boolean ret) {
+                        sendClientIpThreadRunning = false;
+                    }
+                });
+        /*
+        * [five] test
+        * */
+        new Thread() {
+            @Override
+            public void run() {
+                ServerSocket serverSocket = null;
+                try {
+                    serverSocket = new ServerSocket(8080);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                while(connectedDeviceInfo != null) {
+                    try {
+                        Socket client = serverSocket.accept();
+                        LogUtils.d(TAG, "a new connection!!!");
+                        wifiTransferManager.receive(client);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        try {
+                            if(serverSocket != null) {
+                                serverSocket.close();
+                            }
+                        } catch (Exception e1) {}
+                        if(serverSocket == null) {
+                            try {
+                                serverSocket = new ServerSocket(8080);
+                            } catch (Exception e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+                    }
+                    try {
+                        sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+
+        if(!connectedDeviceInfo.connectInfo.isGroupOwner) {
+
+            new Thread() {
+                @Override
+                public void run() {
+                    sendClientIpThreadRunning = true;
+                    while (sendClientIpThreadRunning) {
+                        wifiTransferManager.sendClientIp();
+                        try {
+                            sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }.start();
         }
     }
 
@@ -130,6 +225,7 @@ public class WiFiP2pState extends BroadcastReceiver implements
     @Override
     public void onGroupInfoAvailable(WifiP2pGroup group) {
         if(group == null || !isConnected()) return;
+        connectedDeviceInfo.group = group;
         for(WifiP2pDevice device : group.getClientList()) {
             if(device.status == WifiP2pDevice.CONNECTED) {
                 connectedDeviceInfo.connectedDevice = device;
@@ -137,15 +233,32 @@ public class WiFiP2pState extends BroadcastReceiver implements
             }
         }
 
-        if (group.isGroupOwner()) { //groupOwner
-            connectedDeviceInfo.connectedDeviceAddr = getInterfaceAddress(group);
-            LogUtils.d(TAG, "Connected device ip:" + connectedDeviceInfo.connectedDeviceAddr.toString());
-        } else {//client
-            if (connectedDeviceInfo.connectInfo != null) {
-                connectedDeviceInfo.connectedDeviceAddr = connectedDeviceInfo.connectInfo.groupOwnerAddress;
-            }
-        }
+        manager.requestConnectionInfo(channel, this);
     }
+
+    private static byte[] getLocalIPAddress() {
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+                NetworkInterface intf = en.nextElement();
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+                    InetAddress inetAddress = enumIpAddr.nextElement();
+                    if (!inetAddress.isLoopbackAddress()) {
+                        if (inetAddress instanceof Inet4Address) { // fix for Galaxy Nexus. IPv4 is easy to use :-)
+                            return inetAddress.getAddress();
+                        }
+                        //return inetAddress.getHostAddress().toString(); // Galaxy Nexus returns IPv6
+                    }
+                }
+            }
+        } catch (SocketException ex) {
+            //Log.e("AndroidNetworkAddressFactory", "getLocalIPAddress()", ex);
+        } catch (NullPointerException ex) {
+            //Log.e("AndroidNetworkAddressFactory", "getLocalIPAddress()", ex);
+        }
+        return null;
+    }
+
+
 
     private static Inet4Address getInterfaceAddress(WifiP2pGroup info) {
         NetworkInterface iface;
@@ -158,8 +271,9 @@ public class WiFiP2pState extends BroadcastReceiver implements
         Enumeration<InetAddress> addrs = iface.getInetAddresses();
         while (addrs.hasMoreElements()) {
             InetAddress addr = addrs.nextElement();
-            if (addr instanceof Inet4Address) {
-                return (Inet4Address)addr;
+            if (addr instanceof Inet4Address ) {
+                LogUtils.d(TAG, "getInterfaceAddress--> addr="+addr.toString());
+//                return (Inet4Address)addr;
             }
         }
         return null;
@@ -181,5 +295,6 @@ public class WiFiP2pState extends BroadcastReceiver implements
         public WifiP2pInfo connectInfo;
         public WifiP2pDevice connectedDevice;
         public InetAddress connectedDeviceAddr;
+        public WifiP2pGroup group;
     }
 }

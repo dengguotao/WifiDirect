@@ -72,12 +72,12 @@ public class DeviceChooseFragment extends Fragment{
 	//update views
 	public void init() {
 		MainActivity activity = (MainActivity) getActivity();
-		if(activity.getWifiP2pHelper().isConnected()) {//设备已经连接上了
+		if(activity.getWifiP2pHelper().isConnected()) {
 			if(txt_connected_info.getText().equals("")) {
 				txt_connected_info.setText(R.string.connect_successed);
 			}
 			listView.setVisibility(View.GONE);
-		}else { //设备未连接
+		}else {
 			listView.setVisibility(View.VISIBLE);
 			activity.getWifiP2pHelper().discoverDevice();
 			txt_connected_info.setText(R.string.searching_hit);
@@ -97,11 +97,10 @@ public class DeviceChooseFragment extends Fragment{
 		}
 	}
 
-	//连接断开
 	public void onDisconnectedInfo() {
 		listView.setVisibility(View.VISIBLE);
 		txt_connected_info.setText(R.string.disconnected_device);
-		//2s后重新开始搜索
+
 		handler.postDelayed(new Runnable() {
 			@Override
 			public void run() {

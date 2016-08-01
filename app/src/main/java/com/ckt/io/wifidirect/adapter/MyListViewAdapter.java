@@ -25,7 +25,7 @@ public class MyListViewAdapter extends BaseAdapter{
     private ArrayList<String> list = new ArrayList<>();
     private File innerSdFile, externalSDFile;
     private Context context;
-    private ArrayList<String> titleList; //要显示的文件的标题(如果为空,则会自动去获取)
+    private ArrayList<String> titleList;
     public MyListViewAdapter(Context context, ArrayList<String> fileList) {
         this.context = context;
         if(fileList != null) {
@@ -113,7 +113,7 @@ public class MyListViewAdapter extends BaseAdapter{
         File tempFile = new File(path);
         if(tempFile.isDirectory()) {
             viewHolder.img_icon.setImageResource(R.drawable.folder_icon);
-            //sdcard目录,特别处理:
+
             if(innerSdFile != null) {
                 if(tempFile.getPath().equals(innerSdFile.getPath())) {
                     viewHolder.img_icon.setImageResource(R.drawable.sdcard_icon);
@@ -125,30 +125,29 @@ public class MyListViewAdapter extends BaseAdapter{
                 }
             }
         }else {
-            if(FileTypeUtils.isNeedToLoadDrawable(tempFile.getPath())) {//需要显示加载图片
+            if(FileTypeUtils.isNeedToLoadDrawable(tempFile.getPath())) {
                 Object object = FileResLoaderUtils.getPic(tempFile.getPath());
                 if(object instanceof Drawable) {
                     viewHolder.img_icon.setImageDrawable((Drawable) object);
                 }else if(object instanceof Bitmap) {
                     viewHolder.img_icon.setImageBitmap((Bitmap) object);
-                }else { //图片为空-->加载默认的图片
+                }else {
                     int icon_id = FileTypeUtils.getDefaultFileIcon(tempFile.getPath());
                     viewHolder.img_icon.setImageResource(icon_id);
                 }
-            }else {//其他文件-->加载默认图片
+            }else {
                 viewHolder.img_icon.setImageResource(R.drawable.file_icon);
             }
         }
 
-        //设置显示的标题
-        if(titleList!=null) {//显示指定的标题
+
+        if(titleList!=null) {
             viewHolder.txt_title.setText(titleList.get(position));
-        }else { //显示文件名 来 当做文件的标题
+        }else {
             viewHolder.txt_title.setText(tempFile.getName());
         }
 
-        //设置是否选中
-        if(mCheckBoxList.get(position)) { //checked
+        if(mCheckBoxList.get(position)) {
             viewHolder.checkBox.setVisibility(View.VISIBLE);
             viewHolder.checkBox.setChecked(true);
         }else {//unchecked

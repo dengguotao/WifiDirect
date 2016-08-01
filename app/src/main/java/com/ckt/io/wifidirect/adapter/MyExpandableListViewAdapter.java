@@ -188,7 +188,7 @@ public class MyExpandableListViewAdapter extends BaseExpandableListAdapter{
         }
         holder.progressBar.setProgress(progress);
         //set send or receive flag
-        if(record.isSend()) { //·¢ËÍ
+        if(record.isSend()) {
             holder.view_send_recevice_flag.setBackgroundColor(Color.GREEN);
         }else {
             holder.view_send_recevice_flag.setBackgroundColor(Color.RED);

@@ -28,9 +28,9 @@ public class Constants {
 
     // transfer state
     public static class State {
-        public final static int STATE_IDEL = 1; //Í£Ö¹
+        public final static int STATE_IDEL = 1;
         public final static int STATE_TRANSFERING = 2;
-        public final static int STATE_PENDING = 3; //µÈ´ý
+        public final static int STATE_PENDING = 3;
         public final static int STATE_TRANSFER_DONE = 4;
     }
 }

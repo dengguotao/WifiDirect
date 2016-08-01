@@ -73,7 +73,6 @@ public class DeviceConnectDialog extends Dialog {
         getWindow().setAttributes(lp);
     }
 
-    //update views-->ÓÉActivityµ÷ÓÃ
     public void updateDeviceList(ArrayList<WifiP2pDevice> deviceList) {
         if(this.fragment_choose_device != null) {
             this.fragment_choose_device.updateDeviceList(deviceList);
