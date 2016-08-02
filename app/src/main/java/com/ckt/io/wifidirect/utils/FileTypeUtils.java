@@ -31,16 +31,16 @@ public class FileTypeUtils {
         return s.endsWith(".3pg") || s.endsWith(".mp4") || s.endsWith(".rmvb");
     }
 
-    //获取文件类型 字符串
+
     public static String getTypeString(Context context, String path) {
         String ret;
-        if(isApk(path)) { //apk文件
+        if(isApk(path)) {
             ret = context.getResources().getString(R.string.type_application);
-        }else if(isMusic(path)) { //音乐文件
+        }else if(isMusic(path)) {
             ret = context.getResources().getString(R.string.type_music);
-        }else if(isPhoto(path)) {//图片文件
+        }else if(isPhoto(path)) {
             ret = context.getResources().getString(R.string.type_photo);
-        }else if(isMovie(path)) { //视频文件
+        }else if(isMovie(path)) {
             ret = context.getResources().getString(R.string.type_movie);
         }else {
             ret = context.getResources().getString(R.string.type_other);
@@ -48,38 +48,37 @@ public class FileTypeUtils {
         return ret;
     }
 
-    //获取格式的默认图片
     public static int getDefaultFileIcon(String path, int defaultId) {
         String s = path.toLowerCase();
         int id = defaultId;
-        if(isApk(path)) { //apk文件
+        if(isApk(path)) {
             id = R.drawable.apk_icon;
-        }else if(isMusic(path)) { //音乐文件
+        }else if(isMusic(path)) {
             id = R.drawable.music_icon;
-        }else if(isPhoto(path)) {//图片文件
+        }else if(isPhoto(path)) {
             id = R.drawable.photo_icon;
-        }else if(isMovie(path)) { //视频文件
+        }else if(isMovie(path)) {
             id = R.drawable.film_icon;
         }
         return id;
     }
 
-    //获取格式的默认图片
+
     public static int getDefaultFileIcon(String path) {
         return getDefaultFileIcon(path, R.drawable.file_icon);
     }
 
-    //判断文件是否需要加载图片
+
     public static boolean isNeedToLoadDrawable(String path) {
         String s = path.toLowerCase();
-        //需要加载图片的一些文件
+
         return isApk(path) || isMusic(path) || isPhoto(path) || isMovie(path);
     }
 
-    /* 判断文件MimeType的method */
+
     public static String getMIMEType(String path)
     {
-        /* 依扩展名的类型决定MimeType */
+
         String type = "*/*";
         if(isMusic(path)) {
             type = "audio";
@@ -93,7 +92,7 @@ public class FileTypeUtils {
         }else {
             type="*";
         }
-        /*如果无法直接打开，就跳出软件列表给用户选择 */
+
         if(!isApk(path)) {
             type += "/*";
         }

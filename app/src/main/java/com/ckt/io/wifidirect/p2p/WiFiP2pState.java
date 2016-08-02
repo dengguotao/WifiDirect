@@ -15,8 +15,6 @@ import android.util.Log;
 
 import com.ckt.io.wifidirect.utils.LogUtils;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -30,7 +28,7 @@ import java.util.Enumeration;
 /**
  * Created by admin on 2016/7/28.
  */
-public class WiFiP2pState extends BroadcastReceiver implements
+public class WifiP2pState extends BroadcastReceiver implements
         WifiP2pManager.ConnectionInfoListener,
         WifiP2pManager.PeerListListener, WifiP2pManager.GroupInfoListener{
     public static final String TAG = "WiFiP2pState";
@@ -46,22 +44,23 @@ public class WiFiP2pState extends BroadcastReceiver implements
 
     private boolean sendClientIpThreadRunning = false;
 
-    private static WiFiP2pState instance = null;
-    public static WiFiP2pState getInstance(Context context) {
+    private static WifiP2pState instance = null;
+    public static WifiP2pState getInstance(Context context) {
         if(instance == null) {
-            instance = new WiFiP2pState(context);
+            instance = new WifiP2pState(context);
         }
         return instance;
     }
 
-    private WiFiP2pState(Context context) {
+    private ServerSocket serverSocket;
+
+    private WifiP2pState(Context context) {
         this.context = context;
         manager = (WifiP2pManager) context
                 .getSystemService(Context.WIFI_P2P_SERVICE);
         channel = manager.initialize(context, context.getMainLooper(), null);
         deviceList = new ArrayList<WifiP2pDevice>();
 
-        //×¢²á¼àÌý
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
@@ -163,7 +162,7 @@ public class WiFiP2pState extends BroadcastReceiver implements
         new Thread() {
             @Override
             public void run() {
-                ServerSocket serverSocket = null;
+                serverSocket = null;
                 try {
                     serverSocket = new ServerSocket(8080);
                 } catch (IOException e) {
@@ -287,8 +286,21 @@ public class WiFiP2pState extends BroadcastReceiver implements
         return connectedDeviceInfo != null;
     }
 
-    public void destory() {
-        context.unregisterReceiver(this);
+    private static void destory() {
+        try {
+            instance.context.unregisterReceiver(instance);
+        }catch (Exception e) {}
+    }
+
+    public static void relase() {
+        destory();
+        try {
+            instance.serverSocket.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        instance = null;
+
     }
 
     class ConnectedDeviceInfo {

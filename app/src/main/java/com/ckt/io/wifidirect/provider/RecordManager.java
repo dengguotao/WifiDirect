@@ -23,7 +23,7 @@ public class RecordManager implements Record.OnStateChangeListener{
 
     private ArrayList<Record> recordArrayList = new ArrayList<>();
     private ArrayList<OnRecordsChangedListener> listenerArrayList = new ArrayList<>();
-    private HashMap<Record, Uri> uris = new HashMap<>(); //保存每个record对应的URI
+    private HashMap<Record, Uri> uris = new HashMap<>();
     private Context context;
 
     public static RecordManager getInstance(Context context) {
@@ -31,7 +31,7 @@ public class RecordManager implements Record.OnStateChangeListener{
             synchronized (RecordManager.class) {
                 if(manager == null) {
                     manager = new RecordManager(context);
-                    //从数据库中读取数据
+
                     manager.readDB();
                 }
             }
@@ -43,7 +43,6 @@ public class RecordManager implements Record.OnStateChangeListener{
         this.context = context;
     }
 
-    //新增正在发送的记录
     public void addNewSendingRecord(ArrayList<File> list, String mac) {
         ArrayList<Record> changedRecords = new ArrayList<>();
         for(int i=0; i<list.size(); i++) {
@@ -60,7 +59,7 @@ public class RecordManager implements Record.OnStateChangeListener{
             this.add(record, false);
             changedRecords.add(record);
         }
-        //监听回调
+
         for(int i=0; i<listenerArrayList.size(); i++) {
             OnRecordsChangedListener listener = listenerArrayList.get(i);
             if(listener != null) {
@@ -69,7 +68,6 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //新增正在接收的记录
     public Record addNewRecevingRecord(File f, String name, long size, String mac) {
         Record record = new Record(
                 name,
@@ -83,19 +81,16 @@ public class RecordManager implements Record.OnStateChangeListener{
         return record;
     }
 
-    //添加监听
     public void addOnRecordsChangedListener(OnRecordsChangedListener listener) {
         if(!listenerArrayList.contains(listener)) {
             listenerArrayList.add(listener);
         }
     }
 
-    //移除监听
     public void removeOnRecordsChangedListener(OnRecordsChangedListener listener) {
         listenerArrayList.remove(listener);
     }
 
-    //新增record
     public void add(Record record) {
         add(record, true);
     }
@@ -104,9 +99,9 @@ public class RecordManager implements Record.OnStateChangeListener{
         if(!recordArrayList.contains(record)) {
             record.setListener(this);
             recordArrayList.add(0, record);
-            //添加记录到数据库
+
             addToDB(record);
-            //回调监听
+
             if(isCallListener) {
                 for(int i=0; i<listenerArrayList.size(); i++) {
                     OnRecordsChangedListener listener = listenerArrayList.get(i);
@@ -122,12 +117,12 @@ public class RecordManager implements Record.OnStateChangeListener{
 
 
 
-    //移除record
+
     public void remove(Record record) {
         if(recordArrayList.remove(record)) {
-            //从数据库中删除
+
             deleteDB(record);
-            //回调监听
+
             for(int i=0; i<listenerArrayList.size(); i++) {
                 OnRecordsChangedListener listener = listenerArrayList.get(i);
                 if(listener!=null) {
@@ -139,7 +134,6 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //清除所有记录
     public void clearAllRecord() {
         while (recordArrayList.size() != 0) {
             Record record = recordArrayList.get(0);
@@ -151,7 +145,6 @@ public class RecordManager implements Record.OnStateChangeListener{
         return this.recordArrayList;
     }
 
-    //获取 状态为state的 record列表
     public ArrayList<Record> getRecords(int state) {
         ArrayList<Record> ret = new ArrayList<>();
         for(int i=0; i<recordArrayList.size(); i++) {
@@ -174,7 +167,6 @@ public class RecordManager implements Record.OnStateChangeListener{
         return null;
     }
 
-    //数据库操作
     private void addToDB(Record record) {
         ContentResolver resolver = context.getContentResolver();
         ContentValues contentValues = new ContentValues();
@@ -197,7 +189,6 @@ public class RecordManager implements Record.OnStateChangeListener{
         this.uris.put(record, uri);
     }
 
-    //更新数据库中的记录
     private void updateDB(Record record) {
         ContentResolver resolver = context.getContentResolver();
         ContentValues contentValues = new ContentValues();
@@ -215,7 +206,6 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //从数据库读取数据
     private void readDB() {
         this.recordArrayList.clear();
         ContentResolver resolver = context.getContentResolver();
@@ -250,7 +240,6 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //删除一条数据库记录
     private void deleteDB(Record record) {
         ContentResolver resolver = context.getContentResolver();
         Uri uri = this.uris.get(record);
@@ -259,15 +248,13 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //record 状态改变
     @Override
     public void onStateChanged(Record record, int state_old, int state_new) {
-        //将record位置调到最新
         recordArrayList.remove(record);
         recordArrayList.add(0, record);
-        //更新数据库
+
         updateDB(record);
-        //回调监听
+
         for(int i=0; i<listenerArrayList.size(); i++) {
             OnRecordsChangedListener listener = listenerArrayList.get(i);
             if(listener!=null) {
@@ -276,10 +263,10 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //record数据改变
+
     @Override
     public void onDataChanged(Record record) {
-        //回调监听
+
         for(int i=0; i<listenerArrayList.size(); i++) {
             OnRecordsChangedListener listener = listenerArrayList.get(i);
             if(listener!=null) {
@@ -288,7 +275,6 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //记录发生改变的监听
     public interface OnRecordsChangedListener {
         public abstract void onRecordListChanged(int action, ArrayList<Record> changedRecordList);
         public abstract void onRecordChanged(Record record, int state_old, int state_new);

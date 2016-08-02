@@ -267,7 +267,7 @@ public class WifiTransferManager {
                     onFileInfoRequest(paramMap);
                     break;
                 case MSG_RESPONSE_FILE_INFO://another device response our reqeust for file info
-                    onRequestFileInfoResponsed(paramMap);
+                    onRequestFileInfoResponsed((HashMap<String, String>) paramMap.clone());
                     break;
                 case MSG_SEND_FILE://another device send a file to here.
                     //do step 5
@@ -310,7 +310,7 @@ public class WifiTransferManager {
                 if(transferedLen == 0) {//new file
                     f.createNewFile();
                     out = new FileOutputStream(f);
-                }else {//¶ÏµãÐø´«
+                }else {
                     if(!f.exists()) {
                         LogUtils.d(TAG, "recevie file [" + f.getPath() + "] failed: the tmp file does't exist in breakpoint-resume mode" );
                         throw new Exception();
@@ -386,6 +386,7 @@ public class WifiTransferManager {
         sendMap.remove(id);
         sendList.remove((Object)id);
         nowSendTaskNum --;
+        startHandleSendTaskThread();
     }
 
     public void onReciveFileStarted(String path) {
@@ -483,6 +484,7 @@ public class WifiTransferManager {
                         @Override
                         public void run() {
                             doSend(MSG_REQEUST_FILE_INFO, paramMap, null);
+
                         }
                     }.start();
                 }
@@ -509,6 +511,7 @@ public class WifiTransferManager {
 
         @Override
         public void run() {
+            LogUtils.d(TAG, "SendTask tiemout, id="+timeoutTaskId + "path="+sendMap.get(timeoutTaskId));
             onSendFileFinished(timeoutTaskId, false);
         }
     }

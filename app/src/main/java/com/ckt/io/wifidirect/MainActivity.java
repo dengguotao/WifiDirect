@@ -21,12 +21,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
 
-import com.ckt.io.wifidirect.fragment.HistoryFragment;
 import com.ckt.io.wifidirect.myViews.DeviceConnectDialog;
 import com.ckt.io.wifidirect.fragment.ContentFragment;
 import com.ckt.io.wifidirect.fragment.FileExplorerFragment;
-import com.ckt.io.wifidirect.myViews.SpeedFloatWin;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.ckt.io.wifidirect.p2p.WifiP2pState;
 import com.ckt.io.wifidirect.provider.Record;
 import com.ckt.io.wifidirect.provider.RecordManager;
 import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
@@ -73,66 +72,66 @@ public class MainActivity extends BaseActivity {
             Record record = null;
             File f = null;
             switch (msg.what) {
-                case WifiP2pHelper.WIFIP2P_DEVICE_LIST_CHANGED://可用的设备列表更新
+                case WifiP2pHelper.WIFIP2P_DEVICE_LIST_CHANGED:
                     deviceConnectDialog.updateDeviceList(wifiP2pHelper.getDeviceList());
                     break;
-                case WifiP2pHelper.WIFIP2P_DEVICE_CONNECTED_SUCCESS://设备连接成功
+                case WifiP2pHelper.WIFIP2P_DEVICE_CONNECTED_SUCCESS:
                     deviceConnectDialog.updateConnectedInfo(wifiP2pHelper.isServer());
-                    //连接成功后关联 dialog
+
                     if(deviceConnectDialog.isShowing()) {
                         deviceConnectDialog.dismiss();
                     }
-                    //隐藏 "传" 按钮
+
                     contentfragment.toggleConnectImgBut(false);
                     ToastUtils.toast(MainActivity.this, R.string.connect_successed);
                     break;
-                case WifiP2pHelper.WIFIP2P_DEVICE_DISCONNECTED: //连接已断开
+                case WifiP2pHelper.WIFIP2P_DEVICE_DISCONNECTED:
                     deviceConnectDialog.onDisconnectedInfo();
-                    //显示 "传" 按钮
+
                     contentfragment.toggleConnectImgBut(true);
                     break;
 
                 /////////////////////////////////////////////////////////////////////////
-                case WifiP2pHelper.WIFIP2P_SENDFILELIST_ADDED: //正在发送列表新增文件
+                case WifiP2pHelper.WIFIP2P_SENDFILELIST_ADDED:
                     ArrayList<File> addedList = (ArrayList<File>) msg.obj;
                     recordManager.addNewSendingRecord(addedList, wifiP2pHelper.getCurrentConnectMAC());
                     break;
-                case WifiP2pHelper.WIFIP2P_BEGIN_SEND_FILE: //开始发送一个文件
+                case WifiP2pHelper.WIFIP2P_BEGIN_SEND_FILE:
                     LogUtils.i(WifiP2pHelper.TAG, "handle--->WIFIP2P_BEGIN_SEND_FILE");
                     f = (File) msg.obj;
                     record = recordManager.findRecord(f.getPath(), Record.STATE_WAIT_FOR_TRANSPORT, true);
                     if(record == null) break;
                     record.setState(Record.STATE_TRANSPORTING);
-                    //开始更新传输速度和传输进度
+
                     handler.obtainMessage(WifiP2pHelper.WIFIP2P_UPDATE_SPEED, f).sendToTarget();
                     handler.obtainMessage(WifiP2pHelper.WIFIP2P_UPDATE_PROGRESS, f).sendToTarget();
                     /////////////////////////////////////////////////////////////
                     break;
-                case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY:  //发送完一个文件----成功
-                case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_FAILURE:    // 发送完一个文件----失败
+                case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY:
+                case WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_FAILURE:
                     f = (File) msg.obj;
                     record = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, true);
                     if(record == null) break;
-                    if(msg.what == WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY) {//发送成功
+                    if(msg.what == WifiP2pHelper.WIFIP2P_SEND_ONE_FILE_SUCCESSFULLY) {
                         record.setState(Record.STATE_FINISHED);
-                    }else { //发送失败
+                    }else {
                         record.setState(Record.STATE_FAILED);
                     }
                     break;
 
-                case WifiP2pHelper.WIFIP2P_BEGIN_RECEIVE_FILE:  //开始接收文件
+                case WifiP2pHelper.WIFIP2P_BEGIN_RECEIVE_FILE:
                     LogUtils.i(WifiP2pHelper.TAG, "handle--->WIFIP2P_BEGIN_SEND_FILE");
                     HashMap<String, Object> map = (HashMap<String, Object>) msg.obj;
                     f = (File) map.get("path");
                     String sName = (String) map.get("name");
                     long size = (long) map.get("size");
                     recordManager.addNewRecevingRecord(f, sName, size, wifiP2pHelper.getCurrentConnectMAC());
-                    //开始更新传输速度和传输进度
+
                     handler.obtainMessage(WifiP2pHelper.WIFIP2P_UPDATE_SPEED, f).sendToTarget();
                     handler.obtainMessage(WifiP2pHelper.WIFIP2P_UPDATE_PROGRESS, f).sendToTarget();
                     break;
-                case WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY: //接收完一个文件----成功
-                case WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_FAILURE:  //接收完一个文件---失败
+                case WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY:
+                case WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_FAILURE:
                     f = (File) msg.obj;
                     if(f == null) break;
                     record = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, false);
@@ -140,9 +139,9 @@ public class MainActivity extends BaseActivity {
                         LogUtils.i(WifiP2pHelper.TAG, "WIFIP2P_RECEIVE_ONE_FILE---->record == null 更新记录状态失败");
                         break;
                     }
-                    if(msg.what == WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY) {//接收成功
+                    if(msg.what == WifiP2pHelper.WIFIP2P_RECEIVE_ONE_FILE_SUCCESSFULLY) {
                         record.setState(Record.STATE_FINISHED);
-                    }else { //接受失败
+                    }else {
                         record.setState(Record.STATE_FAILED);
                     }
                     break;
@@ -151,7 +150,7 @@ public class MainActivity extends BaseActivity {
                     f = (File) msg.obj;
                     double sendSpeed = 0, receiveSpeed = 0;
                     Record tempRecord;
-                    //计算发送速度
+
                     tempRecord = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, true);//查找正在发送的记录
                     if(tempRecord != null) {
                         tempRecord.setSpeedAndTranportLen(wifiP2pHelper.getSendSpeed(UPDATE_TRANSPORT_SPEED_INTERVAL), wifiP2pHelper.getSendCount());
@@ -159,7 +158,7 @@ public class MainActivity extends BaseActivity {
                     }else {
                         LogUtils.i(WifiP2pHelper.TAG, "handler update speed ---> do not find the sending record");
                     }
-                    //计算接收速度
+
                     tempRecord = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, false);//查找正在接收的记录
                     if(tempRecord != null) {
                         tempRecord.setSpeedAndTranportLen(wifiP2pHelper.getReceiveSpeed(UPDATE_TRANSPORT_SPEED_INTERVAL), wifiP2pHelper.getReceviedCount());
@@ -167,9 +166,7 @@ public class MainActivity extends BaseActivity {
                     }else {
                         LogUtils.i(WifiP2pHelper.TAG, "handler update speed ---> do not find the receving record");
                     }
-                    //更新悬浮窗显示的速度
-                    SpeedFloatWin.updateSpeed(sendSpeed+"M/S",
-                            receiveSpeed+"M/S");
+
                     handler.removeMessages(WifiP2pHelper.WIFIP2P_UPDATE_SPEED);
                     if(wifiP2pHelper.isTranfering()) {
                         Message msg2 = new Message();
@@ -180,12 +177,12 @@ public class MainActivity extends BaseActivity {
                     break;
                 case WifiP2pHelper.WIFIP2P_UPDATE_PROGRESS:
                     f = (File) msg.obj;
-                    //更新已接受的长度
+
                     record = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, true);//查找正在发送的记录
                     if(record != null) {
                         record.setTransported_len(wifiP2pHelper.getSendCount());
                     }
-                    //更新已发送的长度
+
                     record = recordManager.findRecord(f.getPath(), Record.STATE_TRANSPORTING, false);//查找正在接收的记录
                     if(record != null) {
                         record.setTransported_len(wifiP2pHelper.getReceviedCount());
@@ -207,7 +204,6 @@ public class MainActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //保持屏幕常亮
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         selectFiles = new ArrayList<>();
         wifiP2pHelper = new WifiP2pHelper(this, this.handler);
@@ -215,7 +211,7 @@ public class MainActivity extends BaseActivity {
         contentfragment = (ContentFragment) getSupportFragmentManager().findFragmentById(R.id.id_content);
         setOnSendFileListChangeListener(contentfragment);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.id_drawer_layout);
-        // 實作 drawer toggle 並放入 toolbar
+
         toolbar = (Toolbar) findViewById(R.id.id_toolbar_layout);
         getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close);
@@ -224,8 +220,6 @@ public class MainActivity extends BaseActivity {
         deviceConnectDialog = new DeviceConnectDialog(this, R.style.FullHeightDialog);
 
         clearSendFileList();
-
-        //注册监听
 
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
@@ -241,7 +235,6 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        //显示传输速度窗口
         /*requestPermission(this.hashCode()%200 + REQUEST_CODE_SYSTEM_ALERT_PERMISSION,
                 Manifest.permission.SYSTEM_ALERT_WINDOW,
                 new Runnable() {
@@ -256,7 +249,6 @@ public class MainActivity extends BaseActivity {
     @Override
     public void onPause() {
         super.onPause();
-        SpeedFloatWin.hide(this);
     }
 
     @Override
@@ -266,6 +258,7 @@ public class MainActivity extends BaseActivity {
         LogUtils.i(WifiP2pHelper.TAG, "MainActivity onDestroy");
         wifiP2pHelper.release();
         FileResLoaderUtils.release();
+        WifiP2pState.relase();
     }
 
     @Override
@@ -307,7 +300,6 @@ public class MainActivity extends BaseActivity {
         return received_file_path;
     }
 
-    //添加文件到选择列表中
     public boolean addFileToSendFileList(String path) {
         return addFileToSendFileList(path, null);
     }
@@ -357,7 +349,7 @@ public class MainActivity extends BaseActivity {
         return isExist;
     }
 
-    //其他地方主动请求更新已选择的发送列表
+
     public void askUpdatSendFileList(OnSendFileListChangeListener listener) {
         if(listener != null) {
             this.onSendFileListChangeListener.onSendFileListChange(this.selectFiles, selectFiles.size());
@@ -391,7 +383,7 @@ public class MainActivity extends BaseActivity {
         this.onSendFileListChangeListener = onSendFileListChangeListener;
     }
 
-    //选择的发送列表改变
+
     public interface OnSendFileListChangeListener {
         public abstract void onSendFileListChange(ArrayList<String> selectFiles, int num);
     }

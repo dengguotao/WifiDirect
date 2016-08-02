@@ -3,10 +3,7 @@ package com.ckt.io.wifidirect.fragment;
 import android.animation.ValueAnimator;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.net.wifi.p2p.WifiP2pManager;
 import android.support.v4.app.Fragment;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.util.DisplayMetrics;
@@ -28,11 +25,9 @@ import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyFragmentAdapter;
 import com.ckt.io.wifidirect.myViews.SendFileListPopWin;
-import com.ckt.io.wifidirect.p2p.WiFiP2pState;
+import com.ckt.io.wifidirect.p2p.WifiP2pState;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.ApkUtils;
 import com.ckt.io.wifidirect.utils.BitmapUtils;
-import com.ckt.io.wifidirect.utils.SdcardUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -208,7 +203,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
 //                    wifiP2pHelper.sendFiles(list);
                     for(int i=0; i<list.size(); i++) {
                         File temp = list.get(i);
-                        WiFiP2pState.getInstance(getContext()).wifiTransferManager.sendFile(1, temp.getPath());
+                        WifiP2pState.getInstance(getContext()).wifiTransferManager.sendFile(1, temp.getPath());
                     }
 
                     activity.clearSendFileList();

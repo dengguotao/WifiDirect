@@ -16,11 +16,11 @@ public class Record {
     public final static int DIRECTION_IN = 0;
 
 
-    public static final int STATE_FINISHED = 0; //完成
-    public static final int STATE_FAILED = 1; //失败
-    public static final int STATE_WAIT_FOR_TRANSPORT = 2; //等待
-    public static final int STATE_TRANSPORTING = 3; //正在
-    public static final int STATE_PAUSED = 4; //暂停
+    public static final int STATE_FINISHED = 0;
+    public static final int STATE_FAILED = 1;
+    public static final int STATE_WAIT_FOR_TRANSPORT = 2;
+    public static final int STATE_TRANSPORTING = 3;
+    public static final int STATE_PAUSED = 4;
 
     private long id;
     private String name;
@@ -31,7 +31,7 @@ public class Record {
     private int transport_direction;
     private String mac;
 
-    private double speed; //传输的速度
+    private double speed;
 
     private OnStateChangeListener listener;
 
@@ -42,7 +42,7 @@ public class Record {
         this.state = state;
         this.transport_direction = transport_direction;
         this.mac = mac;
-        //使用当前时间来作为id
+
         Calendar c = Calendar.getInstance();
         int day = c.get(Calendar.DAY_OF_YEAR);
         long ms = System.currentTimeMillis();

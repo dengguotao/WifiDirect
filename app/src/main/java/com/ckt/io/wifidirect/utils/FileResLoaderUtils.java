@@ -23,7 +23,7 @@ public class FileResLoaderUtils {
     private OnLoadFinishedListener listener;
     private static HashMap<String, Object> picMap = new HashMap<>();
     private static HashMap<String, String> fileNameMap = new HashMap<>();
-    private LoadTask loadTask;//用来在后台加载图片
+    private LoadTask loadTask;
 
     private FileResLoaderUtils(){}
 
@@ -53,11 +53,11 @@ public class FileResLoaderUtils {
 //            LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->load() warning:"+path+" has been loaded before");
             return;
         }
-        if(loadTask == null || !loadTask.isLoadiing) {//后台任务没有运行,加入loadlist后启动后台任务
+        if(loadTask == null || !loadTask.isLoadiing) {
             loadTask = new LoadTask(context);
             loadTask.loadList.add(path);
             loadTask.execute();
-        }else {//后台正在运行,加入loadlist即可
+        }else {
             loadTask.loadList.add(path);
         }
         loadTask.context = context;
@@ -79,22 +79,22 @@ public class FileResLoaderUtils {
 //                LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->loading pic of "+path);
                 String s = path.toLowerCase();
                 Object obj = null;
-                if(s.endsWith(".apk")) { //apk文件
+                if(s.endsWith(".apk")) {
                     obj = ApkUtils.getApkIcon(context, path);
-                    //顺便把apk文件的lable也一起加载了
+
                     fileNameMap.put(path, ApkUtils.getApkLable(context, path));
-                }else if(s.endsWith(".mp3")) { //音乐文件
+                }else if(s.endsWith(".mp3")) {
                     obj = AudioUtils.getMusicBitpMap(path);
-                    //顺便把音乐文件的lable也一起加载了
+
                     fileNameMap.put(path, AudioUtils.getMusicName(path));
-                }else if(s.endsWith(".jpg") || s.endsWith(".jpeg") || s.endsWith(".bmp") || s.endsWith(".gif") || s.endsWith(".png")) {//图片文件
+                }else if(s.endsWith(".jpg") || s.endsWith(".jpeg") || s.endsWith(".bmp") || s.endsWith(".gif") || s.endsWith(".png")) {
                     BitmapFactory.Options options = new BitmapFactory.Options();
                     options.inSampleSize = 10;
                     Bitmap bitmap = BitmapFactory.decodeFile(path, options);
                     obj = ThumbnailUtils.extractThumbnail(bitmap, 80,
                             80);
                     bitmap.recycle();
-                }else if(s.endsWith(".3gp") || s.endsWith(".mp4") || s.endsWith(".rmvb")) { //视频文件
+                }else if(s.endsWith(".3gp") || s.endsWith(".mp4") || s.endsWith(".rmvb")) {
                     obj = new BitmapDrawable(GetVideoThumbnail.getVideoThumbnailTool(path));
                 }
 
