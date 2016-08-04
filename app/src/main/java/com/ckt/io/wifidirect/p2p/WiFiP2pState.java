@@ -139,12 +139,46 @@ public class WifiP2pState extends BroadcastReceiver implements
         wifiTransferManager = new WifiTransferManager(context,
                 connectedDeviceInfo.connectedDeviceAddr,
                 8080,
-                null,
-                null,
+                new WifiTransferManager.FileSendStateListener() {
+                    @Override
+                    public void onStart(int id, String path, long transferedSize) {
+
+                    }
+
+                    @Override
+                    public void onUpdate(ArrayList<WifiTransferManager.DataTranferTask> taskList) {
+                        for(WifiTransferManager.DataTranferTask task : taskList) {
+                            LogUtils.d(TAG, "update Speed:"+task.toString());
+                        }
+                    }
+
+                    @Override
+                    public void onFinished(int id, String path, long transferedSize, boolean ret) {
+
+                    }
+                },
+                new WifiTransferManager.FileReceiveStateListener() {
+                    @Override
+                    public void onStart(String path, long transferedSize, long size) {
+
+                    }
+
+                    @Override
+                    public void onUpdate(ArrayList<WifiTransferManager.DataTranferTask> taskList) {
+                        for(WifiTransferManager.DataTranferTask task:taskList) {
+                            LogUtils.d(TAG, "update Speed:"+task.toString());
+                        }
+                    }
+
+                    @Override
+                    public void onFinished(String path, long transferedSize, long size, boolean ret) {
+
+                    }
+                },
                 new WifiTransferManager.OnGetClientIpListener() {
                     @Override
                     public void onGetClientIp(InetAddress address) {
-                        LogUtils.d(TAG, "Group owner get the client addr:"+address.toString());
+                        LogUtils.d(TAG, "Group owner get the client addr:" + address.toString());
                         if (connectedDeviceInfo != null) {
                             connectedDeviceInfo.connectedDeviceAddr = address;
                         }
@@ -168,6 +202,7 @@ public class WifiP2pState extends BroadcastReceiver implements
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                int reTryTime = 0;
                 while(connectedDeviceInfo != null) {
                     try {
                         Socket client = serverSocket.accept();
@@ -175,6 +210,8 @@ public class WifiP2pState extends BroadcastReceiver implements
                         wifiTransferManager.receive(client);
                     } catch (Exception e) {
                         e.printStackTrace();
+                        reTryTime ++;
+                        if(reTryTime > 5) break;
                         try {
                             if(serverSocket != null) {
                                 serverSocket.close();
@@ -296,9 +333,7 @@ public class WifiP2pState extends BroadcastReceiver implements
         destory();
         try {
             instance.serverSocket.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) {}
         instance = null;
 
     }
