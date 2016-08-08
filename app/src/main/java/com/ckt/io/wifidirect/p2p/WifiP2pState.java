@@ -13,6 +13,7 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 
+import com.ckt.io.wifidirect.Constants;
 import com.ckt.io.wifidirect.utils.LogUtils;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ import java.util.Enumeration;
  */
 public class WifiP2pState extends BroadcastReceiver implements
         WifiP2pManager.ConnectionInfoListener,
-        WifiP2pManager.PeerListListener, WifiP2pManager.GroupInfoListener{
+        WifiP2pManager.PeerListListener, WifiP2pManager.GroupInfoListener {
     public static final String TAG = "WiFiP2pState";
     private Context context;
     private WifiP2pManager manager;
@@ -40,13 +41,16 @@ public class WifiP2pState extends BroadcastReceiver implements
 
     private ConnectedDeviceInfo connectedDeviceInfo;
 
+    private WifiP2pServer mServer;
+
     public WifiTransferManager wifiTransferManager;
 
     private boolean sendClientIpThreadRunning = false;
 
     private static WifiP2pState instance = null;
+
     public static WifiP2pState getInstance(Context context) {
-        if(instance == null) {
+        if (instance == null) {
             instance = new WifiP2pState(context);
         }
         return instance;
@@ -122,9 +126,9 @@ public class WifiP2pState extends BroadcastReceiver implements
 
     @Override
     public void onConnectionInfoAvailable(WifiP2pInfo info) {
-        LogUtils.d(TAG, "onConnectionInfoAvailable  isGroupOwner:"+info.isGroupOwner);
+        LogUtils.d(TAG, "onConnectionInfoAvailable  isGroupOwner:" + info.isGroupOwner);
         connectedDeviceInfo.connectInfo = info;
-        if(!info.isGroupOwner) { //the client
+        if (!info.isGroupOwner) { //the client
             connectedDeviceInfo.connectedDeviceAddr = info.groupOwnerAddress;
         }
 
@@ -138,7 +142,7 @@ public class WifiP2pState extends BroadcastReceiver implements
 
         wifiTransferManager = new WifiTransferManager(context,
                 connectedDeviceInfo.connectedDeviceAddr,
-                8080,
+                Constants.PORT,
                 new WifiTransferManager.FileSendStateListener() {
                     @Override
                     public void onStart(int id, String path, long transferedSize) {
@@ -147,8 +151,8 @@ public class WifiP2pState extends BroadcastReceiver implements
 
                     @Override
                     public void onUpdate(ArrayList<WifiTransferManager.DataTranferTask> taskList) {
-                        for(WifiTransferManager.DataTranferTask task : taskList) {
-                            LogUtils.d(TAG, "update Speed:"+task.toString());
+                        for (WifiTransferManager.DataTranferTask task : taskList) {
+                            LogUtils.d(TAG, "update Speed:" + task.toString());
                         }
                     }
 
@@ -165,8 +169,8 @@ public class WifiP2pState extends BroadcastReceiver implements
 
                     @Override
                     public void onUpdate(ArrayList<WifiTransferManager.DataTranferTask> taskList) {
-                        for(WifiTransferManager.DataTranferTask task:taskList) {
-                            LogUtils.d(TAG, "update Speed:"+task.toString());
+                        for (WifiTransferManager.DataTranferTask task : taskList) {
+                            LogUtils.d(TAG, "update Speed:" + task.toString());
                         }
                     }
 
@@ -190,51 +194,13 @@ public class WifiP2pState extends BroadcastReceiver implements
                         sendClientIpThreadRunning = false;
                     }
                 });
-        /*
-        * [five] test
-        * */
-        new Thread() {
-            @Override
-            public void run() {
-                serverSocket = null;
-                try {
-                    serverSocket = new ServerSocket(8080);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                int reTryTime = 0;
-                while(connectedDeviceInfo != null) {
-                    try {
-                        Socket client = serverSocket.accept();
-                        LogUtils.d(TAG, "a new connection!!!");
-                        wifiTransferManager.receive(client);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        reTryTime ++;
-                        if(reTryTime > 5) break;
-                        try {
-                            if(serverSocket != null) {
-                                serverSocket.close();
-                            }
-                        } catch (Exception e1) {}
-                        if(serverSocket == null) {
-                            try {
-                                serverSocket = new ServerSocket(8080);
-                            } catch (Exception e1) {
-                                e1.printStackTrace();
-                            }
-                        }
-                    }
-                    try {
-                        sleep(200);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
 
-        if(!connectedDeviceInfo.connectInfo.isGroupOwner) {
+        if (!connectedDeviceInfo.connectInfo.isGroupOwner) {
+            mServer = new WifiP2pServer(wifiTransferManager);
+            mServer.startListen();
+        }
+
+        if (!connectedDeviceInfo.connectInfo.isGroupOwner) {
 
             new Thread() {
                 @Override
@@ -260,10 +226,10 @@ public class WifiP2pState extends BroadcastReceiver implements
 
     @Override
     public void onGroupInfoAvailable(WifiP2pGroup group) {
-        if(group == null || !isConnected()) return;
+        if (group == null || !isConnected()) return;
         connectedDeviceInfo.group = group;
-        for(WifiP2pDevice device : group.getClientList()) {
-            if(device.status == WifiP2pDevice.CONNECTED) {
+        for (WifiP2pDevice device : group.getClientList()) {
+            if (device.status == WifiP2pDevice.CONNECTED) {
                 connectedDeviceInfo.connectedDevice = device;
                 break;
             }
@@ -274,9 +240,9 @@ public class WifiP2pState extends BroadcastReceiver implements
 
     private static byte[] getLocalIPAddress() {
         try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
                 NetworkInterface intf = en.nextElement();
-                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
                     InetAddress inetAddress = enumIpAddr.nextElement();
                     if (!inetAddress.isLoopbackAddress()) {
                         if (inetAddress instanceof Inet4Address) { // fix for Galaxy Nexus. IPv4 is easy to use :-)
@@ -295,7 +261,6 @@ public class WifiP2pState extends BroadcastReceiver implements
     }
 
 
-
     private static Inet4Address getInterfaceAddress(WifiP2pGroup info) {
         NetworkInterface iface;
         try {
@@ -307,8 +272,8 @@ public class WifiP2pState extends BroadcastReceiver implements
         Enumeration<InetAddress> addrs = iface.getInetAddresses();
         while (addrs.hasMoreElements()) {
             InetAddress addr = addrs.nextElement();
-            if (addr instanceof Inet4Address ) {
-                LogUtils.d(TAG, "getInterfaceAddress--> addr="+addr.toString());
+            if (addr instanceof Inet4Address) {
+                LogUtils.d(TAG, "getInterfaceAddress--> addr=" + addr.toString());
 //                return (Inet4Address)addr;
             }
         }
@@ -326,14 +291,16 @@ public class WifiP2pState extends BroadcastReceiver implements
     private static void destory() {
         try {
             instance.context.unregisterReceiver(instance);
-        }catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     public static void relase() {
         destory();
         try {
             instance.serverSocket.close();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
         instance = null;
 
     }
