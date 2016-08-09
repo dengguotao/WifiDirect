@@ -43,15 +43,13 @@ public class WifiP2pState extends BroadcastReceiver implements
 
     private ConnectedDeviceInfo connectedDeviceInfo;
 
-    private WifiP2pServer mServer;
-
     public WifiTransferManager wifiTransferManager;
-
-    private boolean sendClientIpThreadRunning = false;
 
     private static WifiP2pState instance = null;
 
-    private static WifiP2pDevice mThisDevice;
+    private WifiP2pDevice mThisDevice;
+
+    private ArrayList<OnConnectStateChangeListener> listeners = new ArrayList<>();
 
     public static WifiP2pState getInstance(Context context) {
         if (instance == null) {
@@ -59,8 +57,6 @@ public class WifiP2pState extends BroadcastReceiver implements
         }
         return instance;
     }
-
-    private ServerSocket serverSocket;
 
     private WifiP2pState(Context context) {
         this.context = context;
@@ -76,6 +72,12 @@ public class WifiP2pState extends BroadcastReceiver implements
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
         intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         context.registerReceiver(this, intentFilter);
+    }
+
+    public void registerOnConnectChangeListener(OnConnectStateChangeListener listener) {
+        if(listener != null && !listeners.contains(listener)) {
+            listeners.add(listener);
+        }
     }
 
     @Override
@@ -120,16 +122,17 @@ public class WifiP2pState extends BroadcastReceiver implements
                 } else {
                     // It's a disconnect
                     connectedDeviceInfo = null;
-                    if(mServer != null) {
-                        mServer.interrupt();
+
+                    for(OnConnectStateChangeListener listener : listeners) {
+                        listener.onDisConnected();
                     }
-                    mServer = null;
+
                     Log.d(TAG, "device disconnected!!)");
                 }
             } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
-
-            } else if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
                 mThisDevice = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
+            } else if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
+
             }
         }
     }
@@ -171,8 +174,6 @@ public class WifiP2pState extends BroadcastReceiver implements
                 LogUtils.d(TAG, "GroupOwner get client ip failed!");
                 return;
             }
-
-
             LogUtils.d(TAG, "getPeerIp-------->"+ connectedDeviceInfo.connectedDeviceAddr);
         } else {//client
             if (connectedDeviceInfo.connectInfo != null) {
@@ -180,87 +181,9 @@ public class WifiP2pState extends BroadcastReceiver implements
             }
         }
 
-
-
-        wifiTransferManager = new WifiTransferManager(context,
-                connectedDeviceInfo.connectedDeviceAddr,
-                Constants.PORT,
-                mThisDevice,
-                new WifiTransferManager.FileSendStateListener() {
-                    @Override
-                    public void onStart(int id, String path, long transferedSize) {
-
-                    }
-
-                    @Override
-                    public void onUpdate(ArrayList<WifiTransferManager.DataTranferTask> taskList) {
-                        for (WifiTransferManager.DataTranferTask task : taskList) {
-                            LogUtils.d(TAG, "update Speed:" + task.toString());
-                        }
-                    }
-
-                    @Override
-                    public void onFinished(int id, String path, long transferedSize, boolean ret) {
-
-                    }
-                },
-                new WifiTransferManager.FileReceiveStateListener() {
-                    @Override
-                    public void onStart(String path, long transferedSize, long size) {
-
-                    }
-
-                    @Override
-                    public void onUpdate(ArrayList<WifiTransferManager.DataTranferTask> taskList) {
-                        for (WifiTransferManager.DataTranferTask task : taskList) {
-                            LogUtils.d(TAG, "update Speed:" + task.toString());
-                        }
-                    }
-
-                    @Override
-                    public void onFinished(String path, long transferedSize, long size, boolean ret) {
-
-                    }
-                },
-                new WifiTransferManager.OnGetClientIpListener() {
-                    @Override
-                    public void onGetClientIp(InetAddress address) {
-                        LogUtils.d(TAG, "Group owner get the client addr:" + address.toString());
-                        if (connectedDeviceInfo != null) {
-                            connectedDeviceInfo.connectedDeviceAddr = address;
-                        }
-                    }
-                },
-                new WifiTransferManager.OnSendClientIpResponseListener() {
-                    @Override
-                    public void onSendClientIpResponse(boolean ret) {
-                        sendClientIpThreadRunning = false;
-                    }
-                });
-
-        if (!connectedDeviceInfo.connectInfo.isGroupOwner) {
-            mServer = new WifiP2pServer(wifiTransferManager);
-            mServer.startListen();
+        for(OnConnectStateChangeListener listener : listeners) {
+            listener.onConnected(connectedDeviceInfo);
         }
-
-        /*if(!connectedDeviceInfo.connectInfo.isGroupOwner) {
->>>>>>> Stashed changes:app/src/main/java/com/ckt/io/wifidirect/p2p/WiFiP2pState.java
-
-            new Thread() {
-                @Override
-                public void run() {
-                    sendClientIpThreadRunning = true;
-                    while (sendClientIpThreadRunning) {
-                        wifiTransferManager.sendClientIp();
-                        try {
-                            sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }.start();
-        }*/
     }
 
     @Override
@@ -350,18 +273,18 @@ public class WifiP2pState extends BroadcastReceiver implements
 
     public static void relase() {
         destory();
-        try {
-            instance.serverSocket.close();
-        } catch (Exception e) {
-        }
         instance = null;
-
     }
 
-    class ConnectedDeviceInfo {
+    public class ConnectedDeviceInfo {
         public WifiP2pInfo connectInfo;
         public WifiP2pDevice connectedDevice;
         public InetAddress connectedDeviceAddr;
         public WifiP2pGroup group;
+    }
+
+    public interface OnConnectStateChangeListener {
+        public void onConnected(ConnectedDeviceInfo connectedDeviceInfo);
+        public void onDisConnected();
     }
 }

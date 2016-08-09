@@ -80,7 +80,6 @@ public class WifiTransferManager {
     private FileReceiveStateListener fileReceiveStateListener;
 
     private OnSendClientIpResponseListener onSendClientIpResponseListener;
-    private OnGetClientIpListener onGetClientIpListener;
 
     private UpdateSpeedRunnbale mUpdateSpeedRunnable = new UpdateSpeedRunnbale();
 
@@ -90,7 +89,6 @@ public class WifiTransferManager {
                                WifiP2pDevice thisDevice,
                                FileSendStateListener fileSendStateListener,
                                FileReceiveStateListener fileReceiveStateListener,
-                               OnGetClientIpListener onGetClientIpListener,
                                OnSendClientIpResponseListener onSendClientIpResponseListener) {
         if(context == null) {
             try {
@@ -110,7 +108,6 @@ public class WifiTransferManager {
         handler = new android.os.Handler(Looper.getMainLooper());
         this.fileSendStateListener= fileSendStateListener;
         this.fileReceiveStateListener = fileReceiveStateListener;
-        this.onGetClientIpListener = onGetClientIpListener;
         this.onSendClientIpResponseListener = onSendClientIpResponseListener;
     }
 
@@ -140,18 +137,6 @@ public class WifiTransferManager {
         startHandleSendTaskThread();
 
         return true;
-    }
-
-    public void sendClientIp() {
-        Socket s = new Socket();
-        try {
-            s.bind(null);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        HashMap<String, String> map = new HashMap<String, String>();
-        map.put("ip", s.getLocalAddress().toString());
-        doSend(MSG_SEND_CLIENT_IP, map, null);
     }
 
     private boolean doSend(byte msgType, HashMap<String, String> paramMap, String extraFile) {
@@ -348,9 +333,6 @@ public class WifiTransferManager {
 
     public void onGetClientIP(InetAddress address) {
         peerAddr = address;
-        if(onGetClientIpListener != null) {
-            onGetClientIpListener.onGetClientIp(address);
-        }
         HashMap<String, String> map = new HashMap<>();
         map.put("test", "test");
         doSend(MSG_RESPONSE_SEND_CLIENT_IP, map, null);
@@ -824,10 +806,6 @@ public class WifiTransferManager {
         public void onStart(String path, long transferedSize, long size);
         public void onUpdate(ArrayList<DataTranferTask> taskList);
         public void onFinished(String path, long transferedSize, long size, boolean ret);
-    }
-
-    public interface OnGetClientIpListener {
-        public void onGetClientIp(InetAddress address);
     }
 
     public interface OnSendClientIpResponseListener {
