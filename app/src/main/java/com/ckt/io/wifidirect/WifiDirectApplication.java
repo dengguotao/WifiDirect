@@ -14,8 +14,6 @@ public class WifiDirectApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        WifiP2pState.relase();
-        WifiP2pState.getInstance(getApplicationContext());
         Intent intent = new Intent(this.getApplicationContext(), WifiDirectService.class);
         startService(intent);
     }

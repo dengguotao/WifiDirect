@@ -75,7 +75,7 @@ public class WifiP2pState extends BroadcastReceiver implements
     }
 
     public void registerOnConnectChangeListener(OnConnectStateChangeListener listener) {
-        if(listener != null && !listeners.contains(listener)) {
+        if (listener != null && !listeners.contains(listener)) {
             listeners.add(listener);
         }
     }
@@ -123,7 +123,7 @@ public class WifiP2pState extends BroadcastReceiver implements
                     // It's a disconnect
                     connectedDeviceInfo = null;
 
-                    for(OnConnectStateChangeListener listener : listeners) {
+                    for (OnConnectStateChangeListener listener : listeners) {
                         listener.onDisConnected();
                     }
 
@@ -151,10 +151,10 @@ public class WifiP2pState extends BroadcastReceiver implements
             int retryTime = 50;
             String ip = null;
             while (retryTime >= 0) {
-                for(WifiP2pDevice device : connectedDeviceInfo.group.getClientList()) {
+                for (WifiP2pDevice device : connectedDeviceInfo.group.getClientList()) {
                     ip = NetworksUtils.getPeerIP(device.deviceAddress);
                 }
-                if(ip !=  null) {
+                if (ip != null) {
                     break;
                 }
                 try {
@@ -162,26 +162,26 @@ public class WifiP2pState extends BroadcastReceiver implements
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                retryTime --;
+                retryTime--;
             }
-            if(ip != null) {
+            if (ip != null) {
                 try {
                     connectedDeviceInfo.connectedDeviceAddr = InetAddress.getByName(ip);
                 } catch (UnknownHostException e) {
                     e.printStackTrace();
                 }
-            }else {
+            } else {
                 LogUtils.d(TAG, "GroupOwner get client ip failed!");
                 return;
             }
-            LogUtils.d(TAG, "getPeerIp-------->"+ connectedDeviceInfo.connectedDeviceAddr);
+            LogUtils.d(TAG, "getPeerIp-------->" + connectedDeviceInfo.connectedDeviceAddr);
         } else {//client
             if (connectedDeviceInfo.connectInfo != null) {
                 connectedDeviceInfo.connectedDeviceAddr = connectedDeviceInfo.connectInfo.groupOwnerAddress;
             }
         }
 
-        for(OnConnectStateChangeListener listener : listeners) {
+        for (OnConnectStateChangeListener listener : listeners) {
             listener.onConnected(connectedDeviceInfo);
         }
     }
@@ -264,6 +264,10 @@ public class WifiP2pState extends BroadcastReceiver implements
         return connectedDeviceInfo != null;
     }
 
+    public WifiP2pDevice getThisDevice() {
+        return mThisDevice;
+    }
+
     private static void destory() {
         try {
             instance.context.unregisterReceiver(instance);
@@ -285,6 +289,7 @@ public class WifiP2pState extends BroadcastReceiver implements
 
     public interface OnConnectStateChangeListener {
         public void onConnected(ConnectedDeviceInfo connectedDeviceInfo);
+
         public void onDisConnected();
     }
 }
