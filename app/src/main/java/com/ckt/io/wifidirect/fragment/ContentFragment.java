@@ -203,7 +203,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
 //                    wifiP2pHelper.sendFiles(list);
                     for(int i=0; i<list.size(); i++) {
                         File temp = list.get(i);
-                        WifiP2pState.getInstance(getContext()).wifiTransferManager.sendFile(i, temp.getPath(), "0f:21:54:00");
+                        WifiP2pState.getInstance(getContext()).wifiTransferManager.sendFile(i, temp.getPath());
                     }
 
                     activity.clearSendFileList();

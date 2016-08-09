@@ -1,6 +1,7 @@
 package com.ckt.io.wifidirect.p2p;
 
 import android.content.Context;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Looper;
@@ -23,6 +24,8 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -64,6 +67,7 @@ public class WifiTransferManager {
     private Context context;
     private InetAddress peerAddr;
     private int peerPort;
+    private WifiP2pDevice mThisDevice;
 
     private ArrayList<DataTranferTask> mWaitingTasks = new ArrayList<>();
     private ArrayList<DataTranferTask> mDoingTasks = new MyArrayList<>();
@@ -83,6 +87,7 @@ public class WifiTransferManager {
     public WifiTransferManager(Context context,
                                InetAddress addr,
                                int port,
+                               WifiP2pDevice thisDevice,
                                FileSendStateListener fileSendStateListener,
                                FileReceiveStateListener fileReceiveStateListener,
                                OnGetClientIpListener onGetClientIpListener,
@@ -97,6 +102,7 @@ public class WifiTransferManager {
         this.context = context;
         this.peerAddr = addr;
         this.peerPort = port;
+        this.mThisDevice = thisDevice;
         File sdcard = SdcardUtils.getInnerSDcardFile(context);
         if(sdcard != null) {
             receiveFileDir = new File(sdcard, context.getString(R.string.received_file_dir));
@@ -108,8 +114,12 @@ public class WifiTransferManager {
         this.onSendClientIpResponseListener = onSendClientIpResponseListener;
     }
 
-    public boolean sendFile(int id, String path, String mac) {
+    public boolean sendFile(int id, String path) {
         File f = new File(path);
+        String mac = null;
+        if(mThisDevice != null) {
+            mac = mThisDevice.deviceAddress;
+        }
         if(id < 0 || path == null || "".endsWith(path) || !f.exists() || !f.isFile() || mac == null) {
             LogUtils.d(TAG, "Send file failed: The param is null or the file dose't exist!! id="+id+"path="+path);
             return false;
@@ -148,7 +158,7 @@ public class WifiTransferManager {
         return doSend(msgType, paramMap, extraFile, null);
     }
     private boolean doSend(byte msgType, HashMap<String, String> paramMap, String extraFile, DataTranferTask task) {
-        LogUtils.d(TAG, "doSend  msgType="+msgType + " paramMap="+paramMap.toString() + "extraFile="+extraFile + " peerIp:"+peerAddr);
+        LogUtils.d(TAG, "doSend  msgType="+msgType + " paramMap="+paramMap.toString() + "extraFile="+extraFile + " peerIp:"+peerAddr + "  localIP:");
         boolean ret = true;
         //handle param
         boolean hasExtraFile = false;
@@ -168,6 +178,7 @@ public class WifiTransferManager {
         try {
             socket.bind(null);
             socket.connect((new InetSocketAddress(peerAddr, peerPort)), SOCKET_TIMEOUT);
+            LogUtils.d(TAG, "do Send: localIP="+socket.getLocalAddress());
             out = socket.getOutputStream();
             //step 1: send msgType
             out.write(msgType);
@@ -251,7 +262,7 @@ public class WifiTransferManager {
                 throw new Exception();
             }
             int paramLen = DataTypeUtils.byteToInt2(param_len_buf);
-            LogUtils.d(TAG, "do receive msgType="+msgType+" param-len="+paramLen);
+            LogUtils.d(TAG, "do receive msgType="+msgType+" param-len="+paramLen + " from:"+socket.getInetAddress());
             //step 3: receive the param_str and parse it
             byte param_buf[] = new byte[1024];
             int left = paramLen;

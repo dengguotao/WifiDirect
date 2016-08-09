@@ -15,6 +15,7 @@ import android.util.Log;
 
 import com.ckt.io.wifidirect.Constants;
 import com.ckt.io.wifidirect.utils.LogUtils;
+import com.ckt.io.wifidirect.utils.NetworksUtils;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -23,6 +24,7 @@ import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
@@ -48,6 +50,8 @@ public class WifiP2pState extends BroadcastReceiver implements
     private boolean sendClientIpThreadRunning = false;
 
     private static WifiP2pState instance = null;
+
+    private static WifiP2pDevice mThisDevice;
 
     public static WifiP2pState getInstance(Context context) {
         if (instance == null) {
@@ -97,35 +101,41 @@ public class WifiP2pState extends BroadcastReceiver implements
                 manager.requestPeers(channel, this);
             }
             Log.d(TAG, "P2P peers changed");
-        } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
+        } else {
+            if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
 
-            if (manager == null) {
-                return;
+                if (manager == null) {
+                    return;
+                }
+
+                NetworkInfo networkInfo = (NetworkInfo) intent
+                        .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+
+                if (networkInfo.isConnected()) {
+                    // we are connected with the other device, request connection info
+                    //to find group owner IP
+                    connectedDeviceInfo = new ConnectedDeviceInfo();
+                    manager.requestGroupInfo(channel, this);
+                    Log.d(TAG, "device Connected!!--->requestConnectionInfo()");
+                } else {
+                    // It's a disconnect
+                    connectedDeviceInfo = null;
+                    if(mServer != null) {
+                        mServer.interrupt();
+                    }
+                    mServer = null;
+                    Log.d(TAG, "device disconnected!!)");
+                }
+            } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
+
+            } else if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
+                mThisDevice = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
             }
-
-            NetworkInfo networkInfo = (NetworkInfo) intent
-                    .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
-
-            if (networkInfo.isConnected()) {
-                // we are connected with the other device, request connection info
-                //to find group owner IP
-                connectedDeviceInfo = new ConnectedDeviceInfo();
-                manager.requestGroupInfo(channel, this);
-                Log.d(TAG, "device Connected!!--->requestConnectionInfo()");
-            } else {
-                // It's a disconnect
-                connectedDeviceInfo = null;
-                Log.d(TAG, "device disconnected!!)");
-            }
-        } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
-
-        } else if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
-
         }
     }
 
     @Override
-    public void onConnectionInfoAvailable(WifiP2pInfo info) {
+    public void onConnectionInfoAvailable(final WifiP2pInfo info) {
         LogUtils.d(TAG, "onConnectionInfoAvailable  isGroupOwner:" + info.isGroupOwner);
         connectedDeviceInfo.connectInfo = info;
         if (!info.isGroupOwner) { //the client
@@ -133,16 +143,49 @@ public class WifiP2pState extends BroadcastReceiver implements
         }
 
         if (info.isGroupOwner) { //groupOwner
-            connectedDeviceInfo.connectedDeviceAddr = null;
+            /*connectedDeviceInfo.connectedDeviceAddr =
+                    NetworksUtils.getPeerIp(connectedDeviceInfo.group);*/
+            int retryTime = 50;
+            String ip = null;
+            while (retryTime >= 0) {
+                for(WifiP2pDevice device : connectedDeviceInfo.group.getClientList()) {
+                    ip = NetworksUtils.getPeerIP(device.deviceAddress);
+                }
+                if(ip !=  null) {
+                    break;
+                }
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                retryTime --;
+            }
+            if(ip != null) {
+                try {
+                    connectedDeviceInfo.connectedDeviceAddr = InetAddress.getByName(ip);
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                }
+            }else {
+                LogUtils.d(TAG, "GroupOwner get client ip failed!");
+                return;
+            }
+
+
+            LogUtils.d(TAG, "getPeerIp-------->"+ connectedDeviceInfo.connectedDeviceAddr);
         } else {//client
             if (connectedDeviceInfo.connectInfo != null) {
                 connectedDeviceInfo.connectedDeviceAddr = connectedDeviceInfo.connectInfo.groupOwnerAddress;
             }
         }
 
+
+
         wifiTransferManager = new WifiTransferManager(context,
                 connectedDeviceInfo.connectedDeviceAddr,
                 Constants.PORT,
+                mThisDevice,
                 new WifiTransferManager.FileSendStateListener() {
                     @Override
                     public void onStart(int id, String path, long transferedSize) {
@@ -200,7 +243,8 @@ public class WifiP2pState extends BroadcastReceiver implements
             mServer.startListen();
         }
 
-        if (!connectedDeviceInfo.connectInfo.isGroupOwner) {
+        /*if(!connectedDeviceInfo.connectInfo.isGroupOwner) {
+>>>>>>> Stashed changes:app/src/main/java/com/ckt/io/wifidirect/p2p/WiFiP2pState.java
 
             new Thread() {
                 @Override
@@ -216,7 +260,7 @@ public class WifiP2pState extends BroadcastReceiver implements
                     }
                 }
             }.start();
-        }
+        }*/
     }
 
     @Override
@@ -236,6 +280,15 @@ public class WifiP2pState extends BroadcastReceiver implements
         }
 
         manager.requestConnectionInfo(channel, this);
+
+        /*Object obj = context.getSystemService("network_management");
+        try {
+            Method method = obj.getClass().getMethod("getRoutes");
+            RouteInfo ret [] = (RouteInfo[]) method.invoke(obj, group.getInterface());
+            LogUtils.d(TAG, "routeInfo:" + ret);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
     }
 
     private static byte[] getLocalIPAddress() {

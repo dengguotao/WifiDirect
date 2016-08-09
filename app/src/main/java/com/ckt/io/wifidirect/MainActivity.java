@@ -2,6 +2,7 @@ package com.ckt.io.wifidirect;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.usage.NetworkStatsManager;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
@@ -34,6 +35,7 @@ import com.ckt.io.wifidirect.utils.SdcardUtils;
 import com.ckt.io.wifidirect.utils.ToastUtils;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
