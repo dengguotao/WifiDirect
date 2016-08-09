@@ -34,6 +34,7 @@ public class WifiP2pServer extends Thread {
                     mServerSocket = new ServerSocket(Constants.PORT);
                 }
                 Socket client = mServerSocket.accept();
+                LogUtils.d(TAG, "start recive");
                 transferManager.receive(client);
             } catch (IOException e) {
                 if (mServerSocket != null) {

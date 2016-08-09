@@ -2,6 +2,7 @@ package com.ckt.io.wifidirect.fragment;
 
 import android.animation.ValueAnimator;
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -21,6 +22,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 
+import com.ckt.io.wifidirect.Constants;
 import com.ckt.io.wifidirect.MainActivity;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.adapter.MyFragmentAdapter;
@@ -203,7 +205,17 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
 //                    wifiP2pHelper.sendFiles(list);
                     for(int i=0; i<list.size(); i++) {
                         File temp = list.get(i);
-                        WifiP2pState.getInstance(getContext()).wifiTransferManager.sendFile(i, temp.getPath());
+//                        WifiP2pState.getInstance(getContext()).wifiTransferManager.sendFile(i, temp.getPath());
+                        ContentValues contentValues = new ContentValues();
+                        contentValues.put(Constants.InstanceColumns.PATH, temp.getPath());
+                        contentValues.put(Constants.InstanceColumns.NAME, temp.getName());
+                        contentValues.put(Constants.InstanceColumns.LENGTH, temp.length());
+                        WifiP2pState wifiP2pState = WifiP2pState.getInstance(getContext());
+                        contentValues.put(Constants.InstanceColumns.TRANSFER_MAC, wifiP2pState.getConnectedDeviceInfo().connectedDevice.deviceAddress);
+                        contentValues.put(Constants.InstanceColumns.TRANSFER_DIRECTION, Constants.DIRECTION_OUT);
+                        contentValues.put(Constants.InstanceColumns.STATE, Constants.State.STATE_IDEL);
+                        contentValues.put(Constants.InstanceColumns.TRANSFER_LENGTH, 0);
+                        getContext().getContentResolver().insert(Constants.InstanceColumns.CONTENT_URI,contentValues);
                     }
 
                     activity.clearSendFileList();

@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 
-import com.ckt.io.wifidirect.p2p.WifiP2pClient;
 import com.ckt.io.wifidirect.p2p.WifiP2pServer;
 import com.ckt.io.wifidirect.p2p.WifiP2pState;
 import com.ckt.io.wifidirect.p2p.WifiTransferManager;
@@ -68,6 +67,9 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
 
     @Override
     public void onDestroy() {
+        if(mServer != null) {
+            mServer.interrupt();
+        }
         getContentResolver().unregisterContentObserver(contentObserver);
     }
 
@@ -92,7 +94,9 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
 
     @Override
     public void onDisConnected() {
-        mServer.interrupt();
+        if(mServer != null) {
+            mServer.interrupt();
+        }
         mWifiTransferManager = null;
         mConnectedDeviceInfo = null;
     }
@@ -112,6 +116,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
                         return;
                     }
                     if (!mPendingUpdate) {
+                        mUpdateTask = null;
                         return;
                     }
                     mPendingUpdate = false;
@@ -134,6 +139,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
                                     cursor.getString(cursor.getColumnIndex(Constants.InstanceColumns.PATH)));
                         }
                     }
+                    cursor.moveToNext();
                 }
             }
         }

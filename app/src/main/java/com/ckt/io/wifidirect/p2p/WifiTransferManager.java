@@ -1,6 +1,9 @@
 package com.ckt.io.wifidirect.p2p;
 
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
+import android.net.Uri;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.nfc.Tag;
 import android.os.AsyncTask;
@@ -8,6 +11,7 @@ import android.os.Looper;
 import android.renderscript.ScriptGroup;
 import android.util.Log;
 
+import com.ckt.io.wifidirect.Constants;
 import com.ckt.io.wifidirect.R;
 import com.ckt.io.wifidirect.utils.ApkUtils;
 import com.ckt.io.wifidirect.utils.DataTypeUtils;
@@ -45,7 +49,7 @@ public class WifiTransferManager {
 
     public static final int SOCKET_TIMEOUT = 5000;
     public static final int TASK_TIMEOUT = 3000;
-    public static final int MAX_SEND_TASK = 3;
+    public static final int MAX_SEND_TASK = 5;
 
     public static final byte MSG_REQEUST_FILE_INFO = 0;
     public static final byte MSG_RESPONSE_FILE_INFO = 1;
@@ -139,11 +143,8 @@ public class WifiTransferManager {
         return true;
     }
 
-    private boolean doSend(byte msgType, HashMap<String, String> paramMap, String extraFile) {
-        return doSend(msgType, paramMap, extraFile, null);
-    }
-    private boolean doSend(byte msgType, HashMap<String, String> paramMap, String extraFile, DataTranferTask task) {
-        LogUtils.d(TAG, "doSend  msgType="+msgType + " paramMap="+paramMap.toString() + "extraFile="+extraFile + " peerIp:"+peerAddr + "  localIP:");
+    private boolean doSend(OutputStream out, byte msgType, HashMap<String, String> paramMap, String extraFile, DataTranferTask task) {
+        LogUtils.d(TAG, "doSend  msgType=" + msgType + " paramMap=" + paramMap.toString() + "extraFile=" + extraFile + " peerIp:" + peerAddr + "  localIP:");
         boolean ret = true;
         //handle param
         boolean hasExtraFile = false;
@@ -157,14 +158,9 @@ public class WifiTransferManager {
             hasExtraFile = true;
         }
         String paramStr = DataTypeUtils.toJsonStr(paramMap);
-        Socket socket = new Socket();
-        OutputStream out = null;
+
         InputStream in = null;
         try {
-            socket.bind(null);
-            socket.connect((new InetSocketAddress(peerAddr, peerPort)), SOCKET_TIMEOUT);
-            LogUtils.d(TAG, "do Send: localIP="+socket.getLocalAddress());
-            out = socket.getOutputStream();
             //step 1: send msgType
             out.write(msgType);
             //step 2: send param-len
@@ -194,42 +190,38 @@ public class WifiTransferManager {
                 }
                 LogUtils.d(TAG, "do send file successed! ret=");
             }
+//            out.flush();
         } catch (Exception e) {
             e.printStackTrace();
             ret = false;
         } finally {
-            try {
-                out.close();
-            } catch (Exception e) {}
-            try {
-                in.close();
-            } catch (Exception e) {}
-            try {
-                socket.close();
-            } catch (Exception e) {}
+            /*if s is not null do not release it in this method*/
+            if(in == null) {
+                try {
+                    in.close();
+                } catch (Exception e) {}
+            }
         }
+        LogUtils.d(TAG, "do Finished--->ret=" + ret);
         return ret;
     }
 
-    public void receive(final Socket socket) {
-        new Thread() {
-            @Override
-            public void run() {
-                doReceive(socket);
-            }
-        }.start();
+    public boolean receive(final Socket s) {
+        FileReceiveTask task = new FileReceiveTask(s);
+        task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        return true;
     }
 
-    private boolean doReceive(final Socket socket) {
-        if (socket == null) return false;
+    private boolean doReceive(DataTranferTask task, InputStream inputstream) {
+        LogUtils.d(TAG, "doReceive--->"+task.toString());
+        if (inputstream == null) return false;
         boolean ret = true;
-        InputStream inputstream = null;
         OutputStream out = null;
         int len = 0;
         byte msgType = -1;
         File f = null;
+        boolean isHasFileExtra = false;
         try {
-            inputstream = socket.getInputStream();
             //step 1: recevice the msg_type
             byte msg_type[] = new byte[1];//the buffer to recevice the msg_type
             len = inputstream.read(msg_type);
@@ -247,7 +239,7 @@ public class WifiTransferManager {
                 throw new Exception();
             }
             int paramLen = DataTypeUtils.byteToInt2(param_len_buf);
-            LogUtils.d(TAG, "do receive msgType="+msgType+" param-len="+paramLen + " from:"+socket.getInetAddress());
+            LogUtils.d(TAG, "do receive msgType="+msgType+" param-len="+paramLen);
             //step 3: receive the param_str and parse it
             byte param_buf[] = new byte[1024];
             int left = paramLen;
@@ -271,52 +263,89 @@ public class WifiTransferManager {
             //step 4: handle the recevied msg
             switch (msg_type[0]) {
                 case MSG_REQEUST_FILE_INFO: //another device request the file info
-                    onFileInfoRequest(paramMap);
+                    FileReceiveTask fileReceiveTask = (FileReceiveTask) task;
+                    fileReceiveTask.onFileInfoRequest(paramMap);
                     break;
                 case MSG_RESPONSE_FILE_INFO://another device response our reqeust for file info
-                    onRequestFileInfoResponsed((HashMap<String, String>) paramMap.clone());
+                    FileSendTask fileSendTask = (FileSendTask) task;
+                    fileSendTask.onRequestFileInfoResponsed((HashMap<String, String>) paramMap.clone());
                     break;
                 case MSG_SEND_FILE://another device send a file to here.
-                    boolean isHasFileExtra = false;
-                    try {
-                        isHasFileExtra = Boolean.valueOf(paramMap.get(PARAM_IS_HAS_FILE_EXTRA));
-                    } catch (Exception e) {}
-                    if (isHasFileExtra) {
 
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                FileReceiveTask task = new FileReceiveTask(socket, paramMap);
-                                if(!mDoingTasks.contains(task)) {
-                                    mDoingTasks.add(task);
-                                }
-                                task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                            }
-                        });
-                    }
-                    break;
-                case MSG_SEND_CLIENT_IP:
-                    onGetClientIP(socket.getInetAddress());
-                    break;
-                case MSG_RESPONSE_SEND_CLIENT_IP:
-                    onSendClientIpResponse(paramMap);
                     break;
             }
+            try {
+                isHasFileExtra = Boolean.valueOf(paramMap.get(PARAM_IS_HAS_FILE_EXTRA));
+            }catch (Exception e){}
+
+            if(msg_type[0] == MSG_SEND_FILE && isHasFileExtra) {
+                //get important params
+                String name = paramMap.get(PARAM_FILE_NAME);
+                long size = 0;
+                try {
+                    size = Long.valueOf(paramMap.get(PARAM_SIZE));
+                }catch (Exception e) {}
+                long transferedSize = 0;
+                try {
+                    transferedSize = Long.valueOf(paramMap.get(PARAM_TRANSFERED_LEN));
+                }catch (Exception e) {}
+                String mac = null;
+                mac = paramMap.get(PARAM_MAC);
+                if (name == null || size == 0 || mac == null) {
+                    LogUtils.d(TAG, "receive file content: miss important params!!!");
+                    throw new Exception();
+                }
+                f = getTempFile(name, mac);
+                LogUtils.d(TAG, "do receive file:"+f.getPath());
+                task.f = getFiniallyFile(name);
+                task.mac = mac;
+                task.transferedSize = transferedSize;
+                task.size = size;
+                onReceiveFileStarted(task, f.getPath()); /*.............................*/
+                File parent = f.getParentFile();
+                if(!parent.exists()) {
+                    parent.mkdirs();
+                }
+                if(transferedSize == 0) {//new file
+                    f.createNewFile();
+                    out = new FileOutputStream(f);
+                }else {
+                    if(!f.exists()) {
+                        LogUtils.d(TAG, "recevie file [" + f.getPath() + "] failed: the tmp file does't exist in breakpoint-resume mode" );
+                        throw new Exception();
+                    }else if(f.length() != transferedSize) {
+                        LogUtils.d(TAG, "recevie file [" + f.getPath() + "] failed: the tmp file size done't match the transfered size");
+                        throw new Exception();
+                    }
+                    out = new FileOutputStream(f, true);//true--->append file
+                }
+                byte buf [] = new byte[2048];
+                while((len = inputstream.read(buf)) != -1) {
+                    out.write(buf, 0, len);
+                    transferedSize += len;
+                }
+                LogUtils.d(TAG, "do receive file: while exist  receivedSize="+transferedSize+ " szie="+size);
+                if(transferedSize == size) {
+                    //remove the ".tmp" suffix
+                    File newFile = getFiniallyFile(name);
+                    parent = newFile.getParentFile();
+                    if(!parent.exists()) {
+                        parent.mkdirs();
+                    }
+                    newFile.delete();
+                    f.renameTo(newFile);
+                    LogUtils.d(TAG, "do receive file successed--->rename to:" + newFile.getPath());
+                    ret = true;
+                }
+            }
+
         }catch (Exception e) {
             e.printStackTrace();
             ret = false;
-        } finally {
-            if(msgType != MSG_SEND_FILE) {
-                try {
-                    inputstream.close();
-                } catch (Exception e){}
-                try {
-                    out.close();
-                } catch (Exception e) {}
-                try {
-                    socket.close();
-                } catch (Exception e) {}
-            }
+        }
+
+        if(isHasFileExtra) {
+            onReceiveFileFinished(task, task.getFile().getPath(), ret);
         }
         return ret;
     }
@@ -331,18 +360,17 @@ public class WifiTransferManager {
         }
     }
 
-    public void onGetClientIP(InetAddress address) {
-        peerAddr = address;
-        HashMap<String, String> map = new HashMap<>();
-        map.put("test", "test");
-        doSend(MSG_RESPONSE_SEND_CLIENT_IP, map, null);
-    }
-
     public void onSendFileStarted(DataTranferTask task, int id) {
         LogUtils.d(TAG, "onSendFileStarted --> id=" + id);
         if(fileSendStateListener != null) {
             fileSendStateListener.onStart(id, task.f.getPath(), task.transferedSize);
         }
+
+        //update db
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(Constants.InstanceColumns.STATE, Constants.State.STATE_TRANSFERING);
+        Uri uri = ContentUris.withAppendedId(Constants.InstanceColumns.CONTENT_URI, id);
+        context.getContentResolver().update(uri,contentValues,null,null);
     }
 
     public void onSendFileFinished(DataTranferTask task, int id, boolean ret) {
@@ -352,12 +380,30 @@ public class WifiTransferManager {
         if(fileSendStateListener != null) {
             fileSendStateListener.onFinished(id, task.f.getPath(), task.transferedSize, ret);
         }
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(Constants.InstanceColumns.STATE, Constants.State.STATE_TRANSFER_DONE);
+        Uri uri = ContentUris.withAppendedId(Constants.InstanceColumns.CONTENT_URI, id);
+        context.getContentResolver().update(uri,contentValues,null,null);
     }
 
     public void onReceiveFileStarted(DataTranferTask task, String path) {
         LogUtils.d(TAG, "receive File started: " + path);
         if(fileReceiveStateListener != null) {
             fileReceiveStateListener.onStart(path, task.transferedSize, task.size);
+        }
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(Constants.InstanceColumns.PATH, path);
+        contentValues.put(Constants.InstanceColumns.NAME, new File(path).getName());
+        contentValues.put(Constants.InstanceColumns.LENGTH, task.size);
+        WifiP2pState wifiP2pState = WifiP2pState.getInstance(context);
+        contentValues.put(Constants.InstanceColumns.TRANSFER_MAC, wifiP2pState.getConnectedDeviceInfo().connectedDevice.deviceAddress);
+        contentValues.put(Constants.InstanceColumns.TRANSFER_DIRECTION, Constants.DIRECTION_IN);
+        contentValues.put(Constants.InstanceColumns.STATE, Constants.State.STATE_TRANSFERING);
+        contentValues.put(Constants.InstanceColumns.TRANSFER_LENGTH, 0);
+        Uri uri = context.getContentResolver().insert(Constants.InstanceColumns.CONTENT_URI, contentValues);
+        if(uri != null) {
+            task.id = (int) ContentUris.parseId(uri);
         }
     }
 
@@ -367,52 +413,12 @@ public class WifiTransferManager {
         if(fileReceiveStateListener != null) {
             fileReceiveStateListener.onFinished(path, task.transferedSize, task.size, ret);
         }
-    }
 
-    /*
-    ** handle request
-     */
-    public void onFileInfoRequest(HashMap<String, String> map) {
-        String name = map.get(PARAM_FILE_NAME);
-        if(name == null) {
-            LogUtils.d(TAG, "received a request of file info, but file name is null, so ignore the receive!!!!");
-            return ;
-        }
-        String mac = map.get(PARAM_MAC);
-        if(mac == null) {
-            LogUtils.d(TAG, "received a request of file info, but the MAC is null, so ignore the receive!!!!");
-            return ;
-        }
-        File f = getTempFile(name, mac);
-        long transferedLen = 0;
-        if(f.exists()) {
-            transferedLen = f.length();
-        }
-        map.put(PARAM_TRANSFERED_LEN, String.valueOf(transferedLen));
-        //response it
-        doSend(MSG_RESPONSE_FILE_INFO, map, null);
-    }
-
-    /*
-    *
-    * */
-    public void onRequestFileInfoResponsed(HashMap<String, String> map) {
-        int id = -1;
-        try {
-            id = Integer.valueOf(map.get(PARAM_ID));
-        }catch (Exception e){}
-        if(id < 0) {
-            LogUtils.d(TAG, "received a request_file_info response, but the id is invalide, so ignore the receive!!!!");
-            return ;
-        }
-        LogUtils.d(TAG, "onRequestFileInfoResponsed() --> !!!!" + map.toString());
-        /*notify the task we have get the file info*/
-        DataTranferTask task = getDoingTaskById(id);
-        if(task != null) {
-            task.onGetFileInfo(map);
-        }else {
-            LogUtils.d(TAG, "received a request_file_info response, but the task is null, so ignore the receive!!!!");
-        }
+        //update db
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(Constants.InstanceColumns.STATE, Constants.State.STATE_TRANSFER_DONE);
+        Uri uri = ContentUris.withAppendedId(Constants.InstanceColumns.CONTENT_URI, task.id);
+        context.getContentResolver().update(uri,contentValues,null,null);
     }
 
     private void startHandleSendTaskThread() {
@@ -562,14 +568,14 @@ public class WifiTransferManager {
     }
 
     abstract class DataTranferTask extends AsyncTask<Object, Integer, Boolean> {
-        protected long size;
-        protected long transferedSize;
+        public long size;
+        public long transferedSize;
         protected long tempTransferdSize = 0; /*use to calculate speed*/
-        protected int id = -1;
-        protected File f;
-        protected boolean isRunning = false;
-        protected double speed;
-        protected String mac;
+        public int id = -1;
+        public File f;
+        public boolean isRunning = false;
+        public double speed;
+        public String mac;
 
         void onGetFileInfo(HashMap<String, String> map){}
         public long getTransferedSize() {
@@ -640,40 +646,53 @@ public class WifiTransferManager {
         @Override
         protected Boolean doInBackground(Object... params) {
             isRunning = true;
-            boolean ret = false;
+            boolean ret = true;
             String name = f.getName();
             if(name.toString().endsWith(".apk")) {
                 name = ApkUtils.getApkLable(context, f.getPath()) + ".apk";
             }
-            final HashMap<String, String> paramMap = new HashMap<>();
-            paramMap.put(PARAM_ID, String.valueOf(id));
-            paramMap.put(PARAM_FILE_NAME, name);
-            paramMap.put(PARAM_MAC, mac);
-            //step 1: request the file info
-            onSendFileStarted(this, id); /*..................................*/
-            doSend(MSG_REQEUST_FILE_INFO, paramMap,null);
-            int waitTime = 0;
-            boolean isTimeOut = true;
-            //step 2: wait for response until TIMEOUT
-            while (waitTime <= TASK_TIMEOUT) {
-                try {
-                    Thread.sleep(200);
-                    waitTime += 200;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            Socket s = new Socket();
+            OutputStream out = null;
+            InputStream in = null;
+            try {
+                s.bind(null);
+                s.connect((new InetSocketAddress(peerAddr, peerPort)), SOCKET_TIMEOUT);
+                out = s.getOutputStream();
+                in = s.getInputStream();
+                final HashMap<String, String> paramMap = new HashMap<>();
+                paramMap.put(PARAM_ID, String.valueOf(id));
+                paramMap.put(PARAM_FILE_NAME, name);
+                paramMap.put(PARAM_MAC, mac);
+                //step 1: request the file info
+                onSendFileStarted(this, id); /*..................................*/
+                doSend(out, MSG_REQEUST_FILE_INFO, paramMap, null, null);
+                //step 2: wait for the file info
+                if(doReceive(this, in)) {
+                    //step 3: send the file now
+                    paramMap.put(PARAM_TRANSFERED_LEN, String.valueOf(transferedSize));
+                    ret = doSend(out, MSG_SEND_FILE, paramMap,f.getPath(), this);
                 }
-                if(isFileInfoGeted) {
-                    isTimeOut = false;
-                    break;
+            } catch (Exception e) {
+                e.printStackTrace();
+                ret = false;
+            } finally {
+                if(in != null) {
+                    try {
+                        in.close();
+                    } catch (IOException e) {}
+                }
+                if(out != null) {
+                    try {
+                        out.close();
+                    } catch (IOException e) {}
+                }
+                if(s != null) {
+                    try {
+                        s.close();
+                    } catch (IOException e) {}
                 }
             }
-            if(!isTimeOut) {
-                //step 3: send the file now
-                paramMap.put(PARAM_TRANSFERED_LEN, String.valueOf(transferedSize));
-                ret = doSend(MSG_SEND_FILE, paramMap,f.getPath(), this);
-            }else {
-                LogUtils.d(TAG, "SendTask timeout: id="+id+" path="+f.getPath());
-            }
+            onSendFileFinished(this, id, ret);
             isRunning = false;
             return ret;
         }
@@ -682,8 +701,17 @@ public class WifiTransferManager {
         * Called when get the file info send by another device
         * main that the another device have response the file info
         * */
-        @Override
-        public void onGetFileInfo(HashMap<String, String> map) {
+        public void onRequestFileInfoResponsed(HashMap<String, String> map) {
+            int id = -1;
+            try {
+                id = Integer.valueOf(map.get(PARAM_ID));
+            }catch (Exception e){}
+            if(id < 0) {
+                LogUtils.d(TAG, "received a request_file_info response, but the id is invalide, so ignore the receive!!!!");
+                return ;
+            }
+            LogUtils.d(TAG, "onRequestFileInfoResponsed() --> !!!!" + map.toString());
+
             isFileInfoGeted = true;
             try {
                 transferedSize = Long.valueOf(map.get(PARAM_TRANSFERED_LEN));
@@ -696,7 +724,7 @@ public class WifiTransferManager {
 
         @Override
         protected void onPostExecute(Boolean ret) {
-            onSendFileFinished(this, id, ret);
+//            onSendFileFinished(this, id, ret);
         }
     }
 
@@ -706,72 +734,24 @@ public class WifiTransferManager {
     class FileReceiveTask extends DataTranferTask {
         Socket socket;
         HashMap<String, String> paramMap;
-        public FileReceiveTask(Socket socket, HashMap<String, String> map) {
+        public FileReceiveTask(Socket socket) {
             this.socket = socket;
-            this.paramMap = map;
         }
 
         @Override
         protected Boolean doInBackground(Object... params) {
             boolean ret = false;
             isRunning = true;
-            if(socket != null && paramMap != null) {
-                FileOutputStream out = null;
+            if(socket != null) {
+                OutputStream out = null;
                 InputStream inputStream = null;
                 try {
-                    //get important params
-                    String name = paramMap.get(PARAM_FILE_NAME);
-                    try {
-                        size = Long.valueOf(paramMap.get(PARAM_SIZE));
-                    }catch (Exception e) {}
-                    try {
-                        transferedSize = Long.valueOf(paramMap.get(PARAM_TRANSFERED_LEN));
-                    }catch (Exception e) {}
-                    mac = paramMap.get(PARAM_MAC);
-                    if (name == null || size == 0 || mac == null) {
-                        LogUtils.d(TAG, "receive file content: miss important params!!!");
-                        throw new Exception();
-                    }
-                    f = getTempFile(name, mac);
-                    LogUtils.d(TAG, "do receive file:"+f.getPath());
-                    onReceiveFileStarted(this, f.getPath()); /*.............................*/
-                    File parent = f.getParentFile();
-                    if(!parent.exists()) {
-                        parent.mkdirs();
-                    }
-                    if(transferedSize == 0) {//new file
-                        f.createNewFile();
-                        out = new FileOutputStream(f);
-                    }else {
-                        if(!f.exists()) {
-                            LogUtils.d(TAG, "recevie file [" + f.getPath() + "] failed: the tmp file does't exist in breakpoint-resume mode" );
-                            throw new Exception();
-                        }else if(f.length() != transferedSize) {
-                            LogUtils.d(TAG, "recevie file [" + f.getPath() + "] failed: the tmp file size done't match the transfered size");
-                            throw new Exception();
-                        }
-                        out = new FileOutputStream(f, true);//true--->append file
-                    }
+                    out = socket.getOutputStream();
                     inputStream = socket.getInputStream();
-                    int len = 0;
-                    byte buf [] = new byte[2048];
-                    while((len = inputStream.read(buf)) != -1) {
-                        out.write(buf, 0, len);
-                        transferedSize += len;
-                    }
-                    LogUtils.d(TAG, "do receive file: while exist  receivedSize="+transferedSize+ " szie="+size);
-                    if(transferedSize == size) {
-                        //remove the ".tmp" suffix
-                        File newFile = getFiniallyFile(name);
-                                                parent = newFile.getParentFile();
-                        if(!parent.exists()) {
-                            parent.mkdirs();
-                        }
-                        newFile.delete();
-                        f.renameTo(newFile);
-                        LogUtils.d(TAG, "do receive file successed--->rename to:" + newFile.getPath());
-                        ret = true;
-                    }
+                    /*step 1: wait for the file-info request*/
+                    doReceive(this, inputStream);
+                    /*step 2: receive the file*/
+                    doReceive(this, inputStream);
                 }catch (Exception e) {
                     e.printStackTrace();
                 } finally {
@@ -792,7 +772,37 @@ public class WifiTransferManager {
 
         @Override
         protected void onPostExecute(Boolean ret) {
-            onReceiveFileFinished(this, f.getPath(), ret);
+//            onReceiveFileFinished(this, f.getPath(), ret);
+        }
+
+        /*
+        ** handle request
+        */
+        public void onFileInfoRequest(HashMap<String, String> map) {
+            String name = map.get(PARAM_FILE_NAME);
+            if(name == null) {
+                LogUtils.d(TAG, "received a request of file info, but file name is null, so ignore the receive!!!!");
+                return ;
+            }
+            String mac = map.get(PARAM_MAC);
+            if(mac == null) {
+                LogUtils.d(TAG, "received a request of file info, but the MAC is null, so ignore the receive!!!!");
+                return ;
+            }
+            File f = getTempFile(name, mac);
+            long transferedLen = 0;
+            if(f.exists()) {
+                transferedLen = f.length();
+            }
+            map.put(PARAM_TRANSFERED_LEN, String.valueOf(transferedLen));
+            OutputStream out = null;
+            try {
+                out = socket.getOutputStream();
+                //response it
+                doSend(out, MSG_RESPONSE_FILE_INFO, map, null, null);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

@@ -193,14 +193,21 @@ public class WifiP2pState extends BroadcastReceiver implements
 
     @Override
     public void onGroupInfoAvailable(WifiP2pGroup group) {
-        if (group == null || !isConnected()) return;
+        LogUtils.d(TAG, "onGroupInfoAvailable--->"+group);
+        if (group == null) return;
         connectedDeviceInfo.group = group;
-        for (WifiP2pDevice device : group.getClientList()) {
-            if (device.status == WifiP2pDevice.CONNECTED) {
-                connectedDeviceInfo.connectedDevice = device;
-                break;
+        if(group.isGroupOwner()) {
+            for (WifiP2pDevice device : group.getClientList()) {
+                LogUtils.d(TAG, "clientList--->"+device);
+                if (device.status == WifiP2pDevice.CONNECTED) {
+                    connectedDeviceInfo.connectedDevice = device;
+                    break;
+                }
             }
+        }else {
+            connectedDeviceInfo.connectedDevice = group.getOwner();
         }
+
 
         manager.requestConnectionInfo(channel, this);
 
@@ -261,7 +268,7 @@ public class WifiP2pState extends BroadcastReceiver implements
     }
 
     public boolean isConnected() {
-        return connectedDeviceInfo != null;
+        return connectedDeviceInfo != null && connectedDeviceInfo.connectedDevice != null;
     }
 
     public WifiP2pDevice getThisDevice() {
