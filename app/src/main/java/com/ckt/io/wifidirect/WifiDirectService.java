@@ -1,6 +1,9 @@
 package com.ckt.io.wifidirect;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.database.ContentObserver;
 import android.database.Cursor;
@@ -8,6 +11,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.widget.RemoteViews;
 
 import com.ckt.io.wifidirect.p2p.WifiP2pServer;
 import com.ckt.io.wifidirect.p2p.WifiP2pState;
@@ -21,7 +25,8 @@ import java.util.List;
 /**
  * Created by guotao.deng on 2016/7/28.
  */
-public class WifiDirectService extends Service implements WifiP2pState.OnConnectStateChangeListener {
+public class WifiDirectService extends Service implements WifiP2pState.OnConnectStateChangeListener
+        , WifiTransferManager.FileSendStateListener, WifiTransferManager.FileReceiveStateListener {
 
     private static final String TAG = "WifiDirectService";
 
@@ -38,6 +43,8 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
 
     private UpdateTask mUpdateTask;
     private boolean mPendingUpdate;
+
+    private NotificationManager nm;
 
     private ContentObserver contentObserver = new ContentObserver(new Handler()) {
         @Override
@@ -58,6 +65,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
         LogUtils.d(TAG, "WifiDirectService onCreate()");
         mP2pState = WifiP2pState.getInstance(getApplicationContext());
         mP2pState.registerOnConnectChangeListener(this);
+        nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         getContentResolver().registerContentObserver(Constants.InstanceColumns.CONTENT_URI,
                 true, contentObserver);
     }
@@ -89,7 +97,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
     public void onConnected(WifiP2pState.ConnectedDeviceInfo connectedDeviceInfo) {
         mConnectedDeviceInfo = connectedDeviceInfo;
         mWifiTransferManager = new WifiTransferManager(this, mConnectedDeviceInfo.connectedDeviceAddr,
-                Constants.PORT, mP2pState.getThisDevice(), null, null);
+                Constants.PORT, mP2pState.getThisDevice(), this, this);
         mServer = new WifiP2pServer(mWifiTransferManager);
         mServer.startListen();
         updateFromProvider();
@@ -102,6 +110,48 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
         }
         mWifiTransferManager = null;
         mConnectedDeviceInfo = null;
+    }
+
+    @Override
+    public void onStart(TransferFileInfo info) {
+        updateNotification(info);
+    }
+
+    @Override
+    public void onUpdate(ArrayList<WifiTransferManager.DataTranferTask> taskList) {
+        for (WifiTransferManager.DataTranferTask task : taskList) {
+            updateNotification(task.transferFileInfo);
+        }
+    }
+
+    @Override
+    public void onFinished(TransferFileInfo info, boolean ret) {
+        updateNotification(info);
+    }
+
+    private void updateNotification(TransferFileInfo transferFileInfo) {
+        synchronized (nm) {
+            Notification.Builder builder = new Notification.Builder(this);
+            RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.transfer_notification_layout);
+            switch (transferFileInfo.state) {
+                case Constants.State.STATE_TRANSFERING:
+                    remoteViews.setTextViewText(R.id.title, transferFileInfo.direction == Constants.DIRECTION_OUT ?
+                            "sending" : "receiving");
+                    break;
+                case Constants.State.STATE_TRANSFER_DONE:
+                    remoteViews.setTextViewText(R.id.title, "done");
+                case Constants.State.STATE_TRANSFER_FAILED:
+                    remoteViews.setTextViewText(R.id.title, "fail");
+                default:
+                    remoteViews.setTextViewText(R.id.title, "unknow");
+            }
+
+            remoteViews.setTextViewText(R.id.file_name, transferFileInfo.name);
+            remoteViews.setProgressBar(R.id.progress, 100,
+                    (int) (transferFileInfo.transferedLength / transferFileInfo.length * 100), false);
+            builder.setContent(remoteViews);
+            nm.notify(transferFileInfo.id, builder.build());
+        }
     }
 
     private class UpdateTask extends Thread {

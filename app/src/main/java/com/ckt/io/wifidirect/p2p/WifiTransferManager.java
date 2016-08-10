@@ -558,7 +558,7 @@ public class WifiTransferManager {
         }
     }
 
-    abstract class DataTranferTask extends AsyncTask<Object, Integer, Boolean> {
+    public abstract class DataTranferTask extends AsyncTask<Object, Integer, Boolean> {
         public TransferFileInfo transferFileInfo;
         protected long tempTransferdSize = 0; /*use to calculate speed*/
         public boolean isRunning = false;
