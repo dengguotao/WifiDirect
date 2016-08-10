@@ -80,13 +80,13 @@ public class WifiP2pState extends BroadcastReceiver implements
         context.registerReceiver(this, intentFilter);
     }
 
-    public boolean isWifiOn() {
+    private boolean isWifiOn() {
         WifiManager wifiManager = (WifiManager) context
                 .getSystemService(Context.WIFI_SERVICE);
         return wifiManager.isWifiEnabled();
     }
 
-    public void toggleWifi(boolean isOpen) {
+    private void toggleWifi(boolean isOpen) {
         WifiManager wifiManager = (WifiManager) context
                 .getSystemService(Context.WIFI_SERVICE);
         wifiManager.setWifiEnabled(isOpen);
