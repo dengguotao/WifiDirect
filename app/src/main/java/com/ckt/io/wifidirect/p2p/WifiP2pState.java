@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WpsInfo;
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pGroup;
@@ -27,6 +29,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 
 /**
  * Created by admin on 2016/7/28.
@@ -49,7 +52,10 @@ public class WifiP2pState extends BroadcastReceiver implements
 
     private WifiP2pDevice mThisDevice;
 
-    private ArrayList<OnConnectStateChangeListener> listeners = new ArrayList<>();
+    private List<OnConnectStateChangeListener> listeners = new ArrayList<>();
+    private List<OnP2pChangeListener> onP2pChangeListenerList = new ArrayList<>();
+
+    private boolean mPendingDiscover;
 
     public static WifiP2pState getInstance(Context context) {
         if (instance == null) {
@@ -74,9 +80,55 @@ public class WifiP2pState extends BroadcastReceiver implements
         context.registerReceiver(this, intentFilter);
     }
 
+    public boolean isWifiOn() {
+        WifiManager wifiManager = (WifiManager) context
+                .getSystemService(Context.WIFI_SERVICE);
+        return wifiManager.isWifiEnabled();
+    }
+
+    public void toggleWifi(boolean isOpen) {
+        WifiManager wifiManager = (WifiManager) context
+                .getSystemService(Context.WIFI_SERVICE);
+        wifiManager.setWifiEnabled(isOpen);
+    }
+
+    public void discoverDevice() {
+        LogUtils.d(TAG, "discoverDevice()");
+        if (!isWifiOn()) {
+            toggleWifi(true);
+            mPendingDiscover = true;
+        } else {
+            manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                }
+
+                @Override
+                public void onFailure(int reasonCode) {
+                    LogUtils.d(TAG, "WifiP2pHelper-->discoverDevice failed   reasonCode=" + reasonCode);
+                }
+            });
+        }
+    }
+
+    public void connectDevice(WifiP2pDevice device, WifiP2pManager.ActionListener listener) {
+        LogUtils.d(TAG, "connect device " + device.deviceAddress);
+        WifiP2pConfig config = new WifiP2pConfig();
+        config.deviceAddress = device.deviceAddress;
+        config.wps.setup = WpsInfo.PBC;
+
+        manager.connect(channel, config, listener);
+    }
+
     public void registerOnConnectChangeListener(OnConnectStateChangeListener listener) {
         if (listener != null && !listeners.contains(listener)) {
             listeners.add(listener);
+        }
+    }
+
+    public void registerOnP2pChangeListenerListener(OnP2pChangeListener listener) {
+        if (listener != null && !onP2pChangeListenerList.contains(listener)) {
+            onP2pChangeListenerList.add(listener);
         }
     }
 
@@ -132,7 +184,20 @@ public class WifiP2pState extends BroadcastReceiver implements
             } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
                 mThisDevice = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
             } else if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
+                if (isWifiOn() && mPendingDiscover) {
+                    mPendingDiscover = false;
+                    manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
+                        @Override
+                        public void onSuccess() {
 
+                        }
+
+                        @Override
+                        public void onFailure(int reason) {
+                            LogUtils.e(TAG, "discover fail");
+                        }
+                    });
+                }
             }
         }
     }
@@ -188,28 +253,35 @@ public class WifiP2pState extends BroadcastReceiver implements
 
     @Override
     public void onPeersAvailable(WifiP2pDeviceList peers) {
-//        deviceList = (ArrayList<WifiP2pDevice>) peers.getDeviceList();
+        deviceList = (ArrayList<WifiP2pDevice>) peers.getDeviceList();
+        for (OnP2pChangeListener l : onP2pChangeListenerList) {
+            l.onPeersAvailable(peers);
+        }
     }
 
     @Override
     public void onGroupInfoAvailable(WifiP2pGroup group) {
-        LogUtils.d(TAG, "onGroupInfoAvailable--->"+group);
+        LogUtils.d(TAG, "onGroupInfoAvailable--->" + group);
         if (group == null) return;
         connectedDeviceInfo.group = group;
-        if(group.isGroupOwner()) {
+        if (group.isGroupOwner()) {
             for (WifiP2pDevice device : group.getClientList()) {
-                LogUtils.d(TAG, "clientList--->"+device);
+                LogUtils.d(TAG, "clientList--->" + device);
                 if (device.status == WifiP2pDevice.CONNECTED) {
                     connectedDeviceInfo.connectedDevice = device;
                     break;
                 }
             }
-        }else {
+        } else {
             connectedDeviceInfo.connectedDevice = group.getOwner();
         }
 
 
         manager.requestConnectionInfo(channel, this);
+
+        for (OnP2pChangeListener l : onP2pChangeListenerList) {
+            l.onGroupInfoAvailable(group);
+        }
 
         /*Object obj = context.getSystemService("network_management");
         try {
@@ -298,5 +370,11 @@ public class WifiP2pState extends BroadcastReceiver implements
         public void onConnected(ConnectedDeviceInfo connectedDeviceInfo);
 
         public void onDisConnected();
+    }
+
+    public interface OnP2pChangeListener {
+        public void onPeersAvailable(WifiP2pDeviceList peers);
+
+        public void onGroupInfoAvailable(WifiP2pGroup group);
     }
 }
