@@ -103,4 +103,20 @@ public class TransferFileInfo {
         id = (int) ContentUris.parseId(uri);
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "TransferFileInfo{" +
+                "id=" + id +
+                ", path='" + path + '\'' +
+                ", name='" + name + '\'' +
+                ", length=" + length +
+                ", state=" + state +
+                ", transferedLength=" + transferedLength +
+                ", direction=" + direction +
+                ", transferMac='" + transferMac + '\'' +
+                ", speed=" + speed +
+                ", uri=" + uri +
+                '}';
+    }
 }

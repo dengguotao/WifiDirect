@@ -253,7 +253,7 @@ public class WifiP2pState extends BroadcastReceiver implements
 
     @Override
     public void onPeersAvailable(WifiP2pDeviceList peers) {
-        deviceList = (ArrayList<WifiP2pDevice>) peers.getDeviceList();
+//        deviceList = (ArrayList<WifiP2pDevice>) peers.getDeviceList();
         for (OnP2pChangeListener l : onP2pChangeListenerList) {
             l.onPeersAvailable(peers);
         }

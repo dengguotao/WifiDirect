@@ -137,9 +137,8 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
                     if (state == Constants.State.STATE_IDEL) {
                         String mac = cursor.getString(cursor.getColumnIndex(Constants.InstanceColumns.TRANSFER_MAC));
                         if (mConnectedDeviceInfo.connectedDevice.deviceAddress.equals(mac)) {
-                            LogUtils.d(TAG, "send file: " + cursor.getString(cursor.getColumnIndex(Constants.InstanceColumns.PATH)) + " to: " + mac);
-                            boolean result = mWifiTransferManager.sendFile(cursor.getInt(cursor.getColumnIndex(Constants.InstanceColumns.ID)),
-                                    cursor.getString(cursor.getColumnIndex(Constants.InstanceColumns.PATH)));
+                            TransferFileInfo transferFileInfo = new TransferFileInfo(cursor, getContentResolver());
+                            mWifiTransferManager.sendFile(transferFileInfo);
                         }
                     }
                     cursor.moveToNext();

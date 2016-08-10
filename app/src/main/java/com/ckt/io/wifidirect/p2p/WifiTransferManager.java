@@ -113,6 +113,11 @@ public class WifiTransferManager {
     }
 
     public boolean sendFile(TransferFileInfo fileInfo) {
+        if(fileInfo == null) {
+            LogUtils.i(TAG, "sendFile------------------------------>failed--------------->fileInfo is null");
+            return false;
+        }
+        LogUtils.i(TAG, "taskId=" + fileInfo.id + "     sendFile---------------------------------->" + fileInfo.toString());
         File f = new File(fileInfo.path);
         String mac = null;
         if (mThisDevice != null) {
@@ -141,7 +146,7 @@ public class WifiTransferManager {
     }
 
     private boolean doSend(OutputStream out, byte msgType, HashMap<String, String> paramMap, String extraFile, DataTranferTask task) {
-        LogUtils.d(TAG, "doSend  msgType=" + msgType + " paramMap=" + paramMap.toString() + "extraFile=" + extraFile + " peerIp:" + peerAddr + "  localIP:");
+        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    doSend  msgType=" + msgType + " paramMap=" + paramMap.toString() + "extraFile=" + extraFile + " peerIp:" + peerAddr + "  localIP:");
         boolean ret = true;
         //handle param
         boolean hasExtraFile = false;
@@ -186,8 +191,7 @@ public class WifiTransferManager {
                         task.transferFileInfo.transferedLength += len;
                     }
                 }
-                LogUtils.d(TAG, "do send file successed! ret=");
-            }
+                            }
 //            out.flush();
         } catch (Exception e) {
             e.printStackTrace();
@@ -201,7 +205,6 @@ public class WifiTransferManager {
                 }
             }
         }
-        LogUtils.d(TAG, "do Finished--->ret=" + ret);
         return ret;
     }
 
@@ -304,9 +307,9 @@ public class WifiTransferManager {
                 }
                 f = getTempFile(name, mac);
                 LogUtils.d(TAG, "do receive file:" + f.getPath());
-                task.f = getFiniallyFile(name);
-                task.transferFileInfo.path = task.f.getPath();
-                task.transferFileInfo.name = task.f.getName();
+                File tempf = getFiniallyFile(name);
+                task.transferFileInfo.path = tempf.getPath();
+                task.transferFileInfo.name = tempf.getName();
                 task.transferFileInfo.transferMac = mac;
                 task.transferFileInfo.transferedLength = transferedSize;
                 task.transferFileInfo.length = size;
@@ -320,10 +323,10 @@ public class WifiTransferManager {
                     out = new FileOutputStream(f);
                 } else {
                     if (!f.exists()) {
-                        LogUtils.d(TAG, "recevie file [" + f.getPath() + "] failed: the tmp file does't exist in breakpoint-resume mode");
+                        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    recevie file [" + f.getPath() + "] failed: the tmp file does't exist in breakpoint-resume mode");
                         throw new Exception();
                     } else if (f.length() != transferedSize) {
-                        LogUtils.d(TAG, "recevie file [" + f.getPath() + "] failed: the tmp file size done't match the transfered size");
+                        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    recevie file [" + f.getPath() + "] failed: the tmp file size done't match the transfered size");
                         throw new Exception();
                     }
                     out = new FileOutputStream(f, true);//true--->append file
@@ -333,8 +336,8 @@ public class WifiTransferManager {
                     out.write(buf, 0, len);
                     task.transferFileInfo.transferedLength += len;
                 }
-                LogUtils.d(TAG, "do receive file: while exist  receivedSize=" + transferedSize + " szie=" + size);
-                if (transferedSize == size) {
+                LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    do receive file: while exist  receivedSize=" + task.transferFileInfo.transferedLength + " szie=" + size);
+                if (task.transferFileInfo.transferedLength == size) {
                     //remove the ".tmp" suffix
                     File newFile = getFiniallyFile(name);
                     parent = newFile.getParentFile();
@@ -343,7 +346,7 @@ public class WifiTransferManager {
                     }
                     newFile.delete();
                     f.renameTo(newFile);
-                    LogUtils.d(TAG, "do receive file successed--->rename to:" + newFile.getPath());
+                    LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    do receive file successed--->rename to:" + newFile.getPath());
                     ret = true;
                 }
             }
@@ -360,7 +363,7 @@ public class WifiTransferManager {
     }
 
     public void onSendFileStarted(DataTranferTask task) {
-        LogUtils.d(TAG, "onSendFileStarted --> id=" + task.transferFileInfo.id);
+        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    onSendFileStarted --> id=" + task.transferFileInfo.id);
         task.transferFileInfo.updateState(Constants.State.STATE_TRANSFERING);
         if (fileSendStateListener != null) {
             fileSendStateListener.onStart(task.transferFileInfo);
@@ -369,7 +372,7 @@ public class WifiTransferManager {
 
     public void onSendFileFinished(DataTranferTask task, boolean ret) {
         mDoingTasks.remove(task);
-        LogUtils.d(TAG, "onSendFileFinished --> id=" + task.transferFileInfo.id + "ret=" + ret);
+        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    ret=" + ret + " " + task.transferFileInfo.toString());
         startHandleSendTaskThread();
         if(ret) {
             task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_DONE);
@@ -382,16 +385,16 @@ public class WifiTransferManager {
     }
 
     public void onReceiveFileStarted(DataTranferTask task) {
-        LogUtils.d(TAG, "receive File started: " + task.transferFileInfo.path);
         task.transferFileInfo.insert();
-        if (fileReceiveStateListener != null) {
+        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    receive File started: " + task.transferFileInfo.path);
+                if (fileReceiveStateListener != null) {
             fileReceiveStateListener.onStart(task.transferFileInfo);
         }
     }
 
     public void onReceiveFileFinished(DataTranferTask task, boolean ret) {
         mDoingTasks.remove(task);
-        LogUtils.d(TAG, "receive File finished: " + task.transferFileInfo.path + " ret:" + ret);
+        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    receive File finished: " + task.transferFileInfo.path + " ret:" + ret + "   " + task.transferFileInfo.toString());
         if(ret) {
             task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_DONE);
         }else {
@@ -492,13 +495,16 @@ public class WifiTransferManager {
         public void run() {
             ArrayList<DataTranferTask> sendingList = new ArrayList<>();
             ArrayList<DataTranferTask> receivingList = new ArrayList<>();
-            for (DataTranferTask task : mDoingTasks) {
-                if (task != null && task.isRunning) {
-                    task.calculateSpeed(UPDATE_SPEED_INTERVAL);
-                    if (task instanceof FileSendTask) {
-                        sendingList.add(task);
-                    } else {
-                        receivingList.add(task);
+            synchronized (mDoingTasks) {
+                for (DataTranferTask task : mDoingTasks) {
+                    if (task != null && task.isRunning) {
+                        task.calculateSpeed(UPDATE_SPEED_INTERVAL);
+                        LogUtils.i(TAG, "taskId=" + task.transferFileInfo.id + "    " + task.toString());
+                        if (task instanceof FileSendTask) {
+                            sendingList.add(task);
+                        } else {
+                            receivingList.add(task);
+                        }
                     }
                 }
             }
@@ -527,25 +533,27 @@ public class WifiTransferManager {
             *    there are some task to do or doing
             *
             * */
-            while ((mWaitingTasks.size() > 0 && mDoingTasks.size() < MAX_SEND_TASK) && peerAddr != null) {
+            synchronized (mWaitingTasks) {
+                synchronized (mDoingTasks) {
+                    while (mWaitingTasks.size() > 0 && mDoingTasks.size() < MAX_SEND_TASK) {
 
-                final DataTranferTask task = mWaitingTasks.remove(0);
-                if (!mDoingTasks.contains(task) || task != null) {
-                    mDoingTasks.add(task);
-                }
-                LogUtils.d(TAG, "A new Send task begin:" + task.toString());
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        final DataTranferTask task = mWaitingTasks.remove(0);
+                        if (!mDoingTasks.contains(task) || task != null) {
+                            mDoingTasks.add(task);
+                        }
+                        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    A new Send task begin:" + task.toString());
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if(!task.isRunning()) {
+                                    task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                                }
+                            }
+                        });
                     }
-                });
-                try {
-                    sleep(UPDATE_SPEED_INTERVAL);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
             }
+
             isRunning = false;
         }
     }
@@ -553,7 +561,6 @@ public class WifiTransferManager {
     abstract class DataTranferTask extends AsyncTask<Object, Integer, Boolean> {
         public TransferFileInfo transferFileInfo;
         protected long tempTransferdSize = 0; /*use to calculate speed*/
-        public File f;
         public boolean isRunning = false;
 
         private double calculateSpeed(int ms) {
@@ -577,10 +584,6 @@ public class WifiTransferManager {
             return transferFileInfo.length;
         }
 
-        public File getFile() {
-            return f;
-        }
-
         public boolean isRunning() {
             return isRunning;
         }
@@ -595,7 +598,7 @@ public class WifiTransferManager {
                     "size=" + transferFileInfo.length +
                     ", transferedSize=" + transferFileInfo.transferedLength +
                     ", id=" + transferFileInfo.id +
-                    ", f=" + f +
+                    ", path=" + transferFileInfo.path +
                     ", mac=" + transferFileInfo.transferMac +
                     ", isRunning=" + isRunning +
                     ", speed=" + getSpeed() +
@@ -620,9 +623,9 @@ public class WifiTransferManager {
         protected Boolean doInBackground(Object... params) {
             isRunning = true;
             boolean ret = true;
-            String name = f.getName();
+            String name = transferFileInfo.name;
             if (name.toString().endsWith(".apk")) {
-                name = ApkUtils.getApkLable(context, f.getPath()) + ".apk";
+                name = ApkUtils.getApkLable(context, transferFileInfo.path) + ".apk";
             }
             Socket s = new Socket();
             OutputStream out = null;
@@ -638,12 +641,12 @@ public class WifiTransferManager {
                 paramMap.put(PARAM_MAC, transferFileInfo.transferMac);
                 //step 1: request the file info
                 onSendFileStarted(this); /*..................................*/
-                doSend(out, MSG_REQEUST_FILE_INFO, paramMap, null, null);
+                doSend(out, MSG_REQEUST_FILE_INFO, paramMap, null, this);
                 //step 2: wait for the file info
                 if (doReceive(this, in)) {
                     //step 3: send the file now
                     paramMap.put(PARAM_TRANSFERED_LEN, String.valueOf(transferFileInfo.transferedLength));
-                    ret = doSend(out, MSG_SEND_FILE, paramMap, f.getPath(), this);
+                    ret = doSend(out, MSG_SEND_FILE, paramMap, transferFileInfo.path, this);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -795,7 +798,7 @@ public class WifiTransferManager {
             try {
                 out = socket.getOutputStream();
                 //response it
-                doSend(out, MSG_RESPONSE_FILE_INFO, map, null, null);
+                doSend(out, MSG_RESPONSE_FILE_INFO, map, null, this);
             } catch (IOException e) {
                 e.printStackTrace();
             }
