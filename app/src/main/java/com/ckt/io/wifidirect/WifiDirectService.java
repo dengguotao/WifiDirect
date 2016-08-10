@@ -15,6 +15,8 @@ import com.ckt.io.wifidirect.p2p.WifiTransferManager;
 import com.ckt.io.wifidirect.utils.LogUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by guotao.deng on 2016/7/28.
@@ -24,7 +26,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
     private static final String TAG = "WifiDirectService";
 
     private static final String[] PROJECTION = {Constants.InstanceColumns.ID, Constants.InstanceColumns.NAME,
-            Constants.InstanceColumns.PATH, Constants.InstanceColumns.STATE,
+            Constants.InstanceColumns.PATH, Constants.InstanceColumns.STATE, Constants.InstanceColumns.TRANSFER_LENGTH,
             Constants.InstanceColumns.TRANSFER_DIRECTION, Constants.InstanceColumns.TRANSFER_MAC};
 
     private Object mLock = new Object();
@@ -47,7 +49,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        //maybe will use, but not now.
+        //maybe will use
         return null;
     }
 
@@ -67,7 +69,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
 
     @Override
     public void onDestroy() {
-        if(mServer != null) {
+        if (mServer != null) {
             mServer.interrupt();
         }
         getContentResolver().unregisterContentObserver(contentObserver);
@@ -87,14 +89,15 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
     public void onConnected(WifiP2pState.ConnectedDeviceInfo connectedDeviceInfo) {
         mConnectedDeviceInfo = connectedDeviceInfo;
         mWifiTransferManager = new WifiTransferManager(this, mConnectedDeviceInfo.connectedDeviceAddr,
-                Constants.PORT, mP2pState.getThisDevice(), null, null, null);
+                Constants.PORT, mP2pState.getThisDevice(), null, null);
         mServer = new WifiP2pServer(mWifiTransferManager);
         mServer.startListen();
+        updateFromProvider();
     }
 
     @Override
     public void onDisConnected() {
-        if(mServer != null) {
+        if (mServer != null) {
             mServer.interrupt();
         }
         mWifiTransferManager = null;
@@ -141,6 +144,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
                     }
                     cursor.moveToNext();
                 }
+                cursor.close();
             }
         }
     }
