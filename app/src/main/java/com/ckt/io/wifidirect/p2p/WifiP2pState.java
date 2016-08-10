@@ -159,7 +159,9 @@ public class WifiP2pState extends BroadcastReceiver implements
             if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
 
                 if (manager == null) {
-                    return;
+                    manager = (WifiP2pManager) context
+                            .getSystemService(Context.WIFI_P2P_SERVICE);
+                    channel = manager.initialize(context, context.getMainLooper(), null);
                 }
 
                 NetworkInfo networkInfo = (NetworkInfo) intent

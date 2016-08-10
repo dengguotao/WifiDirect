@@ -372,7 +372,7 @@ public class WifiTransferManager {
 
     public void onSendFileFinished(DataTranferTask task, boolean ret) {
         mDoingTasks.remove(task);
-        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    ret=" + ret + " " + task.transferFileInfo.toString());
+        LogUtils.d(TAG, "SEND FINISHED----------->taskId=" + task.transferFileInfo.id + "    ret=" + ret + " " + task.transferFileInfo.toString());
         startHandleSendTaskThread();
         if(ret) {
             task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_DONE);
@@ -394,7 +394,7 @@ public class WifiTransferManager {
 
     public void onReceiveFileFinished(DataTranferTask task, boolean ret) {
         mDoingTasks.remove(task);
-        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    receive File finished: " + task.transferFileInfo.path + " ret:" + ret + "   " + task.transferFileInfo.toString());
+        LogUtils.d(TAG, "RECEIVE FINISHED------------>taskId=" + task.transferFileInfo.id + "    receive File finished: " + task.transferFileInfo.path + " ret:" + ret + "   " + task.transferFileInfo.toString());
         if(ret) {
             task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_DONE);
         }else {

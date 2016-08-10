@@ -17,7 +17,7 @@ public class LogUtils {
 
     public static void d(String tag, String msg) {
         if (DBG_D) {
-            Log.d("five", msg);
+            Log.d(tag, msg);
         }
     }
 
