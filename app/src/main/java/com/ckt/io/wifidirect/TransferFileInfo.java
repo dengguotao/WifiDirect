@@ -6,6 +6,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
 
+import com.ckt.io.wifidirect.p2p.WifiP2pState;
 import com.ckt.io.wifidirect.utils.LogUtils;
 
 import java.io.File;
@@ -23,12 +24,27 @@ public class TransferFileInfo {
     public String name;
     public long length = 0;
     public int state;
-    public long transferLength = 0;
+    public long transferedLength = 0;
     public int direction;
     public String transferMac;
+    public double speed;
 
     private ContentResolver mContentResolver;
     private Uri uri;
+
+    public TransferFileInfo(int id, String path, String name, long length, int state,
+                            long transferLength, int direction, String transferMac,
+                            ContentResolver mContentResolver) {
+        this.id = id;
+        this.path = path;
+        this.name = name;
+        this.length = length;
+        this.state = state;
+        this.transferedLength = transferLength;
+        this.direction = direction;
+        this.transferMac = transferMac;
+        this.mContentResolver = mContentResolver;
+    }
 
     public TransferFileInfo(Cursor cursor, ContentResolver contentResolver) {
         id = cursor.getInt(cursor.getColumnIndex(Constants.InstanceColumns.ID));
@@ -45,7 +61,7 @@ public class TransferFileInfo {
             }
         }
         state = cursor.getInt(cursor.getColumnIndex(Constants.InstanceColumns.STATE));
-        transferLength = cursor.getLong(cursor.getColumnIndex(Constants.InstanceColumns.TRANSFER_LENGTH));
+        transferedLength = cursor.getLong(cursor.getColumnIndex(Constants.InstanceColumns.TRANSFER_LENGTH));
         direction = cursor.getInt(cursor.getColumnIndex(Constants.InstanceColumns.TRANSFER_DIRECTION));
         transferMac = cursor.getString(cursor.getColumnIndex(Constants.InstanceColumns.TRANSFER_MAC));
         mContentResolver = contentResolver;
@@ -70,6 +86,21 @@ public class TransferFileInfo {
         ContentValues contentValues = new ContentValues();
         contentValues.put(Constants.InstanceColumns.TRANSFER_LENGTH, size);
         mContentResolver.update(uri, contentValues, null, null);
+        return true;
+    }
+
+    public boolean insert() {
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(Constants.InstanceColumns.PATH, path);
+        contentValues.put(Constants.InstanceColumns.NAME, name);
+        contentValues.put(Constants.InstanceColumns.LENGTH, length);
+        contentValues.put(Constants.InstanceColumns.TRANSFER_MAC, transferMac);
+        contentValues.put(Constants.InstanceColumns.TRANSFER_DIRECTION, direction);
+        contentValues.put(Constants.InstanceColumns.STATE, state);
+        contentValues.put(Constants.InstanceColumns.TRANSFER_LENGTH, transferedLength);
+        uri = mContentResolver.insert(Constants.InstanceColumns.CONTENT_URI,contentValues);
+        if(uri == null) return false;
+        id = (int) ContentUris.parseId(uri);
         return true;
     }
 }

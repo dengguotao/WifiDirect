@@ -13,6 +13,7 @@ import android.util.Log;
 
 import com.ckt.io.wifidirect.Constants;
 import com.ckt.io.wifidirect.R;
+import com.ckt.io.wifidirect.TransferFileInfo;
 import com.ckt.io.wifidirect.utils.ApkUtils;
 import com.ckt.io.wifidirect.utils.DataTypeUtils;
 import com.ckt.io.wifidirect.utils.FileTypeUtils;
@@ -111,24 +112,24 @@ public class WifiTransferManager {
         this.fileReceiveStateListener = fileReceiveStateListener;
     }
 
-    public boolean sendFile(int id, String path) {
-        File f = new File(path);
+    public boolean sendFile(TransferFileInfo fileInfo) {
+        File f = new File(fileInfo.path);
         String mac = null;
         if (mThisDevice != null) {
             mac = mThisDevice.deviceAddress;
         }
-        if (id < 0 || path == null || "".endsWith(path) || !f.exists() || !f.isFile() || mac == null) {
-            LogUtils.d(TAG, "Send file failed: The param is null or the file dose't exist!! id=" + id + "path=" + path);
+        if (fileInfo.id < 0 || fileInfo.path == null || "".endsWith(fileInfo.path) || !f.exists() || !f.isFile() || mac == null) {
+            LogUtils.d(TAG, "Send file failed: The param is null or the file dose't exist!! id=" + fileInfo.id + "path=" + fileInfo.path);
             return false;
         }
 
         DataTranferTask temp = null;
-        if (getWaittingTaskById(id) != null || (((temp = getDoingTaskById(id)) != null) && temp instanceof FileSendTask)) {
-            LogUtils.d(TAG, "Send file failed: There have a watting or doing task with the same id!! id=" + id + "path=" + path);
+        if (getWaittingTaskById(fileInfo.id) != null || (((temp = getDoingTaskById(fileInfo.id)) != null) && temp instanceof FileSendTask)) {
+            LogUtils.d(TAG, "Send file failed: There have a watting or doing task with the same id!! id=" + fileInfo.id + "path=" + fileInfo.path);
             return false;
         }
 
-        FileSendTask task = new FileSendTask(id, path, mac);
+        FileSendTask task = new FileSendTask(fileInfo);
         synchronized (task) {
             mWaitingTasks.add(task);
         }
@@ -182,7 +183,7 @@ public class WifiTransferManager {
                 while ((len = in.read(buf)) != -1) {
                     out.write(buf, 0, len);
                     if (task != null) {
-                        task.transferedSize += len;
+                        task.transferFileInfo.transferedLength += len;
                     }
                 }
                 LogUtils.d(TAG, "do send file successed! ret=");
@@ -204,8 +205,13 @@ public class WifiTransferManager {
         return ret;
     }
 
+
+    /*
+    *
+    * */
     public boolean receive(final Socket s) {
         FileReceiveTask task = new FileReceiveTask(s);
+        mDoingTasks.add(task);
         task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         return true;
     }
@@ -299,10 +305,12 @@ public class WifiTransferManager {
                 f = getTempFile(name, mac);
                 LogUtils.d(TAG, "do receive file:" + f.getPath());
                 task.f = getFiniallyFile(name);
-                task.mac = mac;
-                task.transferedSize = transferedSize;
-                task.size = size;
-                onReceiveFileStarted(task, f.getPath()); /*.............................*/
+                task.transferFileInfo.path = task.f.getPath();
+                task.transferFileInfo.name = task.f.getName();
+                task.transferFileInfo.transferMac = mac;
+                task.transferFileInfo.transferedLength = transferedSize;
+                task.transferFileInfo.length = size;
+                onReceiveFileStarted(task); /*.............................*/
                 File parent = f.getParentFile();
                 if (!parent.exists()) {
                     parent.mkdirs();
@@ -323,7 +331,7 @@ public class WifiTransferManager {
                 byte buf[] = new byte[2048];
                 while ((len = inputstream.read(buf)) != -1) {
                     out.write(buf, 0, len);
-                    transferedSize += len;
+                    task.transferFileInfo.transferedLength += len;
                 }
                 LogUtils.d(TAG, "do receive file: while exist  receivedSize=" + transferedSize + " szie=" + size);
                 if (transferedSize == size) {
@@ -346,70 +354,53 @@ public class WifiTransferManager {
         }
 
         if (isHasFileExtra) {
-            onReceiveFileFinished(task, task.getFile().getPath(), ret);
+            onReceiveFileFinished(task, ret);
         }
         return ret;
     }
 
-    public void onSendFileStarted(DataTranferTask task, int id) {
-        LogUtils.d(TAG, "onSendFileStarted --> id=" + id);
+    public void onSendFileStarted(DataTranferTask task) {
+        LogUtils.d(TAG, "onSendFileStarted --> id=" + task.transferFileInfo.id);
+        task.transferFileInfo.updateState(Constants.State.STATE_TRANSFERING);
         if (fileSendStateListener != null) {
-            fileSendStateListener.onStart(id, task.f.getPath(), task.transferedSize);
+            fileSendStateListener.onStart(task.transferFileInfo);
         }
-
-        //update db
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(Constants.InstanceColumns.STATE, Constants.State.STATE_TRANSFERING);
-        Uri uri = ContentUris.withAppendedId(Constants.InstanceColumns.CONTENT_URI, id);
-        context.getContentResolver().update(uri, contentValues, null, null);
     }
 
-    public void onSendFileFinished(DataTranferTask task, int id, boolean ret) {
+    public void onSendFileFinished(DataTranferTask task, boolean ret) {
         mDoingTasks.remove(task);
-        LogUtils.d(TAG, "onSendFileFinished --> id=" + id + "ret=" + ret);
+        LogUtils.d(TAG, "onSendFileFinished --> id=" + task.transferFileInfo.id + "ret=" + ret);
         startHandleSendTaskThread();
+        if(ret) {
+            task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_DONE);
+        }else {
+            task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_FAILED);
+        }
         if (fileSendStateListener != null) {
-            fileSendStateListener.onFinished(id, task.f.getPath(), task.transferedSize, ret);
+            fileSendStateListener.onFinished(task.transferFileInfo, ret);
         }
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(Constants.InstanceColumns.STATE, Constants.State.STATE_TRANSFER_DONE);
-        Uri uri = ContentUris.withAppendedId(Constants.InstanceColumns.CONTENT_URI, id);
-        context.getContentResolver().update(uri, contentValues, null, null);
     }
 
-    public void onReceiveFileStarted(DataTranferTask task, String path) {
-        LogUtils.d(TAG, "receive File started: " + path);
+    public void onReceiveFileStarted(DataTranferTask task) {
+        LogUtils.d(TAG, "receive File started: " + task.transferFileInfo.path);
+        task.transferFileInfo.insert();
         if (fileReceiveStateListener != null) {
-            fileReceiveStateListener.onStart(path, task.transferedSize, task.size);
-        }
-
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(Constants.InstanceColumns.PATH, path);
-        contentValues.put(Constants.InstanceColumns.NAME, new File(path).getName());
-        contentValues.put(Constants.InstanceColumns.LENGTH, task.size);
-        WifiP2pState wifiP2pState = WifiP2pState.getInstance(context);
-        contentValues.put(Constants.InstanceColumns.TRANSFER_MAC, wifiP2pState.getConnectedDeviceInfo().connectedDevice.deviceAddress);
-        contentValues.put(Constants.InstanceColumns.TRANSFER_DIRECTION, Constants.DIRECTION_IN);
-        contentValues.put(Constants.InstanceColumns.STATE, Constants.State.STATE_TRANSFERING);
-        contentValues.put(Constants.InstanceColumns.TRANSFER_LENGTH, 0);
-        Uri uri = context.getContentResolver().insert(Constants.InstanceColumns.CONTENT_URI, contentValues);
-        if (uri != null) {
-            task.id = (int) ContentUris.parseId(uri);
+            fileReceiveStateListener.onStart(task.transferFileInfo);
         }
     }
 
-    public void onReceiveFileFinished(DataTranferTask task, String path, boolean ret) {
+    public void onReceiveFileFinished(DataTranferTask task, boolean ret) {
         mDoingTasks.remove(task);
-        LogUtils.d(TAG, "receive File finished: " + path + " ret:" + ret);
-        if (fileReceiveStateListener != null) {
-            fileReceiveStateListener.onFinished(path, task.transferedSize, task.size, ret);
+        LogUtils.d(TAG, "receive File finished: " + task.transferFileInfo.path + " ret:" + ret);
+        if(ret) {
+            task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_DONE);
+        }else {
+            task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_FAILED);
         }
 
-        //update db
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(Constants.InstanceColumns.STATE, Constants.State.STATE_TRANSFER_DONE);
-        Uri uri = ContentUris.withAppendedId(Constants.InstanceColumns.CONTENT_URI, task.id);
-        context.getContentResolver().update(uri, contentValues, null, null);
+        if (fileReceiveStateListener != null) {
+            fileReceiveStateListener.onFinished(task.transferFileInfo, ret);
+        }
     }
 
     private void startHandleSendTaskThread() {
@@ -438,7 +429,7 @@ public class WifiTransferManager {
 
     private DataTranferTask getDoingTaskById(int id) {
         for (DataTranferTask task : mDoingTasks) {
-            if (task.id == id) {
+            if (task.transferFileInfo.id == id) {
                 return task;
             }
         }
@@ -447,7 +438,7 @@ public class WifiTransferManager {
 
     private DataTranferTask getWaittingTaskById(int id) {
         for (DataTranferTask task : mWaitingTasks) {
-            if (task.id == id) {
+            if (task.transferFileInfo.id == id) {
                 return task;
             }
         }
@@ -560,41 +551,30 @@ public class WifiTransferManager {
     }
 
     abstract class DataTranferTask extends AsyncTask<Object, Integer, Boolean> {
-        public long size;
-        public long transferedSize;
+        public TransferFileInfo transferFileInfo;
         protected long tempTransferdSize = 0; /*use to calculate speed*/
-        public int id = -1;
         public File f;
         public boolean isRunning = false;
-        public double speed;
-        public String mac;
-
-        void onGetFileInfo(HashMap<String, String> map) {
-        }
-
-        public long getTransferedSize() {
-            return transferedSize;
-        }
 
         private double calculateSpeed(int ms) {
-            if (tempTransferdSize >= transferedSize) {
+            if (tempTransferdSize >= transferFileInfo.transferedLength) {
                 return 0;
             }
-            speed = (transferedSize - tempTransferdSize) * 1000.0 / ms / 1024 / 1204;
-            tempTransferdSize = transferedSize;
-            return speed;
+            transferFileInfo.speed = (transferFileInfo.transferedLength - tempTransferdSize) * 1000.0 / ms / 1024 / 1204;
+            tempTransferdSize = transferFileInfo.transferedLength;
+            return transferFileInfo.speed;
         }
 
         public double getSpeed() {
-            return speed;
+            return transferFileInfo.speed;
         }
 
         public int getId() {
-            return id;
+            return transferFileInfo.id;
         }
 
         public long getSize() {
-            return size;
+            return transferFileInfo.length;
         }
 
         public File getFile() {
@@ -606,17 +586,17 @@ public class WifiTransferManager {
         }
 
         public String getMac() {
-            return mac;
+            return transferFileInfo.transferMac;
         }
 
         @Override
         public String toString() {
             return "DataTranferTask{" +
-                    "size=" + size +
-                    ", transferedSize=" + transferedSize +
-                    ", id=" + id +
+                    "size=" + transferFileInfo.length +
+                    ", transferedSize=" + transferFileInfo.transferedLength +
+                    ", id=" + transferFileInfo.id +
                     ", f=" + f +
-                    ", mac=" + mac +
+                    ", mac=" + transferFileInfo.transferMac +
                     ", isRunning=" + isRunning +
                     ", speed=" + getSpeed() +
                     '}';
@@ -632,11 +612,8 @@ public class WifiTransferManager {
     class FileSendTask extends DataTranferTask {
         boolean isFileInfoGeted = false;
 
-        public FileSendTask(int id, String path, String mac) {
-            this.id = id;
-            f = new File(path);
-            size = f.length();
-            this.mac = mac;
+        public FileSendTask(TransferFileInfo info) {
+            transferFileInfo = info;
         }
 
         @Override
@@ -656,16 +633,16 @@ public class WifiTransferManager {
                 out = s.getOutputStream();
                 in = s.getInputStream();
                 final HashMap<String, String> paramMap = new HashMap<>();
-                paramMap.put(PARAM_ID, String.valueOf(id));
+                paramMap.put(PARAM_ID, String.valueOf(transferFileInfo.id));
                 paramMap.put(PARAM_FILE_NAME, name);
-                paramMap.put(PARAM_MAC, mac);
+                paramMap.put(PARAM_MAC, transferFileInfo.transferMac);
                 //step 1: request the file info
-                onSendFileStarted(this, id); /*..................................*/
+                onSendFileStarted(this); /*..................................*/
                 doSend(out, MSG_REQEUST_FILE_INFO, paramMap, null, null);
                 //step 2: wait for the file info
                 if (doReceive(this, in)) {
                     //step 3: send the file now
-                    paramMap.put(PARAM_TRANSFERED_LEN, String.valueOf(transferedSize));
+                    paramMap.put(PARAM_TRANSFERED_LEN, String.valueOf(transferFileInfo.transferedLength));
                     ret = doSend(out, MSG_SEND_FILE, paramMap, f.getPath(), this);
                 }
             } catch (Exception e) {
@@ -691,7 +668,7 @@ public class WifiTransferManager {
                     }
                 }
             }
-            onSendFileFinished(this, id, ret);
+            onSendFileFinished(this, ret);
             isRunning = false;
             return ret;
         }
@@ -714,11 +691,11 @@ public class WifiTransferManager {
 
             isFileInfoGeted = true;
             try {
-                transferedSize = Long.valueOf(map.get(PARAM_TRANSFERED_LEN));
-                if (transferedSize >= size) {
-                    transferedSize = 0;
+                transferFileInfo.transferedLength = Long.valueOf(map.get(PARAM_TRANSFERED_LEN));
+                if (transferFileInfo.transferedLength >= transferFileInfo.length) {
+                    transferFileInfo.transferedLength = 0;
                 }
-                tempTransferdSize = transferedSize;
+                tempTransferdSize = transferFileInfo.transferedLength;
             } catch (Exception e) {
             }
         }
@@ -734,10 +711,24 @@ public class WifiTransferManager {
     * */
     class FileReceiveTask extends DataTranferTask {
         Socket socket;
-        HashMap<String, String> paramMap;
 
+        /*
+        * public TransferFileInfo(int id, String path, String name, long length, int state,
+                            long transferLength, int direction, String transferMac,
+                            ContentResolver mContentResolver) {*/
         public FileReceiveTask(Socket socket) {
             this.socket = socket;
+            this.transferFileInfo = new TransferFileInfo(
+                    -1,
+                    null,
+                    null,
+                    0,
+                    Constants.State.STATE_TRANSFERING,
+                    0,
+                    Constants.DIRECTION_IN,
+                    null,
+                    context.getContentResolver()
+            );
         }
 
         @Override
@@ -812,19 +803,14 @@ public class WifiTransferManager {
     }
 
     public interface FileSendStateListener {
-        public void onStart(int id, String path, long transferedSize);
-
+        public void onStart(TransferFileInfo info);
         public void onUpdate(ArrayList<DataTranferTask> taskList);
-
-        public void onFinished(int id, String path, long transferedSize, boolean ret);
+        public void onFinished(TransferFileInfo info, boolean ret);
     }
 
     public interface FileReceiveStateListener {
-        public void onStart(String path, long transferedSize, long size);
-
+        public void onStart(TransferFileInfo info);
         public void onUpdate(ArrayList<DataTranferTask> taskList);
-
-        public void onFinished(String path, long transferedSize, long size, boolean ret);
+        public void onFinished(TransferFileInfo info, boolean ret);
     }
-
 }

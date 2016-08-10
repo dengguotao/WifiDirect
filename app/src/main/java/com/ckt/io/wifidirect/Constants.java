@@ -32,7 +32,8 @@ public class Constants {
         public final static int STATE_TRANSFERING = 2;
         public final static int STATE_PENDING = 3;
         public final static int STATE_TRANSFER_DONE = 4;
-    }
+        public final static int STATE_TRANSFER_FAILED = 5;
+}
 
     public static final int PORT = 8080;
 }
