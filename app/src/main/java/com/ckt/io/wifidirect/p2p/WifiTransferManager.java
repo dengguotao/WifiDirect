@@ -113,7 +113,7 @@ public class WifiTransferManager {
     }
 
     public boolean sendFile(TransferFileInfo fileInfo) {
-        if(fileInfo == null) {
+        if (fileInfo == null) {
             LogUtils.i(TAG, "sendFile------------------------------>failed--------------->fileInfo is null");
             return false;
         }
@@ -191,7 +191,7 @@ public class WifiTransferManager {
                         task.transferFileInfo.transferedLength += len;
                     }
                 }
-                            }
+            }
 //            out.flush();
         } catch (Exception e) {
             e.printStackTrace();
@@ -374,9 +374,9 @@ public class WifiTransferManager {
         mDoingTasks.remove(task);
         LogUtils.d(TAG, "SEND FINISHED----------->taskId=" + task.transferFileInfo.id + "    ret=" + ret + " " + task.transferFileInfo.toString());
         startHandleSendTaskThread();
-        if(ret) {
+        if (ret) {
             task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_DONE);
-        }else {
+        } else {
             task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_FAILED);
         }
         if (fileSendStateListener != null) {
@@ -387,7 +387,7 @@ public class WifiTransferManager {
     public void onReceiveFileStarted(DataTranferTask task) {
         task.transferFileInfo.insert();
         LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    receive File started: " + task.transferFileInfo.path);
-                if (fileReceiveStateListener != null) {
+        if (fileReceiveStateListener != null) {
             fileReceiveStateListener.onStart(task.transferFileInfo);
         }
     }
@@ -395,9 +395,9 @@ public class WifiTransferManager {
     public void onReceiveFileFinished(DataTranferTask task, boolean ret) {
         mDoingTasks.remove(task);
         LogUtils.d(TAG, "RECEIVE FINISHED------------>taskId=" + task.transferFileInfo.id + "    receive File finished: " + task.transferFileInfo.path + " ret:" + ret + "   " + task.transferFileInfo.toString());
-        if(ret) {
+        if (ret) {
             task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_DONE);
-        }else {
+        } else {
             task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_FAILED);
         }
 
@@ -505,6 +505,7 @@ public class WifiTransferManager {
                         } else {
                             receivingList.add(task);
                         }
+                        task.transferFileInfo.updateTransferSize();
                     }
                 }
             }
@@ -545,7 +546,7 @@ public class WifiTransferManager {
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                if(!task.isRunning()) {
+                                if (!task.isRunning()) {
                                     task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                                 }
                             }
@@ -807,13 +808,17 @@ public class WifiTransferManager {
 
     public interface FileSendStateListener {
         public void onStart(TransferFileInfo info);
+
         public void onUpdate(ArrayList<DataTranferTask> taskList);
+
         public void onFinished(TransferFileInfo info, boolean ret);
     }
 
     public interface FileReceiveStateListener {
         public void onStart(TransferFileInfo info);
+
         public void onUpdate(ArrayList<DataTranferTask> taskList);
+
         public void onFinished(TransferFileInfo info, boolean ret);
     }
 }

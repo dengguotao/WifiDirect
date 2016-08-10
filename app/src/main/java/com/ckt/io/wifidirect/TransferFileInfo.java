@@ -72,19 +72,23 @@ public class TransferFileInfo {
             LogUtils.e(TAG, "update state failed, reson: uri is null");
             return false;
         }
+        if (this.state == state) {
+            return false;
+        }
+        this.state = state;
         ContentValues contentValues = new ContentValues();
         contentValues.put(Constants.InstanceColumns.STATE, state);
         mContentResolver.update(uri, contentValues, null, null);
         return true;
     }
 
-    public boolean updateTransferSize(long size) {
+    public boolean updateTransferSize() {
         if (uri == null) {
             LogUtils.e(TAG, "update state failed, reson: uri is null");
             return false;
         }
         ContentValues contentValues = new ContentValues();
-        contentValues.put(Constants.InstanceColumns.TRANSFER_LENGTH, size);
+        contentValues.put(Constants.InstanceColumns.TRANSFER_LENGTH, transferedLength);
         mContentResolver.update(uri, contentValues, null, null);
         return true;
     }
@@ -98,8 +102,8 @@ public class TransferFileInfo {
         contentValues.put(Constants.InstanceColumns.TRANSFER_DIRECTION, direction);
         contentValues.put(Constants.InstanceColumns.STATE, state);
         contentValues.put(Constants.InstanceColumns.TRANSFER_LENGTH, transferedLength);
-        uri = mContentResolver.insert(Constants.InstanceColumns.CONTENT_URI,contentValues);
-        if(uri == null) return false;
+        uri = mContentResolver.insert(Constants.InstanceColumns.CONTENT_URI, contentValues);
+        if (uri == null) return false;
         id = (int) ContentUris.parseId(uri);
         return true;
     }

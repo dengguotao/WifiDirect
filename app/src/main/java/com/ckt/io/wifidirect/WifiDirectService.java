@@ -11,16 +11,15 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
-import android.widget.RemoteViews;
 
 import com.ckt.io.wifidirect.p2p.WifiP2pServer;
 import com.ckt.io.wifidirect.p2p.WifiP2pState;
 import com.ckt.io.wifidirect.p2p.WifiTransferManager;
 import com.ckt.io.wifidirect.utils.LogUtils;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Created by guotao.deng on 2016/7/28.
@@ -34,6 +33,8 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
             Constants.InstanceColumns.PATH, Constants.InstanceColumns.STATE, Constants.InstanceColumns.TRANSFER_LENGTH,
             Constants.InstanceColumns.TRANSFER_DIRECTION, Constants.InstanceColumns.TRANSFER_MAC};
 
+    private DecimalFormat df = new DecimalFormat("0.00");
+
     private Object mLock = new Object();
 
     private WifiP2pState mP2pState;
@@ -45,6 +46,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
     private boolean mPendingUpdate;
 
     private NotificationManager nm;
+    private HashMap<Integer, Notification.Builder> notificationMap = new HashMap<>();
 
     private ContentObserver contentObserver = new ContentObserver(new Handler()) {
         @Override
@@ -131,26 +133,49 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
 
     private void updateNotification(TransferFileInfo transferFileInfo) {
         synchronized (nm) {
-            Notification.Builder builder = new Notification.Builder(this);
-            RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.transfer_notification_layout);
+            if (transferFileInfo.id <= 0) {
+                return;
+            }
+            Notification.Builder builder;
+            Notification notification;
+            if (notificationMap.containsKey(transferFileInfo.id)) {
+                builder = notificationMap.get(transferFileInfo.id);
+            } else {
+                builder = new Notification.Builder(this);
+                notificationMap.put(transferFileInfo.id, builder);
+            }
+            builder.setSmallIcon(R.drawable.send);
             switch (transferFileInfo.state) {
                 case Constants.State.STATE_TRANSFERING:
-                    remoteViews.setTextViewText(R.id.title, transferFileInfo.direction == Constants.DIRECTION_OUT ?
+                    builder.setContentTitle(transferFileInfo.direction == Constants.DIRECTION_OUT ?
                             "sending" : "receiving");
                     break;
                 case Constants.State.STATE_TRANSFER_DONE:
-                    remoteViews.setTextViewText(R.id.title, "done");
+                    builder.setContentTitle("done");
+                    notificationMap.remove(transferFileInfo.id);
+                    break;
                 case Constants.State.STATE_TRANSFER_FAILED:
-                    remoteViews.setTextViewText(R.id.title, "fail");
+                    builder.setContentTitle("transfer fail");
+                    notificationMap.remove(transferFileInfo.id);
+                    break;
                 default:
-                    remoteViews.setTextViewText(R.id.title, "unknow");
+                    builder.setContentTitle("unknow");
+                    break;
             }
-
-            remoteViews.setTextViewText(R.id.file_name, transferFileInfo.name);
-            remoteViews.setProgressBar(R.id.progress, 100,
-                    (int) (transferFileInfo.transferedLength / transferFileInfo.length * 100), false);
-            builder.setContent(remoteViews);
-            nm.notify(transferFileInfo.id, builder.build());
+            LogUtils.d(TAG, transferFileInfo.transferedLength + "    " + transferFileInfo.length);
+            long progress = transferFileInfo.length == 0 ?
+                    0l : transferFileInfo.transferedLength * 100 / transferFileInfo.length;
+            LogUtils.d(TAG, progress + "");
+            builder.setContentText(progress + "%" + "         " + "speed: "
+                    + df.format(transferFileInfo.speed) + "MB/S" + "         " + transferFileInfo.name);
+            builder.setProgress(100, (int) progress, true);
+            notification = builder.build();
+            if (transferFileInfo.state == Constants.State.STATE_TRANSFERING) {
+                notification.flags |= Notification.FLAG_NO_CLEAR;
+            } else {
+                notification.flags |= Notification.FLAG_AUTO_CANCEL;
+            }
+            nm.notify(transferFileInfo.id, notification);
         }
     }
 
@@ -188,7 +213,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
                         String mac = cursor.getString(cursor.getColumnIndex(Constants.InstanceColumns.TRANSFER_MAC));
                         if (mConnectedDeviceInfo.connectedDevice.deviceAddress.equals(mac)) {
                             TransferFileInfo transferFileInfo = new TransferFileInfo(cursor, getContentResolver());
-                            LogUtils.d(TAG,"transfer file "+transferFileInfo.name+" to "+mac);
+                            LogUtils.d(TAG, "transfer file " + transferFileInfo.name + " to " + mac);
                             mWifiTransferManager.sendFile(transferFileInfo);
                         }
                     }
