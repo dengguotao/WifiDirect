@@ -45,19 +45,16 @@ public class WifiTransferManager {
 
     public static final String TAG = "WifiTransferManager";
 
-    public static final int UPDATE_SPEED_INTERVAL = 500;
+    public static final int UPDATE_SPEED_INTERVAL = 600;
 
     public static String TEMP_FILE_SUFFIX = ".tmp";
 
-    public static final int SOCKET_TIMEOUT = 5000;
-    public static final int TASK_TIMEOUT = 3000;
-    public static final int MAX_SEND_TASK = 20;
+    public static final int SOCKET_TIMEOUT = 3000;
+    public static final int MAX_SEND_TASK = 5;
 
     public static final byte MSG_REQEUST_FILE_INFO = 0;
     public static final byte MSG_RESPONSE_FILE_INFO = 1;
     public static final byte MSG_SEND_FILE = 2;
-    public static final byte MSG_SEND_CLIENT_IP = 10;
-    public static final byte MSG_RESPONSE_SEND_CLIENT_IP = 11;
 
     public static final String PARAM_TRANSFERED_LEN = "transferedLen";
     public static final String PARAM_SIZE = "size";
@@ -76,7 +73,7 @@ public class WifiTransferManager {
     private WifiP2pDevice mThisDevice;
 
     private ArrayList<DataTranferTask> mWaitingTasks = new ArrayList<>();
-    private ArrayList<DataTranferTask> mDoingTasks = new MyArrayList<>();
+    private ArrayList<DataTranferTask> mDoingTasks = new ArrayList<>();
 
     private SendTaskHandleThread sendTaskHandleThread;
 
@@ -84,8 +81,6 @@ public class WifiTransferManager {
 
     private FileSendStateListener fileSendStateListener;
     private FileReceiveStateListener fileReceiveStateListener;
-
-    private UpdateSpeedRunnbale mUpdateSpeedRunnable = new UpdateSpeedRunnbale();
 
     public WifiTransferManager(Context context,
                                InetAddress addr,
@@ -195,8 +190,8 @@ public class WifiTransferManager {
                         task.transferFileInfo.transferedLength += len;
                     }
                     time = SystemClock.elapsedRealtime();
-                    if(time - tempTime >= 500) {
-                        task.transferFileInfo.speed = (task.transferFileInfo.transferedLength-tempTranfered) * 1000.0/(time-tempTime)/1024/1024;
+                    if (time - tempTime >= UPDATE_SPEED_INTERVAL) {
+                        task.transferFileInfo.speed = (task.transferFileInfo.transferedLength - tempTranfered) * 1000.0 / (time - tempTime) / 1024 / 1024;
                         tempTime = time;
                         tempTranfered = task.transferFileInfo.transferedLength;
                         handler.post(new Runnable() {
@@ -206,8 +201,9 @@ public class WifiTransferManager {
                             }
                         });
                     }
-
                 }
+                task.transferFileInfo.speed = 0;
+                task.transferFileInfo.updateTransferSize();
             }
 //            out.flush();
         } catch (Exception e) {
@@ -356,8 +352,8 @@ public class WifiTransferManager {
                     out.write(buf, 0, len);
                     task.transferFileInfo.transferedLength += len;
                     time = SystemClock.elapsedRealtime();
-                    if(time-tempTime >= 500) {
-                        task.transferFileInfo.speed = (task.transferFileInfo.transferedLength-tempTranfered) * 1000.0/(time-tempTime)/1024/1024;
+                    if (time - tempTime >= UPDATE_SPEED_INTERVAL) {
+                        task.transferFileInfo.speed = (task.transferFileInfo.transferedLength - tempTranfered) * 1000.0 / (time - tempTime) / 1024 / 1024;
                         tempTime = time;
                         tempTranfered = task.transferFileInfo.transferedLength;
                         handler.post(new Runnable() {
@@ -370,6 +366,8 @@ public class WifiTransferManager {
                 }
                 LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    do receive file: while exist  receivedSize=" + task.transferFileInfo.transferedLength + " szie=" + size);
                 if (task.transferFileInfo.transferedLength == size) {
+                    task.transferFileInfo.speed = 0;
+                    task.transferFileInfo.updateTransferSize();
                     //remove the ".tmp" suffix
                     File newFile = getFiniallyFile(name);
                     parent = newFile.getParentFile();
@@ -425,14 +423,14 @@ public class WifiTransferManager {
     }
 
     public void onUpdate(DataTranferTask task) {
-        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    updateSpeed:"+task.transferFileInfo.speed);
+        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    updateSpeed:" + task.transferFileInfo.speed);
         task.transferFileInfo.updateTransferSize();
-        if(task instanceof FileSendTask) {
-            if(fileSendStateListener != null) {
+        if (task instanceof FileSendTask) {
+            if (fileSendStateListener != null) {
                 fileSendStateListener.onUpdate(task.transferFileInfo);
             }
-        }else {
-            if(fileReceiveStateListener != null) {
+        } else {
+            if (fileReceiveStateListener != null) {
                 fileReceiveStateListener.onUpdate(task.transferFileInfo);
             }
         }
@@ -495,81 +493,6 @@ public class WifiTransferManager {
         }
         return null;
     }
-
-    public void startUpdateSpeed() {
-        stopUpdateSpeed();
-//        handler.post(mUpdateSpeedRunnable);
-    }
-
-    public void stopUpdateSpeed() {
-        handler.removeCallbacks(mUpdateSpeedRunnable);
-    }
-
-    class MyArrayList<E> extends ArrayList<E> {
-        @Override
-        public boolean add(E object) {
-            startUpdateSpeed();
-            return super.add(object);
-        }
-
-        @Override
-        public boolean remove(Object object) {
-            boolean ret = super.remove(object);
-            if (this.size() == 0) {
-                stopUpdateSpeed();
-            }
-            return ret;
-        }
-
-        @Override
-        public E remove(int index) {
-            E ret = super.remove(index);
-            if (this.size() == 0) {
-                stopUpdateSpeed();
-            }
-            return ret;
-        }
-
-        @Override
-        public boolean removeAll(Collection<?> collection) {
-            stopUpdateSpeed();
-            return super.removeAll(collection);
-        }
-    }
-
-    class UpdateSpeedRunnbale implements Runnable {
-
-        @Override
-        public void run() {
-            ArrayList<DataTranferTask> sendingList = new ArrayList<>();
-            ArrayList<DataTranferTask> receivingList = new ArrayList<>();
-            synchronized (mDoingTasks) {
-                for (DataTranferTask task : mDoingTasks) {
-                    if (task != null && task.isRunning) {
-                        task.calculateSpeed(UPDATE_SPEED_INTERVAL);
-                        LogUtils.i(TAG, "taskId=" + task.transferFileInfo.id + "    " + task.toString());
-                        if (task instanceof FileSendTask) {
-                            sendingList.add(task);
-                        } else {
-                            receivingList.add(task);
-                        }
-                        task.transferFileInfo.updateTransferSize();
-                    }
-                }
-            }
-
-            if (fileSendStateListener != null) {
-//                fileReceiveStateListener.onUpdate(sendingList);
-            }
-
-            if (fileReceiveStateListener != null) {
-//                fileReceiveStateListener.onUpdate(receivingList);
-            }
-
-            handler.postDelayed(mUpdateSpeedRunnable, UPDATE_SPEED_INTERVAL);
-        }
-    }
-
 
     class SendTaskHandleThread extends Thread {
         boolean isRunning = false;
@@ -752,10 +675,6 @@ public class WifiTransferManager {
             }
         }
 
-        @Override
-        protected void onPostExecute(Boolean ret) {
-//            onSendFileFinished(this, id, ret);
-        }
     }
 
     /*
@@ -764,10 +683,6 @@ public class WifiTransferManager {
     class FileReceiveTask extends DataTranferTask {
         Socket socket;
 
-        /*
-        * public TransferFileInfo(int id, String path, String name, long length, int state,
-                            long transferLength, int direction, String transferMac,
-                            ContentResolver mContentResolver) {*/
         public FileReceiveTask(Socket socket) {
             this.socket = socket;
             this.transferFileInfo = new TransferFileInfo(
@@ -818,10 +733,6 @@ public class WifiTransferManager {
             return ret;
         }
 
-        @Override
-        protected void onPostExecute(Boolean ret) {
-//            onReceiveFileFinished(this, f.getPath(), ret);
-        }
 
         /*
         ** handle request
