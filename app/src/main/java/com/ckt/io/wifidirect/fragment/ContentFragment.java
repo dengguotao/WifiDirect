@@ -29,7 +29,9 @@ import com.ckt.io.wifidirect.adapter.MyFragmentAdapter;
 import com.ckt.io.wifidirect.myViews.SendFileListPopWin;
 import com.ckt.io.wifidirect.p2p.WifiP2pState;
 import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.ckt.io.wifidirect.utils.ApkUtils;
 import com.ckt.io.wifidirect.utils.BitmapUtils;
+import com.ckt.io.wifidirect.utils.FileTypeUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -208,7 +210,11 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
 //                        WifiP2pState.getInstance(getContext()).wifiTransferManager.sendFile(i, temp.getPath());
                         ContentValues contentValues = new ContentValues();
                         contentValues.put(Constants.InstanceColumns.PATH, temp.getPath());
-                        contentValues.put(Constants.InstanceColumns.NAME, temp.getName());
+                        String name = temp.getName();
+                        if(FileTypeUtils.isApk(temp.getPath())) {
+                            name = ApkUtils.getApkLable(getContext(), temp.getPath()) + ".apk";
+                        }
+                        contentValues.put(Constants.InstanceColumns.NAME, name);
                         contentValues.put(Constants.InstanceColumns.LENGTH, temp.length());
                         WifiP2pState wifiP2pState = WifiP2pState.getInstance(getContext());
                         contentValues.put(Constants.InstanceColumns.TRANSFER_MAC, wifiP2pState.getConnectedDeviceInfo().connectedDevice.deviceAddress);

@@ -596,9 +596,9 @@ public class WifiTransferManager {
             isRunning = true;
             boolean ret = true;
             String name = transferFileInfo.name;
-            if (name.toString().endsWith(".apk")) {
+            /*if (name.toLowerCase().endsWith(".apk")) {
                 name = ApkUtils.getApkLable(context, transferFileInfo.path) + ".apk";
-            }
+            }*/
             Socket s = new Socket();
             OutputStream out = null;
             InputStream in = null;

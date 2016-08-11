@@ -168,7 +168,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
             LogUtils.d(TAG, progress + "");
             builder.setContentText(progress + "%" + "         " + "speed: "
                     + df.format(transferFileInfo.speed) + "MB/S" + "         " + transferFileInfo.name);
-            builder.setProgress(100, (int) progress, true);
+            builder.setProgress(100, (int) progress, false);
             notification = builder.build();
             if (transferFileInfo.state == Constants.State.STATE_TRANSFERING) {
                 notification.flags |= Notification.FLAG_NO_CLEAR;
