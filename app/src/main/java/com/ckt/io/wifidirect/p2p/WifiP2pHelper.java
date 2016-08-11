@@ -140,6 +140,8 @@ public class WifiP2pHelper extends BroadcastReceiver implements
             @Override
             public void onFailure(int reasonCode) {
                 Log.d(TAG, "WifiP2pHelper-->discoverDevice failed   reasonCode=" + reasonCode);
+                manager.cancelConnect(channel, null);
+                discoverDevice();
             }
         });
     }

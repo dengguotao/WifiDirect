@@ -62,6 +62,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
         return null;
     }
 
+
     @Override
     public void onCreate() {
         LogUtils.d(TAG, "WifiDirectService onCreate()");
@@ -82,6 +83,7 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
         if (mServer != null) {
             mServer.interrupt();
         }
+        WifiP2pState.relase();
         getContentResolver().unregisterContentObserver(contentObserver);
     }
 
@@ -120,10 +122,8 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
     }
 
     @Override
-    public void onUpdate(ArrayList<WifiTransferManager.DataTranferTask> taskList) {
-        for (WifiTransferManager.DataTranferTask task : taskList) {
-            updateNotification(task.transferFileInfo);
-        }
+    public void onUpdate(TransferFileInfo transferFileInfo) {
+        updateNotification(transferFileInfo);
     }
 
     @Override

@@ -260,7 +260,6 @@ public class MainActivity extends BaseActivity {
         LogUtils.i(WifiP2pHelper.TAG, "MainActivity onDestroy");
         wifiP2pHelper.release();
         FileResLoaderUtils.release();
-        WifiP2pState.relase();
     }
 
     @Override
