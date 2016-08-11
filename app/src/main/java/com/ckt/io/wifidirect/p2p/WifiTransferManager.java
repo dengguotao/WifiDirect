@@ -610,7 +610,7 @@ public class WifiTransferManager {
                 final HashMap<String, String> paramMap = new HashMap<>();
                 paramMap.put(PARAM_ID, String.valueOf(transferFileInfo.id));
                 paramMap.put(PARAM_FILE_NAME, name);
-                paramMap.put(PARAM_MAC, transferFileInfo.transferMac);
+                paramMap.put(PARAM_MAC, mThisDevice.deviceAddress);//put local mac and send to another device
                 //step 1: request the file info
                 onSendFileStarted(this); /*..................................*/
                 doSend(out, MSG_REQEUST_FILE_INFO, paramMap, null, this);
