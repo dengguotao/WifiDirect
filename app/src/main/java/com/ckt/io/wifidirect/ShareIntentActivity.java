@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 import com.ckt.io.wifidirect.p2p.WifiP2pState;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -38,12 +39,14 @@ public class ShareIntentActivity extends BaseActivity {
     private WifiP2pState.ConnectedDeviceInfo mConnectedDeviceInfo;
     private Intent intent;
     private String action;
+    private static List<WifiP2pDevice> mList;
     private ContentResolver mContentResolver;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_share_intent);
 
+        mList = new ArrayList<WifiP2pDevice>();
         mContext = getApplicationContext();
         intent = getIntent();
         action = intent.getAction();
@@ -53,25 +56,34 @@ public class ShareIntentActivity extends BaseActivity {
         mListView = (ListView) findViewById(R.id.sharelist);
         mWifiP2pDeviceAdapter = new ArrayAdapter<String>(this,R.layout.devicelist);
 
-
         mListView.setAdapter(mWifiP2pDeviceAdapter);
         mListView.setOnItemClickListener(new OnItemClick());
         mWifiP2pState.registerOnP2pChangeListenerListener(new mOnP2pChangeListener());
         mWifiP2pState.registerOnConnectChangeListener(new mOnConnectStateChangeListener());
 
-        if (action.equals(Intent.ACTION_SEND) || action.equals(Intent.ACTION_SEND_MULTIPLE)) {
-            if (!mWifiP2pState.isConnected()) {
-                mWifiP2pState.discoverDevice();
-            } else {
-                mConnectedDeviceInfo = mWifiP2pState.getConnectedDeviceInfo();
-            }
-        }
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        if (action.equals(Intent.ACTION_SEND) || action.equals(Intent.ACTION_SEND_MULTIPLE)) {
+            if (!mWifiP2pState.isConnected()) {
+                mWifiP2pState.discoverDevice();
+            } else {
+                mConnectedDeviceInfo = mWifiP2pState.getConnectedDeviceInfo();
+                mWifiP2pDeviceAdapter.add(mConnectedDeviceInfo.connectedDevice.deviceName + "    --Connected");
+                mWifiP2pDeviceAdapter.notifyDataSetChanged();
+            }
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mList.clear();
         mWifiP2pDeviceAdapter.clear();
+        mWifiP2pDeviceAdapter.notifyDataSetChanged();
     }
 
     private final class OnItemClick implements AdapterView.OnItemClickListener {
@@ -93,8 +105,7 @@ public class ShareIntentActivity extends BaseActivity {
         Log.d(TAG, "action = " + action);
         if (action.equals(Intent.ACTION_SEND) || action.equals(Intent.ACTION_SEND_MULTIPLE)) {
             final String type = intent.getType();
-            final Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
-            CharSequence extra_text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
+            final Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
             if (uri != null && type != null) {
                 Thread thread = new Thread(new Runnable() {
                     @Override
@@ -108,6 +119,7 @@ public class ShareIntentActivity extends BaseActivity {
                             int column_index = mCursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
                             mCursor.moveToFirst();
                             path =mCursor.getString(column_index);
+                            mCursor.close();
                         }
                         Log.d(TAG, "path =" + path);
                         String name = path.substring(path.lastIndexOf("/") + 1, path.length());
@@ -137,12 +149,16 @@ public class ShareIntentActivity extends BaseActivity {
     private class mOnP2pChangeListener implements WifiP2pState.OnP2pChangeListener {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peers) {
-            Log.d(TAG, peers.toString());
+            Log.d(TAG, "mList = " + (mList == null));
             mWifiP2pDeviceList = peers.getDeviceList();
             for (WifiP2pDevice device : mWifiP2pDeviceList) {
-                String name = device.deviceName;
-                mWifiP2pDeviceAdapter.add(name);
-                mWifiP2pDeviceAdapter.notifyDataSetChanged();
+                if (mList == null || (!mList.contains(device))) {
+                    mList.add(device);
+                    Log.d(TAG,"Add in mList is " + device.deviceName);
+                    String name = device.deviceName;
+                    mWifiP2pDeviceAdapter.add(name);
+                    mWifiP2pDeviceAdapter.notifyDataSetChanged();
+                }
             }
         }
 
@@ -157,6 +173,12 @@ public class ShareIntentActivity extends BaseActivity {
         public void onConnected(WifiP2pState.ConnectedDeviceInfo connectedDeviceInfo) {
             Log.d(TAG,"onConnected");
             mConnectedDeviceInfo = connectedDeviceInfo;
+            if (mList.contains(mConnectedDeviceInfo.connectedDevice)) {
+                mWifiP2pDeviceAdapter.remove(mConnectedDeviceInfo.connectedDevice.deviceName);
+            }
+            mWifiP2pDeviceAdapter.add(mConnectedDeviceInfo.connectedDevice.deviceName + "    --Connected.");
+            mWifiP2pDeviceAdapter.notifyDataSetChanged();
+
             Toast.makeText(mContext, mConnectedDeviceInfo.connectedDevice.deviceName,Toast.LENGTH_SHORT).show();
             startShareIntent();
         }
