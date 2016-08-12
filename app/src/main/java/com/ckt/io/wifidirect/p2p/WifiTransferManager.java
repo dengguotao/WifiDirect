@@ -131,7 +131,8 @@ public class WifiTransferManager {
         }
 
         FileSendTask task = new FileSendTask(fileInfo);
-        synchronized (task) {
+
+        synchronized (mWaitingTasks) {
             mWaitingTasks.add(task);
         }
 
@@ -203,7 +204,6 @@ public class WifiTransferManager {
                     }
                 }
                 task.transferFileInfo.speed = 0;
-                task.transferFileInfo.updateTransferSize();
             }
             out.flush();
         } catch (Exception e) {
@@ -367,7 +367,6 @@ public class WifiTransferManager {
                 LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    do receive file: while exist  receivedSize=" + task.transferFileInfo.transferedLength + " szie=" + size);
                 if (task.transferFileInfo.transferedLength == size) {
                     task.transferFileInfo.speed = 0;
-                    task.transferFileInfo.updateTransferSize();
                     //remove the ".tmp" suffix
                     File newFile = getFiniallyFile(name);
                     parent = newFile.getParentFile();
@@ -404,6 +403,7 @@ public class WifiTransferManager {
         mDoingTasks.remove(task);
         LogUtils.d(TAG, "SEND FINISHED----------->taskId=" + task.transferFileInfo.id + "    ret=" + ret + " " + task.transferFileInfo.toString());
         startHandleSendTaskThread();
+        task.transferFileInfo.updateTransferSize();
         if (ret) {
             task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_DONE);
         } else {
@@ -438,7 +438,8 @@ public class WifiTransferManager {
 
     public void onReceiveFileFinished(DataTranferTask task, boolean ret) {
         mDoingTasks.remove(task);
-        LogUtils.d(TAG, "RECEIVE FINISHED------------>taskId=" + task.transferFileInfo.id + "    receive File finished: " + task.transferFileInfo.path + " ret:" + ret + "   " + task.transferFileInfo.toString());
+        LogUtils.d(TAG, "RECEIVE FINISHED------------>taskId=" + task.transferFileInfo.id + task.transferFileInfo.path + "  ret=" + ret + "   " + task.transferFileInfo.toString());
+        task.transferFileInfo.updateTransferSize();
         if (ret) {
             task.transferFileInfo.updateState(Constants.State.STATE_TRANSFER_DONE);
         } else {
@@ -486,9 +487,11 @@ public class WifiTransferManager {
     }
 
     private DataTranferTask getWaittingTaskById(int id) {
-        for (DataTranferTask task : mWaitingTasks) {
-            if (task.transferFileInfo.id == id) {
-                return task;
+        synchronized (mWaitingTasks) {
+            for (DataTranferTask task : mWaitingTasks) {
+                if (task.transferFileInfo.id == id) {
+                    return task;
+                }
             }
         }
         return null;
@@ -503,29 +506,26 @@ public class WifiTransferManager {
             /*
             * Do while if
             *    there are some task to do or doing
-            *
             * */
-            synchronized (mWaitingTasks) {
-                synchronized (mDoingTasks) {
-                    while (mWaitingTasks.size() > 0 && mDoingTasks.size() < MAX_SEND_TASK) {
-
-                        final DataTranferTask task = mWaitingTasks.remove(0);
-                        if (!mDoingTasks.contains(task) || task != null) {
-                            mDoingTasks.add(task);
-                        }
-                        LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    A new Send task begin:" + task.toString());
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (!task.isRunning()) {
-                                    task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                                }
-                            }
-                        });
-                    }
+            while (mWaitingTasks.size() > 0 && mDoingTasks.size() < MAX_SEND_TASK) {
+                final DataTranferTask task;
+                synchronized (mWaitingTasks) {
+                     task = mWaitingTasks.remove(0);
                 }
-            }
 
+                if (!mDoingTasks.contains(task) || task != null) {
+                    mDoingTasks.add(task);
+                }
+                LogUtils.d(TAG, "taskId=" + task.transferFileInfo.id + "    A new Send task begin:" + task.toString());
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!task.isRunning()) {
+                            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        }
+                    }
+                });
+            }
             isRunning = false;
         }
     }
@@ -613,12 +613,13 @@ public class WifiTransferManager {
                 paramMap.put(PARAM_MAC, mThisDevice.deviceAddress);//put local mac and send to another device
                 //step 1: request the file info
                 onSendFileStarted(this); /*..................................*/
-                doSend(out, MSG_REQEUST_FILE_INFO, paramMap, null, this);
-                //step 2: wait for the file info
-                if (doReceive(this, in)) {
-                    //step 3: send the file now
-                    paramMap.put(PARAM_TRANSFERED_LEN, String.valueOf(transferFileInfo.transferedLength));
-                    ret = doSend(out, MSG_SEND_FILE, paramMap, transferFileInfo.path, this);
+                if((ret = doSend(out, MSG_REQEUST_FILE_INFO, paramMap, null, this)) == true) {
+                    //step 2: wait for the file info
+                    if (doReceive(this, in)) {
+                        //step 3: send the file now
+                        paramMap.put(PARAM_TRANSFERED_LEN, String.valueOf(transferFileInfo.transferedLength));
+                        ret = doSend(out, MSG_SEND_FILE, paramMap, transferFileInfo.path, this);
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();

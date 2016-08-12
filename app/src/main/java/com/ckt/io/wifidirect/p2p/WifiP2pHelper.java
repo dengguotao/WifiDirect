@@ -629,7 +629,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements
         if(fileSendAsyncTask!=null) {
             fileSendAsyncTask.cancel(true);
         }
-        manager.removeGroup(channel, new ActionListener() {
+        /*manager.removeGroup(channel, new ActionListener() {
             @Override
             public void onFailure(int reasonCode) {
                 Log.d(TAG, "Disconnect failed. Reason :" + reasonCode);
@@ -638,7 +638,7 @@ public class WifiP2pHelper extends BroadcastReceiver implements
             @Override
             public void onSuccess() {
             }
-        });
+        });*/
     }
 
     // 打开/关闭wifi
