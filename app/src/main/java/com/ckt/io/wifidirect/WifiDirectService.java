@@ -17,6 +17,7 @@ import com.ckt.io.wifidirect.p2p.WifiP2pState;
 import com.ckt.io.wifidirect.p2p.WifiTransferManager;
 import com.ckt.io.wifidirect.utils.LogUtils;
 
+import java.net.URI;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -109,7 +110,9 @@ public class WifiDirectService extends Service implements WifiP2pState.OnConnect
 
     @Override
     public void onDisConnected() {
+        LogUtils.i(TAG, "WifiDirectService---->onDisConnected");
         if (mServer != null) {
+            mServer.relase();
             mServer.interrupt();
         }
         mWifiTransferManager = null;

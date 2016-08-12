@@ -205,7 +205,7 @@ public class WifiTransferManager {
                 task.transferFileInfo.speed = 0;
                 task.transferFileInfo.updateTransferSize();
             }
-//            out.flush();
+            out.flush();
         } catch (Exception e) {
             e.printStackTrace();
             ret = false;

@@ -48,6 +48,18 @@ public class WifiP2pServer extends Thread {
                 e.printStackTrace();
             }
         }
+        LogUtils.e(TAG, "server exit");
+        if (mServerSocket != null) {
+            try {
+                mServerSocket.close();
+                mServerSocket = null;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void relase() {
         if (mServerSocket != null) {
             try {
                 mServerSocket.close();
