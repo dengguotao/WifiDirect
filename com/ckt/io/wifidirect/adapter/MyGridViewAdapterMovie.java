@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.adapter;
+package com.easy.transfer.adapter;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
@@ -11,7 +11,7 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.ckt.io.wifidirect.R;
+import com.ckt.io.transfer.R;
 
 import java.util.ArrayList;
 

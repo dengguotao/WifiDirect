@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.provider;
+package com.easy.transfer.provider;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -6,8 +6,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
-import com.ckt.io.wifidirect.Constants;
-import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
+import com.ckt.io.transfer.Constants;
+import com.easy.transfer.utils.FileResLoaderUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ public class RecordManager implements Record.OnStateChangeListener{
 
     private ArrayList<Record> recordArrayList = new ArrayList<>();
     private ArrayList<OnRecordsChangedListener> listenerArrayList = new ArrayList<>();
-    private HashMap<Record, Uri> uris = new HashMap<>(); //±£´æÃ¿¸örecord¶ÔÓ¦µÄURI
+    private HashMap<Record, Uri> uris = new HashMap<>(); //ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½recordï¿½ï¿½Ó¦ï¿½ï¿½URI
     private Context context;
 
     public static RecordManager getInstance(Context context) {
@@ -31,7 +31,7 @@ public class RecordManager implements Record.OnStateChangeListener{
             synchronized (RecordManager.class) {
                 if(manager == null) {
                     manager = new RecordManager(context);
-                    //´ÓÊý¾Ý¿âÖÐ¶ÁÈ¡Êý¾Ý
+                    //ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Ð¶ï¿½È¡ï¿½ï¿½ï¿½ï¿½
                     manager.readDB();
                 }
             }
@@ -43,7 +43,7 @@ public class RecordManager implements Record.OnStateChangeListener{
         this.context = context;
     }
 
-    //ÐÂÔöÕýÔÚ·¢ËÍµÄ¼ÇÂ¼
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú·ï¿½ï¿½ÍµÄ¼ï¿½Â¼
     public void addNewSendingRecord(ArrayList<File> list, String mac) {
         ArrayList<Record> changedRecords = new ArrayList<>();
         for(int i=0; i<list.size(); i++) {
@@ -60,7 +60,7 @@ public class RecordManager implements Record.OnStateChangeListener{
             this.add(record, false);
             changedRecords.add(record);
         }
-        //¼àÌý»Øµ÷
+        //ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½
         for(int i=0; i<listenerArrayList.size(); i++) {
             OnRecordsChangedListener listener = listenerArrayList.get(i);
             if(listener != null) {
@@ -69,7 +69,7 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //ÐÂÔöÕýÔÚ½ÓÊÕµÄ¼ÇÂ¼
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú½ï¿½ï¿½ÕµÄ¼ï¿½Â¼
     public Record addNewRecevingRecord(File f, String name, long size, String mac) {
         Record record = new Record(
                 name,
@@ -83,19 +83,19 @@ public class RecordManager implements Record.OnStateChangeListener{
         return record;
     }
 
-    //Ìí¼Ó¼àÌý
+    //ï¿½ï¿½Ó¼ï¿½ï¿½ï¿½
     public void addOnRecordsChangedListener(OnRecordsChangedListener listener) {
         if(!listenerArrayList.contains(listener)) {
             listenerArrayList.add(listener);
         }
     }
 
-    //ÒÆ³ý¼àÌý
+    //ï¿½Æ³ï¿½ï¿½ï¿½ï¿½ï¿½
     public void removeOnRecordsChangedListener(OnRecordsChangedListener listener) {
         listenerArrayList.remove(listener);
     }
 
-    //ÐÂÔörecord
+    //ï¿½ï¿½ï¿½ï¿½record
     public void add(Record record) {
         add(record, true);
     }
@@ -104,9 +104,9 @@ public class RecordManager implements Record.OnStateChangeListener{
         if(!recordArrayList.contains(record)) {
             record.setListener(this);
             recordArrayList.add(0, record);
-            //Ìí¼Ó¼ÇÂ¼µ½Êý¾Ý¿â
+            //ï¿½ï¿½Ó¼ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½
             addToDB(record);
-            //»Øµ÷¼àÌý
+            //ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½
             if(isCallListener) {
                 for(int i=0; i<listenerArrayList.size(); i++) {
                     OnRecordsChangedListener listener = listenerArrayList.get(i);
@@ -122,12 +122,12 @@ public class RecordManager implements Record.OnStateChangeListener{
 
 
 
-    //ÒÆ³ýrecord
+    //ï¿½Æ³ï¿½record
     public void remove(Record record) {
         if(recordArrayList.remove(record)) {
-            //´ÓÊý¾Ý¿âÖÐÉ¾³ý
+            //ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½É¾ï¿½ï¿½
             deleteDB(record);
-            //»Øµ÷¼àÌý
+            //ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½
             for(int i=0; i<listenerArrayList.size(); i++) {
                 OnRecordsChangedListener listener = listenerArrayList.get(i);
                 if(listener!=null) {
@@ -139,7 +139,7 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //Çå³ýËùÓÐ¼ÇÂ¼
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¼ï¿½Â¼
     public void clearAllRecord() {
         while (recordArrayList.size() != 0) {
             Record record = recordArrayList.get(0);
@@ -151,7 +151,7 @@ public class RecordManager implements Record.OnStateChangeListener{
         return this.recordArrayList;
     }
 
-    //»ñÈ¡ ×´Ì¬ÎªstateµÄ recordÁÐ±í
+    //ï¿½ï¿½È¡ ×´Ì¬Îªstateï¿½ï¿½ recordï¿½Ð±ï¿½
     public ArrayList<Record> getRecords(int state) {
         ArrayList<Record> ret = new ArrayList<>();
         for(int i=0; i<recordArrayList.size(); i++) {
@@ -174,7 +174,7 @@ public class RecordManager implements Record.OnStateChangeListener{
         return null;
     }
 
-    //Êý¾Ý¿â²Ù×÷
+    //ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½
     private void addToDB(Record record) {
         ContentResolver resolver = context.getContentResolver();
         ContentValues contentValues = new ContentValues();
@@ -197,7 +197,7 @@ public class RecordManager implements Record.OnStateChangeListener{
         this.uris.put(record, uri);
     }
 
-    //¸üÐÂÊý¾Ý¿âÖÐµÄ¼ÇÂ¼
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ÐµÄ¼ï¿½Â¼
     private void updateDB(Record record) {
         ContentResolver resolver = context.getContentResolver();
         ContentValues contentValues = new ContentValues();
@@ -215,7 +215,7 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //´ÓÊý¾Ý¿â¶ÁÈ¡Êý¾Ý
+    //ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½
     private void readDB() {
         this.recordArrayList.clear();
         ContentResolver resolver = context.getContentResolver();
@@ -250,7 +250,7 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //É¾³ýÒ»ÌõÊý¾Ý¿â¼ÇÂ¼
+    //É¾ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Â¼
     private void deleteDB(Record record) {
         ContentResolver resolver = context.getContentResolver();
         Uri uri = this.uris.get(record);
@@ -259,15 +259,15 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //record ×´Ì¬¸Ä±ä
+    //record ×´Ì¬ï¿½Ä±ï¿½
     @Override
     public void onStateChanged(Record record, int state_old, int state_new) {
-        //½«recordÎ»ÖÃµ÷µ½×îÐÂ
+        //ï¿½ï¿½recordÎ»ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         recordArrayList.remove(record);
         recordArrayList.add(0, record);
-        //¸üÐÂÊý¾Ý¿â
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½
         updateDB(record);
-        //»Øµ÷¼àÌý
+        //ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½
         for(int i=0; i<listenerArrayList.size(); i++) {
             OnRecordsChangedListener listener = listenerArrayList.get(i);
             if(listener!=null) {
@@ -276,10 +276,10 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //recordÊý¾Ý¸Ä±ä
+    //recordï¿½ï¿½ï¿½Ý¸Ä±ï¿½
     @Override
     public void onDataChanged(Record record) {
-        //»Øµ÷¼àÌý
+        //ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½
         for(int i=0; i<listenerArrayList.size(); i++) {
             OnRecordsChangedListener listener = listenerArrayList.get(i);
             if(listener!=null) {
@@ -288,7 +288,7 @@ public class RecordManager implements Record.OnStateChangeListener{
         }
     }
 
-    //¼ÇÂ¼·¢Éú¸Ä±äµÄ¼àÌý
+    //ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½Ä¼ï¿½ï¿½ï¿½
     public interface OnRecordsChangedListener {
         public abstract void onRecordListChanged(int action, ArrayList<Record> changedRecordList);
         public abstract void onRecordChanged(Record record, int state_old, int state_new);

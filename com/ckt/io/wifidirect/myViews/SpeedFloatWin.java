@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.myViews;
+package com.easy.transfer.myViews;
 
 import android.app.Activity;
 import android.content.Context;
@@ -14,8 +14,8 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.utils.BitmapUtils;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.utils.BitmapUtils;
 
 
 /**
@@ -47,31 +47,31 @@ public class SpeedFloatWin {
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams();
 //        final WindowManager wm = (WindowManager) context.getApplicationContext()
 //                .getSystemService(Context.WINDOW_SERVICE);
-        //»ñÈ¡»ùÓÚActivityµÄWindowManager
+        //ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½Activityï¿½ï¿½WindowManager
         final WindowManager wm = activity.getWindowManager();
         // set window type
         params.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
             /*
-             * if params.type = WindowManager.LayoutParams.TYPE_PHONE; ÄÇÃ´ÓÅÏÈ¼¶»á½µµÍÒ»Ð©,
-             * ¼´À­ÏÂÍ¨ÖªÀ¸²»¿É¼û
+             * if params.type = WindowManager.LayoutParams.TYPE_PHONE; ï¿½ï¿½Ã´ï¿½ï¿½ï¿½È¼ï¿½ï¿½á½µï¿½ï¿½Ò»Ð©,
+             * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¨Öªï¿½ï¿½ï¿½ï¿½ï¿½É¼ï¿½
              */
-        params.format = PixelFormat.RGBA_8888; // ÉèÖÃÍ¼Æ¬¸ñÊ½£¬Ð§¹ûÎª±³¾°Í¸Ã÷
-        // ÉèÖÃWindow flag
+        params.format = PixelFormat.RGBA_8888; // ï¿½ï¿½ï¿½ï¿½Í¼Æ¬ï¿½ï¿½Ê½ï¿½ï¿½Ð§ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Í¸ï¿½ï¿½
+        // ï¿½ï¿½ï¿½ï¿½Window flag
         params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                 | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
             /*
-             * ÏÂÃæµÄflagsÊôÐÔµÄÐ§¹ûÐÎÍ¬¡°Ëø¶¨¡±¡£ Ðü¸¡´°²»¿É´¥Ãþ£¬²»½ÓÊÜÈÎºÎÊÂ¼þ,Í¬Ê±²»Ó°ÏìºóÃæµÄÊÂ¼þÏìÓ¦¡£
+             * ï¿½ï¿½ï¿½ï¿½ï¿½flagsï¿½ï¿½ï¿½Ôµï¿½Ð§ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îºï¿½ï¿½Â¼ï¿½,Í¬Ê±ï¿½ï¿½Ó°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½
              * wmParams.flags=LayoutParams.FLAG_NOT_TOUCH_MODAL |
              * LayoutParams.FLAG_NOT_FOCUSABLE | LayoutParams.FLAG_NOT_TOUCHABLE;
              */
-        // ÉèÖÃÐü¸¡´°µÄ³¤µÃ¿í
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä³ï¿½ï¿½Ã¿ï¿½
         params.width = (int) BitmapUtils.dipTopx(activity, 80);
         params.height = (int) BitmapUtils.dipTopx(activity, 60);
         params.x = x;
         params.y = y;
         LayoutInflater inflater = LayoutInflater.from(activity);
         View v = inflater.inflate(R.layout.float_win_layout, null);
-        // ÉèÖÃÐü¸¡´°µÄTouch¼àÌý
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Touchï¿½ï¿½ï¿½ï¿½
         v.setOnTouchListener(new View.OnTouchListener() {
             int lastX, lastY;
             int paramX, paramY;
@@ -89,7 +89,7 @@ public class SpeedFloatWin {
                         int dy = (int) event.getRawY() - lastY;
                         params.x = paramX + dx;
                         params.y = paramY + dy;
-                        // ¸üÐÂÐü¸¡´°Î»ÖÃ
+                        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½
                         wm.updateViewLayout(v, params);
                         x = params.x;
                         y = params.y;
@@ -118,7 +118,7 @@ public class SpeedFloatWin {
             }
         });
 
-        //·ÀÖ¹Ìí¼Ó¶à¸öÐü¸¡´°¿Ú
+        //ï¿½ï¿½Ö¹ï¿½ï¿½Ó¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (!isFloatViewAdded) {
             wm.addView(v, params);
             view = v;
@@ -134,7 +134,7 @@ public class SpeedFloatWin {
         }
         isFloatViewAdded = false;
 
-        //±£´æÐü¸¡´°¿ÚµÄÎ»ÖÃ
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½Î»ï¿½ï¿½
         SharedPreferences mySharedPreferences = context.getSharedPreferences(
                 "WifiDirect", Activity.MODE_PRIVATE);
         SharedPreferences.Editor editor = mySharedPreferences.edit();

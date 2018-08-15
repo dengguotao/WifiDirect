@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.adapter;
+package com.easy.transfer.adapter;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -13,11 +13,11 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.BitmapUtils;
-import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
-import com.ckt.io.wifidirect.utils.FileTypeUtils;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.p2p.WifiP2pHelper;
+import com.easy.transfer.utils.BitmapUtils;
+import com.easy.transfer.utils.FileResLoaderUtils;
+import com.easy.transfer.utils.FileTypeUtils;
 
 import java.util.ArrayList;
 

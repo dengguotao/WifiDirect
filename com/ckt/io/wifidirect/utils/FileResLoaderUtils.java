@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.utils;
+package com.easy.transfer.utils;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -9,8 +9,8 @@ import android.media.ThumbnailUtils;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.p2p.WifiP2pHelper;
 
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ public class FileResLoaderUtils {
     private OnLoadFinishedListener listener;
     private static HashMap<String, Object> picMap = new HashMap<>();
     private static HashMap<String, String> fileNameMap = new HashMap<>();
-    private LoadTask loadTask;//ÓÃÀ´ÔÚºóÌ¨¼ÓÔØÍ¼Æ¬
+    private LoadTask loadTask;//ï¿½ï¿½ï¿½ï¿½ï¿½Úºï¿½Ì¨ï¿½ï¿½ï¿½ï¿½Í¼Æ¬
 
     private FileResLoaderUtils(){}
 
@@ -53,11 +53,11 @@ public class FileResLoaderUtils {
 //            LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->load() warning:"+path+" has been loaded before");
             return;
         }
-        if(loadTask == null || !loadTask.isLoadiing) {//ºóÌ¨ÈÎÎñÃ»ÓÐÔËÐÐ,¼ÓÈëloadlistºóÆô¶¯ºóÌ¨ÈÎÎñ
+        if(loadTask == null || !loadTask.isLoadiing) {//ï¿½ï¿½Ì¨ï¿½ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½loadlistï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¨ï¿½ï¿½ï¿½ï¿½
             loadTask = new LoadTask(context);
             loadTask.loadList.add(path);
             loadTask.execute();
-        }else {//ºóÌ¨ÕýÔÚÔËÐÐ,¼ÓÈëloadlist¼´¿É
+        }else {//ï¿½ï¿½Ì¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½loadlistï¿½ï¿½ï¿½ï¿½
             loadTask.loadList.add(path);
         }
         loadTask.context = context;
@@ -79,22 +79,22 @@ public class FileResLoaderUtils {
 //                LogUtils.i(WifiP2pHelper.TAG, "DrawableLoaderUtils-->loading pic of "+path);
                 String s = path.toLowerCase();
                 Object obj = null;
-                if(s.endsWith(".apk")) { //apkÎÄ¼þ
+                if(s.endsWith(".apk")) { //apkï¿½Ä¼ï¿½
                     obj = ApkUtils.getApkIcon(context, path);
-                    //Ë³±ã°ÑapkÎÄ¼þµÄlableÒ²Ò»Æð¼ÓÔØÁË
+                    //Ë³ï¿½ï¿½ï¿½apkï¿½Ä¼ï¿½ï¿½ï¿½lableÒ²Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                     fileNameMap.put(path, ApkUtils.getApkLable(context, path));
-                }else if(s.endsWith(".mp3")) { //ÒôÀÖÎÄ¼þ
+                }else if(s.endsWith(".mp3")) { //ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½
                     obj = AudioUtils.getMusicBitpMap(path);
-                    //Ë³±ã°ÑÒôÀÖÎÄ¼þµÄlableÒ²Ò»Æð¼ÓÔØÁË
+                    //Ë³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½lableÒ²Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                     fileNameMap.put(path, AudioUtils.getMusicName(path));
-                }else if(s.endsWith(".jpg") || s.endsWith(".jpeg") || s.endsWith(".bmp") || s.endsWith(".gif") || s.endsWith(".png")) {//Í¼Æ¬ÎÄ¼þ
+                }else if(s.endsWith(".jpg") || s.endsWith(".jpeg") || s.endsWith(".bmp") || s.endsWith(".gif") || s.endsWith(".png")) {//Í¼Æ¬ï¿½Ä¼ï¿½
                     BitmapFactory.Options options = new BitmapFactory.Options();
                     options.inSampleSize = 10;
                     Bitmap bitmap = BitmapFactory.decodeFile(path, options);
                     obj = ThumbnailUtils.extractThumbnail(bitmap, 80,
                             80);
                     bitmap.recycle();
-                }else if(s.endsWith(".3gp") || s.endsWith(".mp4") || s.endsWith(".rmvb")) { //ÊÓÆµÎÄ¼þ
+                }else if(s.endsWith(".3gp") || s.endsWith(".mp4") || s.endsWith(".rmvb")) { //ï¿½ï¿½Æµï¿½Ä¼ï¿½
                     obj = new BitmapDrawable(GetVideoThumbnail.getVideoThumbnailTool(path));
                 }
 

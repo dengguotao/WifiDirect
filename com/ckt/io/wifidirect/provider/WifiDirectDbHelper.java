@@ -1,11 +1,11 @@
-package com.ckt.io.wifidirect.provider;
+package com.easy.transfer.provider;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import com.ckt.io.wifidirect.Constants;
-import com.ckt.io.wifidirect.utils.LogUtils;
+import com.ckt.io.transfer.Constants;
+import com.easy.transfer.utils.LogUtils;
 
 /**
  * Created by admin on 2016/3/14.

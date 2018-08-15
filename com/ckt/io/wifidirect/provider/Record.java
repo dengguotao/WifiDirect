@@ -1,9 +1,9 @@
-package com.ckt.io.wifidirect.provider;
+package com.easy.transfer.provider;
 
 import android.util.Log;
 
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.LogUtils;
+import com.easy.transfer.p2p.WifiP2pHelper;
+import com.easy.transfer.utils.LogUtils;
 
 import java.util.Calendar;
 
@@ -16,11 +16,11 @@ public class Record {
     public final static int DIRECTION_IN = 0;
 
 
-    public static final int STATE_FINISHED = 0; //Íê³É
-    public static final int STATE_FAILED = 1; //Ê§°Ü
-    public static final int STATE_WAIT_FOR_TRANSPORT = 2; //µÈ´ý
-    public static final int STATE_TRANSPORTING = 3; //ÕýÔÚ
-    public static final int STATE_PAUSED = 4; //ÔÝÍ£
+    public static final int STATE_FINISHED = 0; //ï¿½ï¿½ï¿½
+    public static final int STATE_FAILED = 1; //Ê§ï¿½ï¿½
+    public static final int STATE_WAIT_FOR_TRANSPORT = 2; //ï¿½È´ï¿½
+    public static final int STATE_TRANSPORTING = 3; //ï¿½ï¿½ï¿½ï¿½
+    public static final int STATE_PAUSED = 4; //ï¿½ï¿½Í£
 
     private long id;
     private String name;
@@ -31,7 +31,7 @@ public class Record {
     private int transport_direction;
     private String mac;
 
-    private double speed; //´«ÊäµÄËÙ¶È
+    private double speed; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
 
     private OnStateChangeListener listener;
 
@@ -42,7 +42,7 @@ public class Record {
         this.state = state;
         this.transport_direction = transport_direction;
         this.mac = mac;
-        //Ê¹ÓÃµ±Ç°Ê±¼äÀ´×÷Îªid
+        //Ê¹ï¿½Ãµï¿½Ç°Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªid
         Calendar c = Calendar.getInstance();
         int day = c.get(Calendar.DAY_OF_YEAR);
         long ms = System.currentTimeMillis();

@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.myViews;
+package com.easy.transfer.myViews;
 
 import android.os.Handler;
 import android.view.View;
@@ -11,8 +11,8 @@ import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
-import com.ckt.io.wifidirect.MainActivity;
-import com.ckt.io.wifidirect.R;
+import com.ckt.io.transfer.MainActivity;
+import com.ckt.io.transfer.R;
 
 import java.util.ArrayList;
 

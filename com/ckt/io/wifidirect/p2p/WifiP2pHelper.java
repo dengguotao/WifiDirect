@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.p2p;
+package com.easy.transfer.p2p;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,14 +43,14 @@ import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.ckt.io.wifidirect.Constants;
-import com.ckt.io.wifidirect.MainActivity;
-import com.ckt.io.wifidirect.utils.ApkUtils;
-import com.ckt.io.wifidirect.utils.AudioUtils;
-import com.ckt.io.wifidirect.utils.DataTypeUtils;
-import com.ckt.io.wifidirect.utils.FileTypeUtils;
-import com.ckt.io.wifidirect.utils.LogUtils;
-import com.ckt.io.wifidirect.utils.SdcardUtils;
+import com.ckt.io.transfer.Constants;
+import com.ckt.io.transfer.MainActivity;
+import com.easy.transfer.utils.ApkUtils;
+import com.easy.transfer.utils.AudioUtils;
+import com.easy.transfer.utils.DataTypeUtils;
+import com.easy.transfer.utils.FileTypeUtils;
+import com.easy.transfer.utils.LogUtils;
+import com.easy.transfer.utils.SdcardUtils;
 
 
 public class WifiP2pHelper extends BroadcastReceiver implements

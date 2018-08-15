@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect;
+package com.ckt.io.transfer;
 
 import android.Manifest;
 import android.app.Activity;
@@ -21,18 +21,18 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
 
-import com.ckt.io.wifidirect.fragment.HistoryFragment;
-import com.ckt.io.wifidirect.myViews.DeviceConnectDialog;
-import com.ckt.io.wifidirect.fragment.ContentFragment;
-import com.ckt.io.wifidirect.fragment.FileExplorerFragment;
-import com.ckt.io.wifidirect.myViews.SpeedFloatWin;
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.provider.Record;
-import com.ckt.io.wifidirect.provider.RecordManager;
-import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
-import com.ckt.io.wifidirect.utils.LogUtils;
-import com.ckt.io.wifidirect.utils.SdcardUtils;
-import com.ckt.io.wifidirect.utils.ToastUtils;
+import com.easy.transfer.fragment.HistoryFragment;
+import com.easy.transfer.myViews.DeviceConnectDialog;
+import com.easy.transfer.fragment.ContentFragment;
+import com.easy.transfer.fragment.FileExplorerFragment;
+import com.easy.transfer.myViews.SpeedFloatWin;
+import com.easy.transfer.p2p.WifiP2pHelper;
+import com.easy.transfer.provider.Record;
+import com.easy.transfer.provider.RecordManager;
+import com.easy.transfer.utils.FileResLoaderUtils;
+import com.easy.transfer.utils.LogUtils;
+import com.easy.transfer.utils.SdcardUtils;
+import com.easy.transfer.utils.ToastUtils;
 
 import java.io.File;
 import java.text.DecimalFormat;

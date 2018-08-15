@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.fragment;
+package com.easy.transfer.fragment;
 
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
@@ -28,13 +28,13 @@ import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.ckt.io.wifidirect.MainActivity;
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.adapter.MyGridViewAdapter;
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
-import com.ckt.io.wifidirect.utils.LogUtils;
-import com.ckt.io.wifidirect.utils.ToastUtils;
+import com.ckt.io.transfer.MainActivity;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.adapter.MyGridViewAdapter;
+import com.easy.transfer.p2p.WifiP2pHelper;
+import com.easy.transfer.utils.FileResLoaderUtils;
+import com.easy.transfer.utils.LogUtils;
+import com.easy.transfer.utils.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;

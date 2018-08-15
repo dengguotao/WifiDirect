@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.fragment;
+package com.easy.transfer.fragment;
 
 import android.app.Fragment;
 import android.os.Bundle;
@@ -9,7 +9,7 @@ import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
 
-import com.ckt.io.wifidirect.R;
+import com.ckt.io.transfer.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect;
+package com.ckt.io.transfer;
 
 import android.net.Uri;
 
@@ -6,7 +6,7 @@ import android.net.Uri;
  * Created by admin on 2016/3/14.
  */
 public class Constants {
-    public static final String AUTHORITY = "com.ckt.io.wifidirect";
+    public static final String AUTHORITY = "com.ckt.io.transfer";
     public final static String DATABASE_NAME = "wifi_direct.db";
     public final static String TABLE_NAME = "wifi_direct";
 
@@ -30,7 +30,7 @@ public class Constants {
     public static class State {
         public final static int STATE_IDEL = 1; //ֹͣ
         public final static int STATE_TRANSFERING = 2;
-        public final static int STATE_PENDING = 3; //�ȴ�
+        public final static int STATE_PENDING = 3; //�ȴ�
         public final static int STATE_TRANSFER_DONE = 4;
     }
 }

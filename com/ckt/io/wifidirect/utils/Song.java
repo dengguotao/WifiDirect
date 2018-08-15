@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.utils;
+package com.easy.transfer.utils;
 
 /**
  * Created by admin on 2016/3/8.

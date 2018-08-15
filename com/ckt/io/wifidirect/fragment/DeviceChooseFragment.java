@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.fragment;
+package com.easy.transfer.fragment;
 
 import java.util.ArrayList;
 
@@ -16,10 +16,10 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.ckt.io.wifidirect.MainActivity;
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.ToastUtils;
+import com.ckt.io.transfer.MainActivity;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.p2p.WifiP2pHelper;
+import com.easy.transfer.utils.ToastUtils;
 
 
 public class DeviceChooseFragment extends Fragment{
@@ -72,12 +72,12 @@ public class DeviceChooseFragment extends Fragment{
 	//update views
 	public void init() {
 		MainActivity activity = (MainActivity) getActivity();
-		if(activity.getWifiP2pHelper().isConnected()) {//Éè±¸ÒÑ¾­Á¬½ÓÉÏÁË
+		if(activity.getWifiP2pHelper().isConnected()) {//ï¿½è±¸ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			if(txt_connected_info.getText().equals("")) {
 				txt_connected_info.setText(R.string.connect_successed);
 			}
 			listView.setVisibility(View.GONE);
-		}else { //Éè±¸Î´Á¬½Ó
+		}else { //ï¿½è±¸Î´ï¿½ï¿½ï¿½ï¿½
 			listView.setVisibility(View.VISIBLE);
 			activity.getWifiP2pHelper().discoverDevice();
 			txt_connected_info.setText(R.string.searching_hit);
@@ -97,11 +97,11 @@ public class DeviceChooseFragment extends Fragment{
 		}
 	}
 
-	//Á¬½Ó¶Ï¿ª
+	//ï¿½ï¿½ï¿½Ó¶Ï¿ï¿½
 	public void onDisconnectedInfo() {
 		listView.setVisibility(View.VISIBLE);
 		txt_connected_info.setText(R.string.disconnected_device);
-		//2sºóÖØÐÂ¿ªÊ¼ËÑË÷
+		//2sï¿½ï¿½ï¿½ï¿½ï¿½Â¿ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½
 		handler.postDelayed(new Runnable() {
 			@Override
 			public void run() {

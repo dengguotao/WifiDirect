@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.adapter;
+package com.easy.transfer.adapter;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -12,11 +12,11 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.provider.Record;
-import com.ckt.io.wifidirect.utils.DataTypeUtils;
-import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
-import com.ckt.io.wifidirect.utils.FileTypeUtils;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.provider.Record;
+import com.easy.transfer.utils.DataTypeUtils;
+import com.easy.transfer.utils.FileResLoaderUtils;
+import com.easy.transfer.utils.FileTypeUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -188,7 +188,7 @@ public class MyExpandableListViewAdapter extends BaseExpandableListAdapter{
         }
         holder.progressBar.setProgress(progress);
         //set send or receive flag
-        if(record.isSend()) { //·¢ËÍ
+        if(record.isSend()) { //ï¿½ï¿½ï¿½ï¿½
             holder.view_send_recevice_flag.setBackgroundColor(Color.GREEN);
         }else {
             holder.view_send_recevice_flag.setBackgroundColor(Color.RED);
