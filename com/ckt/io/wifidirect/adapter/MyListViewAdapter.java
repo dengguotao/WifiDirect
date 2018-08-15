@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.adapter;
+package com.easy.transfer.adapter;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -11,11 +11,11 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
-import com.ckt.io.wifidirect.utils.FileTypeUtils;
-import com.ckt.io.wifidirect.utils.LogUtils;
-import com.ckt.io.wifidirect.utils.SdcardUtils;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.utils.FileResLoaderUtils;
+import com.easy.transfer.utils.FileTypeUtils;
+import com.easy.transfer.utils.LogUtils;
+import com.easy.transfer.utils.SdcardUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ public class MyListViewAdapter extends BaseAdapter{
     private ArrayList<String> list = new ArrayList<>();
     private File innerSdFile, externalSDFile;
     private Context context;
-    private ArrayList<String> titleList; //ÒªÏÔÊ¾µÄÎÄ¼þµÄ±êÌâ(Èç¹ûÎª¿Õ,Ôò»á×Ô¶¯È¥»ñÈ¡)
+    private ArrayList<String> titleList; //Òªï¿½ï¿½Ê¾ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½Ä±ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½Îªï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½È¥ï¿½ï¿½È¡)
     public MyListViewAdapter(Context context, ArrayList<String> fileList) {
         this.context = context;
         if(fileList != null) {
@@ -113,7 +113,7 @@ public class MyListViewAdapter extends BaseAdapter{
         File tempFile = new File(path);
         if(tempFile.isDirectory()) {
             viewHolder.img_icon.setImageResource(R.drawable.folder_icon);
-            //sdcardÄ¿Â¼,ÌØ±ð´¦Àí:
+            //sdcardÄ¿Â¼,ï¿½Ø±ï¿½ï¿½ï¿½:
             if(innerSdFile != null) {
                 if(tempFile.getPath().equals(innerSdFile.getPath())) {
                     viewHolder.img_icon.setImageResource(R.drawable.sdcard_icon);
@@ -125,29 +125,29 @@ public class MyListViewAdapter extends BaseAdapter{
                 }
             }
         }else {
-            if(FileTypeUtils.isNeedToLoadDrawable(tempFile.getPath())) {//ÐèÒªÏÔÊ¾¼ÓÔØÍ¼Æ¬
+            if(FileTypeUtils.isNeedToLoadDrawable(tempFile.getPath())) {//ï¿½ï¿½Òªï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Í¼Æ¬
                 Object object = FileResLoaderUtils.getPic(tempFile.getPath());
                 if(object instanceof Drawable) {
                     viewHolder.img_icon.setImageDrawable((Drawable) object);
                 }else if(object instanceof Bitmap) {
                     viewHolder.img_icon.setImageBitmap((Bitmap) object);
-                }else { //Í¼Æ¬Îª¿Õ-->¼ÓÔØÄ¬ÈÏµÄÍ¼Æ¬
+                }else { //Í¼Æ¬Îªï¿½ï¿½-->ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½Ïµï¿½Í¼Æ¬
                     int icon_id = FileTypeUtils.getDefaultFileIcon(tempFile.getPath());
                     viewHolder.img_icon.setImageResource(icon_id);
                 }
-            }else {//ÆäËûÎÄ¼þ-->¼ÓÔØÄ¬ÈÏÍ¼Æ¬
+            }else {//ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½-->ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½Í¼Æ¬
                 viewHolder.img_icon.setImageResource(R.drawable.file_icon);
             }
         }
 
-        //ÉèÖÃÏÔÊ¾µÄ±êÌâ
-        if(titleList!=null) {//ÏÔÊ¾Ö¸¶¨µÄ±êÌâ
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½Ä±ï¿½ï¿½ï¿½
+        if(titleList!=null) {//ï¿½ï¿½Ê¾Ö¸ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½
             viewHolder.txt_title.setText(titleList.get(position));
-        }else { //ÏÔÊ¾ÎÄ¼þÃû À´ µ±×öÎÄ¼þµÄ±êÌâ
+        }else { //ï¿½ï¿½Ê¾ï¿½Ä¼ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½Ä±ï¿½ï¿½ï¿½
             viewHolder.txt_title.setText(tempFile.getName());
         }
 
-        //ÉèÖÃÊÇ·ñÑ¡ÖÐ
+        //ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Ñ¡ï¿½ï¿½
         if(mCheckBoxList.get(position)) { //checked
             viewHolder.checkBox.setVisibility(View.VISIBLE);
             viewHolder.checkBox.setChecked(true);

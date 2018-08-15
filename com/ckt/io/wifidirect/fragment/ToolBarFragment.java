@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.fragment;
+package com.easy.transfer.fragment;
 
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -9,9 +9,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.support.v7.widget.Toolbar;
 
-import com.ckt.io.wifidirect.MainActivity;
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.ckt.io.transfer.MainActivity;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.p2p.WifiP2pHelper;
 
 import java.io.File;
 import java.util.ArrayList;

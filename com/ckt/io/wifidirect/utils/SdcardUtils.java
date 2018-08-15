@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.utils;
+package com.easy.transfer.utils;
 
 import java.io.File;
 import java.lang.reflect.Method;

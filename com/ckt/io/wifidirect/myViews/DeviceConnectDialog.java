@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.myViews;
+package com.easy.transfer.myViews;
 
 import android.app.Dialog;
 import android.graphics.Bitmap;
@@ -11,11 +11,11 @@ import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
 
-import com.ckt.io.wifidirect.MainActivity;
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.fragment.DeviceChooseFragment;
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.BitmapUtils;
+import com.ckt.io.transfer.MainActivity;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.fragment.DeviceChooseFragment;
+import com.easy.transfer.p2p.WifiP2pHelper;
+import com.easy.transfer.utils.BitmapUtils;
 
 import java.util.ArrayList;
 
@@ -73,7 +73,7 @@ public class DeviceConnectDialog extends Dialog {
         getWindow().setAttributes(lp);
     }
 
-    //update views-->ÓÉActivityµ÷ÓÃ
+    //update views-->ï¿½ï¿½Activityï¿½ï¿½ï¿½ï¿½
     public void updateDeviceList(ArrayList<WifiP2pDevice> deviceList) {
         if(this.fragment_choose_device != null) {
             this.fragment_choose_device.updateDeviceList(deviceList);

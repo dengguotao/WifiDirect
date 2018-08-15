@@ -5,7 +5,7 @@
     android:layout_height="fill_parent"
     android:fitsSystemWindows="true"
     android:orientation="vertical"
-    tools:context="com.ckt.io.wifidirect.ShareIntentActivity">
+    tools:context="com.ckt.io.transfer.easy.transfer.ShareIntentActivity">
     <TextView
         android:paddingTop="40dp"
         android:padding="10dp"

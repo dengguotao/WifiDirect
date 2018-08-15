@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.fragment;
+package com.easy.transfer.fragment;
 
 import android.annotation.TargetApi;
 
@@ -12,11 +12,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.ApkUtils;
-import com.ckt.io.wifidirect.utils.FileTypeUtils;
-import com.ckt.io.wifidirect.utils.LogUtils;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.p2p.WifiP2pHelper;
+import com.easy.transfer.utils.ApkUtils;
+import com.easy.transfer.utils.FileTypeUtils;
+import com.easy.transfer.utils.LogUtils;
 
 /**
  * Created by Administrator on 2016/4/6.

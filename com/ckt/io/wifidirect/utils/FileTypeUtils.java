@@ -1,10 +1,10 @@
-package com.ckt.io.wifidirect.utils;
+package com.easy.transfer.utils;
 
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
-import com.ckt.io.wifidirect.R;
+import com.ckt.io.transfer.R;
 
 import java.io.File;
 import java.text.DecimalFormat;
@@ -31,16 +31,16 @@ public class FileTypeUtils {
         return s.endsWith(".3pg") || s.endsWith(".mp4") || s.endsWith(".rmvb");
     }
 
-    //»ñÈ¡ÎÄ¼þÀàÐÍ ×Ö·û´®
+    //ï¿½ï¿½È¡ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö·ï¿½ï¿½ï¿½
     public static String getTypeString(Context context, String path) {
         String ret;
-        if(isApk(path)) { //apkÎÄ¼þ
+        if(isApk(path)) { //apkï¿½Ä¼ï¿½
             ret = context.getResources().getString(R.string.type_application);
-        }else if(isMusic(path)) { //ÒôÀÖÎÄ¼þ
+        }else if(isMusic(path)) { //ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½
             ret = context.getResources().getString(R.string.type_music);
-        }else if(isPhoto(path)) {//Í¼Æ¬ÎÄ¼þ
+        }else if(isPhoto(path)) {//Í¼Æ¬ï¿½Ä¼ï¿½
             ret = context.getResources().getString(R.string.type_photo);
-        }else if(isMovie(path)) { //ÊÓÆµÎÄ¼þ
+        }else if(isMovie(path)) { //ï¿½ï¿½Æµï¿½Ä¼ï¿½
             ret = context.getResources().getString(R.string.type_movie);
         }else {
             ret = context.getResources().getString(R.string.type_other);
@@ -48,38 +48,38 @@ public class FileTypeUtils {
         return ret;
     }
 
-    //»ñÈ¡¸ñÊ½µÄÄ¬ÈÏÍ¼Æ¬
+    //ï¿½ï¿½È¡ï¿½ï¿½Ê½ï¿½ï¿½Ä¬ï¿½ï¿½Í¼Æ¬
     public static int getDefaultFileIcon(String path, int defaultId) {
         String s = path.toLowerCase();
         int id = defaultId;
-        if(isApk(path)) { //apkÎÄ¼þ
+        if(isApk(path)) { //apkï¿½Ä¼ï¿½
             id = R.drawable.apk_icon;
-        }else if(isMusic(path)) { //ÒôÀÖÎÄ¼þ
+        }else if(isMusic(path)) { //ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½
             id = R.drawable.music_icon;
-        }else if(isPhoto(path)) {//Í¼Æ¬ÎÄ¼þ
+        }else if(isPhoto(path)) {//Í¼Æ¬ï¿½Ä¼ï¿½
             id = R.drawable.photo_icon;
-        }else if(isMovie(path)) { //ÊÓÆµÎÄ¼þ
+        }else if(isMovie(path)) { //ï¿½ï¿½Æµï¿½Ä¼ï¿½
             id = R.drawable.film_icon;
         }
         return id;
     }
 
-    //»ñÈ¡¸ñÊ½µÄÄ¬ÈÏÍ¼Æ¬
+    //ï¿½ï¿½È¡ï¿½ï¿½Ê½ï¿½ï¿½Ä¬ï¿½ï¿½Í¼Æ¬
     public static int getDefaultFileIcon(String path) {
         return getDefaultFileIcon(path, R.drawable.file_icon);
     }
 
-    //ÅÐ¶ÏÎÄ¼þÊÇ·ñÐèÒª¼ÓÔØÍ¼Æ¬
+    //ï¿½Ð¶ï¿½ï¿½Ä¼ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½Í¼Æ¬
     public static boolean isNeedToLoadDrawable(String path) {
         String s = path.toLowerCase();
-        //ÐèÒª¼ÓÔØÍ¼Æ¬µÄÒ»Ð©ÎÄ¼þ
+        //ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½Í¼Æ¬ï¿½ï¿½Ò»Ð©ï¿½Ä¼ï¿½
         return isApk(path) || isMusic(path) || isPhoto(path) || isMovie(path);
     }
 
-    /* ÅÐ¶ÏÎÄ¼þMimeTypeµÄmethod */
+    /* ï¿½Ð¶ï¿½ï¿½Ä¼ï¿½MimeTypeï¿½ï¿½method */
     public static String getMIMEType(String path)
     {
-        /* ÒÀÀ©Õ¹ÃûµÄÀàÐÍ¾ö¶¨MimeType */
+        /* ï¿½ï¿½ï¿½ï¿½Õ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¾ï¿½ï¿½ï¿½MimeType */
         String type = "*/*";
         if(isMusic(path)) {
             type = "audio";
@@ -93,7 +93,7 @@ public class FileTypeUtils {
         }else {
             type="*";
         }
-        /*Èç¹ûÎÞ·¨Ö±½Ó´ò¿ª£¬¾ÍÌø³öÈí¼þÁÐ±í¸øÓÃ»§Ñ¡Ôñ */
+        /*ï¿½ï¿½ï¿½ï¿½Þ·ï¿½Ö±ï¿½Ó´ò¿ª£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½ï¿½ï¿½Ã»ï¿½Ñ¡ï¿½ï¿½ */
         if(!isApk(path)) {
             type += "/*";
         }

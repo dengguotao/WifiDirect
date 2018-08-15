@@ -31,7 +31,7 @@
             </intent-filter>
         </activity>
         <provider
-            android:authorities="com.ckt.io.wifidirect"
+            android:authorities="com.ckt.io.transfer"
             android:name=".provider.WifiDirectContentProvider"
             android:exported="false"/>
     </application>

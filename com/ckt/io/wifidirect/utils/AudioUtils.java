@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.utils;
+package com.easy.transfer.utils;
 
 import android.content.ContentUris;
 import android.content.Context;
@@ -10,7 +10,7 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
+import com.easy.transfer.p2p.WifiP2pHelper;
 
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;

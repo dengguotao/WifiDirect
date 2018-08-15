@@ -1,10 +1,10 @@
-package com.ckt.io.wifidirect.utils;
+package com.easy.transfer.utils;
 
 import android.content.Context;
 import android.view.Gravity;
 import android.widget.Toast;
 
-import com.ckt.io.wifidirect.R;
+import com.ckt.io.transfer.R;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

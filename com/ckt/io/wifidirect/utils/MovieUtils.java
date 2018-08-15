@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.utils;
+package com.easy.transfer.utils;
 
 import android.content.Context;
 import android.database.Cursor;

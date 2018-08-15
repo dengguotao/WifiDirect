@@ -10,7 +10,7 @@
         android:layout_height="match_parent">
         <fragment
             android:id="@+id/fragment_choose_device"
-            android:name="com.ckt.io.wifidirect.fragment.DeviceChooseFragment"
+            android:name="com.easy.transfer.fragment.DeviceChooseFragment"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
     </FrameLayout>

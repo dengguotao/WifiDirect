@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.fragment;
+package com.easy.transfer.fragment;
 
 
 import android.Manifest;
@@ -23,16 +23,16 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.ckt.io.wifidirect.MainActivity;
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.adapter.MyListViewAdapter;
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.AudioUtils;
-import com.ckt.io.wifidirect.utils.FileResLoaderUtils;
-import com.ckt.io.wifidirect.utils.FileTypeUtils;
-import com.ckt.io.wifidirect.utils.LogUtils;
-import com.ckt.io.wifidirect.utils.SdcardUtils;
-import com.ckt.io.wifidirect.utils.Song;
+import com.ckt.io.transfer.MainActivity;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.adapter.MyListViewAdapter;
+import com.easy.transfer.p2p.WifiP2pHelper;
+import com.easy.transfer.utils.AudioUtils;
+import com.easy.transfer.utils.FileResLoaderUtils;
+import com.easy.transfer.utils.FileTypeUtils;
+import com.easy.transfer.utils.LogUtils;
+import com.easy.transfer.utils.SdcardUtils;
+import com.easy.transfer.utils.Song;
 
 import java.io.File;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.fragment;
+package com.easy.transfer.fragment;
 
 import android.animation.ValueAnimator;
 import android.app.AlertDialog;
@@ -24,14 +24,14 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 
-import com.ckt.io.wifidirect.MainActivity;
-import com.ckt.io.wifidirect.R;
-import com.ckt.io.wifidirect.adapter.MyFragmentAdapter;
-import com.ckt.io.wifidirect.myViews.SendFileListPopWin;
-import com.ckt.io.wifidirect.p2p.WifiP2pHelper;
-import com.ckt.io.wifidirect.utils.ApkUtils;
-import com.ckt.io.wifidirect.utils.BitmapUtils;
-import com.ckt.io.wifidirect.utils.SdcardUtils;
+import com.ckt.io.transfer.MainActivity;
+import com.ckt.io.transfer.R;
+import com.easy.transfer.adapter.MyFragmentAdapter;
+import com.easy.transfer.myViews.SendFileListPopWin;
+import com.easy.transfer.p2p.WifiP2pHelper;
+import com.easy.transfer.utils.ApkUtils;
+import com.easy.transfer.utils.BitmapUtils;
+import com.easy.transfer.utils.SdcardUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -153,7 +153,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         if (isShow) {//show
             if(img_connect.getTag() == null || !(Boolean)(img_connect.getTag())) {
 
-            }else { //ÒÑ¾­ÏÔÊ¾ÁË
+            }else { //ï¿½Ñ¾ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½
                 return;
             }
             img_connect.setTag(true);
@@ -161,7 +161,7 @@ public class ContentFragment extends Fragment implements View.OnClickListener, M
         } else {//hide
             if(img_connect.getTag() == null || (Boolean)(img_connect.getTag())) {
 
-            }else { //ÒÑ¾­Òþ²ØÁË
+            }else { //ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 return;
             }
             img_connect.setTag(false);

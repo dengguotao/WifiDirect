@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect.provider;
+package com.easy.transfer.provider;
 
 import android.content.ContentProvider;
 import android.content.ContentUris;
@@ -10,8 +10,8 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
 
-import com.ckt.io.wifidirect.Constants;
-import com.ckt.io.wifidirect.utils.LogUtils;
+import com.ckt.io.transfer.Constants;
+import com.easy.transfer.utils.LogUtils;
 
 /**
  * Created by admin on 2016/3/14.

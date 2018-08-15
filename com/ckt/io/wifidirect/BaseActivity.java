@@ -1,4 +1,4 @@
-package com.ckt.io.wifidirect;
+package com.ckt.io.transfer;
 
 import android.content.pm.PackageManager;
 import android.os.Build;
